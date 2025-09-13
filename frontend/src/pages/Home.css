@@ -1,0 +1,105 @@
+.home-container {
+    font-family: Arial, sans-serif;
+    color: #1b5e20;
+  }
+  
+  /* Hero Section */
+  .hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3rem 2rem;
+    background: #e8f5e9;
+    flex-wrap: wrap;
+  }
+  
+  .hero-text {
+    max-width: 600px;
+  }
+  
+  .hero-text h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .hero-text p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+  }
+  
+  .hero-buttons .btn-hero-register,
+  .hero-buttons .btn-hero-login {
+    padding: 0.6rem 1.2rem;
+    margin-right: 1rem;
+    border-radius: 6px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: 0.3s;
+  }
+  
+  .btn-hero-register {
+    background: #1b5e20;
+    color: white;
+  }
+  
+  .btn-hero-register:hover {
+    background: #2e7d32;
+  }
+  
+  .btn-hero-login {
+    background: white;
+    color: #1b5e20;
+    border: 2px solid #1b5e20;
+  }
+  
+  .btn-hero-login:hover {
+    background: #c8e6c9;
+  }
+  
+  .hero-image img {
+    max-width: 400px;
+    width: 100%;
+    border-radius: 12px;
+  }
+  
+  /* Features Section */
+  .features {
+    padding: 3rem 2rem;
+    text-align: center;
+  }
+  
+  .features h2 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
+  
+  .feature-cards {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    width: 250px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: 0.3s;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+  }
+  
+  .card h3 {
+    margin-bottom: 1rem;
+  }
+  
+  .card p {
+    font-size: 0.95rem;
+    color: #2e7d32;
+  }
+  
