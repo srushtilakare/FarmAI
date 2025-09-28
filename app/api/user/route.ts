@@ -1,101 +1,80 @@
 // /app/api/user/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import dbConnect from "@/backend/config/db";
 import User from "@/backend/models/User";
+import jwt from "jsonwebtoken";
 
-// Ensure this route runs on the Node.js runtime to support 'jsonwebtoken'
 export const runtime = "nodejs";
 
-// ✅ GET user data
-export async function GET(req: NextRequest) {
-  await dbConnect();
+interface IUserUpdate {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  farmName?: string;
+  farmSize?: number;
+  farmLocation?: string;
+  state?: string;
+  district?: string;
+  pincode?: string;
+  primaryCrops?: string;
+  farmingExperience?: string;
+  farmingType?: string;
+  irrigationType?: string;
+  preferredLanguage?: string;
+  communicationPreference?: string;
+  profilePhoto?: string;
+}
+
+async function getUserFromToken(req: NextRequest) {
+  const token = req.headers.get("authorization")?.split(" ")[1];
+  if (!token) return null;
+
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET is not defined");
 
   try {
-    const token = req.headers.get("Authorization")?.split(" ")[1];
-
-    if (!token) {
-      return NextResponse.json(
-        { message: "Authentication required." },
-        { status: 401 }
-      );
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
-    const userId = decoded.id;
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return NextResponse.json({ message: "User not found." }, { status: 404 });
-    }
-
-    // ✅ Remove password safely
-    const { password, ...userWithoutPassword } = user.toObject();
-
-    return NextResponse.json(userWithoutPassword);
-  } catch (error: any) {
-    console.error("Error fetching user data:", error);
-    if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
-      return NextResponse.json(
-        { message: "Invalid or expired token." },
-        { status: 401 }
-      );
-    }
-    return NextResponse.json(
-      { message: "Error fetching user data." },
-      { status: 500 }
-    );
+    const decoded = jwt.verify(token, secret) as { id: string };
+    const user = await User.findById(decoded.id).lean();
+    return user;
+  } catch {
+    return null;
   }
 }
 
-// ✅ POST to update user data
+export async function GET(req: NextRequest) {
+  await dbConnect();
+
+  const user = await getUserFromToken(req);
+  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+  // Exclude password safely
+  const { password, ...userWithoutPassword } = user;
+
+  return NextResponse.json(userWithoutPassword);
+}
+
 export async function POST(req: NextRequest) {
   await dbConnect();
 
+  const user = await getUserFromToken(req);
+  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
   try {
-    const data = await req.json();
+    const data: IUserUpdate = await req.json();
 
-    const token = req.headers.get("Authorization")?.split(" ")[1];
-
-    if (!token) {
-      return NextResponse.json(
-        { message: "Authentication required." },
-        { status: 401 }
-      );
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
-    const userId = decoded.id;
-
-    const updatedUser = await User.findByIdAndUpdate(userId, data, {
+    const updatedUser = await User.findByIdAndUpdate(user._id, data, {
       new: true,
       runValidators: true,
-    });
+    }).lean();
 
-    if (!updatedUser) {
-      return NextResponse.json(
-        { message: "User not found or unable to update." },
-        { status: 404 }
-      );
-    }
+    if (!updatedUser) return NextResponse.json({ message: "User not found" }, { status: 404 });
 
-    // ✅ Remove password safely
-    const { password, ...updatedUserWithoutPassword } = updatedUser.toObject();
+    // Exclude password safely
+    const { password, ...userWithoutPassword } = updatedUser;
 
-    return NextResponse.json(updatedUserWithoutPassword);
-  } catch (error: any) {
-    console.error("Error updating user data:", error);
-    if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
-      return NextResponse.json(
-        { message: "Invalid or expired token." },
-        { status: 401 }
-      );
-    }
-    return NextResponse.json(
-      { message: "Error updating user data." },
-      { status: 500 }
-    );
+    return NextResponse.json(userWithoutPassword);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    return NextResponse.json({ message: "Something went wrong" }, { status: 500 });
   }
 }

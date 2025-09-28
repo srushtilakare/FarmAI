@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Leaf, LayoutDashboard, History, MessageSquare, Globe, User, Settings, LogOut, Menu, X } from "lucide-react"
@@ -16,34 +15,38 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const pathname = usePathname()
   const router = useRouter()
 
   const sidebarItems = [
-    {
-      title: "Dashboard",
-      href: "/dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      title: "History",
-      href: "/dashboard/history",
-      icon: History,
-    },
-    {
-      title: "Talk with Farmii",
-      href: "/dashboard/chat",
-      icon: MessageSquare,
-    },
-    {
-      title: "Change Language",
-      href: "/dashboard/language",
-      icon: Globe,
-    },
+    { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { title: "History", href: "/dashboard/history", icon: History },
+    { title: "Talk with Farmii", href: "/dashboard/chat", icon: MessageSquare },
+    { title: "Change Language", href: "/dashboard/language", icon: Globe },
   ]
 
+  // Fetch logged-in user info
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        if (!token) return
+        const res = await fetch("/api/user", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) throw new Error("Failed to fetch user")
+        const data = await res.json()
+        setUser(data)
+      } catch (err) {
+        console.error("Error fetching user:", err)
+      }
+    }
+    fetchUser()
+  }, [])
+
   const handleLogout = () => {
-    // Simulate logout
+    localStorage.removeItem("token")
     router.push("/")
   }
 
@@ -77,12 +80,26 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="p-6 border-b border-sidebar-border">
             <div className="flex items-center space-x-3">
               <Avatar className="h-12 w-12">
-                <AvatarImage src="/indian-farmer-profile.jpg" />
-                <AvatarFallback className="bg-primary text-primary-foreground">RF</AvatarFallback>
+                {user?.profilePhoto ? (
+                  <AvatarImage src={user.profilePhoto} />
+                ) : (
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {user?.fullName
+                      ? user.fullName
+                          .split(" ")
+                          .map((n: string) => n[0])
+                          .join("")
+                      : "RF"}
+                  </AvatarFallback>
+                )}
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">Rajesh Farmer</p>
-                <p className="text-xs text-muted-foreground truncate">Pune, Maharashtra</p>
+                <p className="text-sm font-medium text-sidebar-foreground truncate">
+                  {user?.fullName || "Loading..."}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user?.farmLocation || "Loading..."}
+                </p>
               </div>
             </div>
           </div>

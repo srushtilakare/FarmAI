@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const authMiddleware = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -9,6 +10,10 @@ const router = express.Router();
 router.post("/register", async (req, res) => {
   try {
     const { email, password, fullName, phone } = req.body;
+
+    if (!email || !password || !fullName || !phone) {
+      return res.status(400).json({ message: "All required fields must be filled" });
+    }
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -19,20 +24,14 @@ router.post("/register", async (req, res) => {
 
     // Save user
     const user = new User({
-      fullName,
-      email,
-      phone,
+      ...req.body,
       password: hashedPassword,
-      ...req.body // store other optional fields
     });
     await user.save();
 
-    // Create JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-    res.status(201).json({ token, user: { id: user._id, fullName, email } });
+    res.status(201).json({ message: "Registration successful, please login" });
   } catch (error) {
-    console.error(error);
+    console.error("Register error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -42,20 +41,43 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check user
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    // Create JWT token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-    res.json({ token, user: { id: user._id, fullName: user.fullName, email: user.email } });
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+      },
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// GET USER PROFILE (protected route)
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password"); // don’t send password
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json(user);
+  } catch (error) {
+    console.error("Profile fetch error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

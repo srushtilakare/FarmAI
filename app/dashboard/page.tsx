@@ -1,6 +1,6 @@
-"use client"
+ "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,6 +26,16 @@ export default function DashboardPage() {
     rainfall: "12mm",
     windSpeed: "8 km/h",
   })
+
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    // Fetch user from localStorage
+    const storedUser = localStorage.getItem("user")
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
+    }
+  }, [])
 
   const services = [
     {
@@ -91,8 +101,12 @@ export default function DashboardPage() {
         {/* Welcome Section */}
         <div className="flex flex-col space-y-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Welcome back, Farmer!</h1>
-            <p className="text-muted-foreground">{"Here's what's happening with your farm today"}</p>
+            <h1 className="text-3xl font-bold text-foreground">
+              {user ? `Welcome back, ${user.fullName}!` : "Welcome back, Farmer!"}
+            </h1>
+            <p className="text-muted-foreground">
+              {"Here's what's happening with your farm today"}
+            </p>
           </div>
 
           {/* Weather Widget */}
