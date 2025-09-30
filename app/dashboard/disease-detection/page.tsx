@@ -1,7 +1,6 @@
-"use client"
+ "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,40 +29,73 @@ export default function DiseaseDetectionPage() {
     }
   }
 
-  const handleAnalyze = () => {
-    setIsAnalyzing(true)
-    // Simulate AI analysis
-    setTimeout(() => {
-      setAnalysisResult({
-        disease: "Late Blight",
-        confidence: 92,
-        severity: "Moderate",
-        affectedArea: "Leaves and stems",
-        treatment: [
-          "Apply copper-based fungicide immediately",
-          "Remove affected leaves and dispose properly",
-          "Improve air circulation around plants",
-          "Reduce watering frequency",
-        ],
-        prevention: [
-          "Use resistant varieties",
-          "Maintain proper plant spacing",
-          "Apply preventive fungicide sprays",
-          "Monitor weather conditions",
-        ],
-      })
-      setIsAnalyzing(false)
-    }, 3000)
-  }
-
   const toggleRecording = () => {
     setIsRecording(!isRecording)
-    // Simulate voice recording
     if (!isRecording) {
       setTimeout(() => {
         setIsRecording(false)
         setTextInput("My tomato plants have brown spots on the leaves and they are wilting")
       }, 3000)
+    }
+  }
+
+  const handleAnalyze = async () => {
+    if (!selectedImage) return
+    setIsAnalyzing(true)
+
+    try {
+      // Convert Base64 image to Blob
+      const resBlob = await fetch(selectedImage)
+      const blob = await resBlob.blob()
+
+      // Prepare form data
+      const formData = new FormData()
+      formData.append("image", blob, "crop.jpg")
+
+      // Call backend API
+      const res = await fetch("/api/predict/tomato", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json()
+
+      if (data.error) {
+        alert(data.error)
+        setIsAnalyzing(false)
+        return
+      }
+
+      // Map backend result to UI structure
+      setAnalysisResult({
+        disease: data.disease,
+        confidence: Math.round(data.confidence * 100), // Convert 0-1 to %
+        severity: data.disease === "Healthy" ? "None" : "Moderate",
+        affectedArea: data.disease === "Healthy" ? "None" : "Leaves",
+        treatment:
+          data.disease === "Healthy"
+            ? ["No treatment needed"]
+            : [
+                "Apply recommended fungicide",
+                "Remove affected leaves",
+                "Improve air circulation",
+                "Reduce watering frequency",
+              ],
+        prevention:
+          data.disease === "Healthy"
+            ? ["Maintain healthy plants", "Regular monitoring"]
+            : [
+                "Use resistant varieties",
+                "Maintain proper spacing",
+                "Apply preventive sprays",
+                "Monitor weather conditions",
+              ],
+      })
+    } catch (err) {
+      console.error(err)
+      alert("Failed to analyze the crop. Please try again.")
+    } finally {
+      setIsAnalyzing(false)
     }
   }
 

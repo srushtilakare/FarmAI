@@ -1,4 +1,3 @@
-# ml/train_model.py
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
@@ -6,9 +5,16 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from utils.preprocess import load_data
 import os
+import json
 
 # Load preprocessed data
 train_generator, test_generator = load_data()
+
+# Save class indices to a JSON file
+class_indices_path = os.path.join(os.getcwd(), "ml", "models", "class_indices.json")
+with open(class_indices_path, "w") as f:
+    json.dump(train_generator.class_indices, f)
+print(f"Class indices saved to {class_indices_path}: {train_generator.class_indices}")
 
 # Transfer learning: MobileNetV2
 base_model = tf.keras.applications.MobileNetV2(
@@ -26,9 +32,11 @@ output = Dense(train_generator.num_classes, activation='softmax')(x)
 model = Model(inputs=base_model.input, outputs=output)
 
 # Compile model
-model.compile(optimizer=Adam(learning_rate=0.0001),
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
+model.compile(
+    optimizer=Adam(learning_rate=0.0001),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
 
 # Callbacks
 checkpoint_path = os.path.join(os.getcwd(), "ml", "models", "tomato_model.h5")
