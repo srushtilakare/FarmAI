@@ -1,0 +1,141 @@
+.register-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #eaf9ea, #cdeccd);
+    font-family: "Segoe UI", sans-serif;
+  }
+  
+  .register-card {
+    background: #fff;
+    padding: 2.5rem;
+    border-radius: 18px;
+    box-shadow: 0 10px 25px rgba(0, 100, 0, 0.15);
+    width: 100%;
+    max-width: 480px;
+    text-align: center;
+  }
+  
+  /* Title */
+  .register-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #2f7a2f;
+    margin-bottom: 1.2rem;
+  }
+  
+  /* Progress bar */
+  .progress-bar {
+    display: flex;
+    justify-content: center;
+    gap: 1.2rem;
+    margin-bottom: 1.8rem;
+  }
+  
+  .progress-step {
+    width: 36px;
+    height: 36px;
+    background: #cfe7cf;
+    color: #555;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    transition: all 0.3s ease;
+  }
+  
+  .progress-step.active {
+    background: #2f7a2f;
+    color: white;
+    box-shadow: 0 0 6px rgba(47, 122, 47, 0.5);
+  }
+  
+  /* Form */
+  .register-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .form-section input {
+    padding: 0.75rem 1rem;
+    border: 1px solid #cce0cc;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+  }
+  
+  .form-section input:focus {
+    border-color: #2f7a2f;
+    outline: none;
+    box-shadow: 0 0 6px rgba(47, 122, 47, 0.3);
+  }
+  
+  /* Buttons */
+  .next-btn,
+  .back-btn,
+  .submit-btn {
+    padding: 0.7rem 1.2rem;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  
+  .next-btn {
+    background: #2f7a2f;
+    color: white;
+  }
+  
+  .next-btn:hover {
+    background: #256b25;
+  }
+  
+  .back-btn {
+    background: #e6e6e6;
+    color: #333;
+  }
+  
+  .back-btn:hover {
+    background: #d1d1d1;
+  }
+  
+  .submit-btn {
+    background: linear-gradient(135deg, #2f7a2f, #45a845);
+    color: #fff;
+  }
+  
+  .submit-btn:hover {
+    background: linear-gradient(135deg, #256b25, #3a963a);
+  }
+  
+  .step-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+  }
+  
+  /* Mobile responsive */
+  @media (max-width: 500px) {
+    .register-card {
+      padding: 2rem 1.5rem;
+    }
+    .register-title {
+      font-size: 1.5rem;
+    }
+    .progress-step {
+      width: 30px;
+      height: 30px;
+      font-size: 0.9rem;
+    }
+  }
+  

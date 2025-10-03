@@ -5,7 +5,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from utils.preprocess import load_data
 import os
-import json
+import json 
 
 # Load preprocessed data
 train_generator, test_generator = load_data()

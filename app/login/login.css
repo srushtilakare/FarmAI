@@ -1,0 +1,91 @@
+/* Background with subtle farm-like theme (green gradient + soft pattern) */
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #e6f7e6, #c2eac2);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  /* Centered card */
+  .login-card {
+    background: #fff;
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 100, 0, 0.15);
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+  
+  /* Title */
+  .login-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #2f7a2f;
+    margin-bottom: 0.4rem;
+  }
+  
+  /* Subtitle */
+  .login-subtitle {
+    font-size: 0.95rem;
+    color: #555;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Form */
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  /* Input fields */
+  .login-input {
+    padding: 0.75rem 1rem;
+    border: 1px solid #cce0cc;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+  }
+  
+  .login-input:focus {
+    border-color: #2f7a2f;
+    outline: none;
+    box-shadow: 0 0 6px rgba(47, 122, 47, 0.3);
+  }
+  
+  /* Button */
+  .login-btn {
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #2f7a2f, #45a845);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.3s ease;
+  }
+  
+  .login-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #256b25, #3a963a);
+    transform: translateY(-2px);
+  }
+  
+  .login-btn:disabled {
+    background: #9acb9a;
+    cursor: not-allowed;
+  }
+  
+  /* Responsive */
+  @media (max-width: 480px) {
+    .login-card {
+      padding: 2rem 1.5rem;
+    }
+    .login-title {
+      font-size: 1.5rem;
+    }
+  }
+  

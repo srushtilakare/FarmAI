@@ -7,10 +7,12 @@ def load_data(img_size=(224, 224), batch_size=32):
     """
     Load and preprocess images for training and testing
     """
-    base_dir = os.path.join(os.getcwd(), "ml", "data", "Tomato")
+    # Go up 2 levels from utils -> ml
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    DATA_DIR = os.path.join(BASE_DIR, "data", "Tomato")
 
-    train_dir = os.path.join(base_dir, "train")
-    test_dir = os.path.join(base_dir, "test")
+    train_dir = os.path.join(DATA_DIR, "train")
+    test_dir = os.path.join(DATA_DIR, "test")
 
     # Data augmentation for training
     train_datagen = ImageDataGenerator(

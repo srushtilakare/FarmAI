@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import "./login.css"; // Import CSS file
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,16 +42,34 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="form-container">
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <input name="email" placeholder="Email" type="email" value={formData.email} onChange={handleChange} required />
-        <input name="password" placeholder="Password" type="password" value={formData.password} onChange={handleChange} required />
-
-        <button type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
+    <div className="login-page">
+      <div className="login-card">
+        <h2 className="login-title">🌱 Farm AI Login</h2>
+        <p className="login-subtitle">Empowering Farmers with AI</p>
+        <form onSubmit={handleSubmit} className="login-form">
+          <input
+            className="login-input"
+            name="email"
+            placeholder="Email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          <input
+            className="login-input"
+            name="password"
+            placeholder="Password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+          <button className="login-btn" type="submit" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
