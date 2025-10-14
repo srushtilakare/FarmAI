@@ -1,24 +1,17 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  fullName: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  phone: { type: String, required: true },
-  password: { type: String, required: true },
-
-  // Optional fields
-  farmName: String,
-  farmSize: Number,
-  farmLocation: String,
-  state: String,
-  district: String,
-  pincode: String,
-  primaryCrops: String,
-  farmingExperience: String,
-  farmingType: String,
-  irrigationType: String,
-  preferredLanguage: String,
-  communicationPreference: String,
-}, { timestamps: true });
+  fullName: { type: String, default: "Farmer" }, // default for OTP users
+  phone: { type: String, required: true, unique: true },
+  email: { type: String, unique: true, sparse: true }, // optional email
+  preferredLanguage: { type: String, default: "en-US" },
+  farmLocation: { type: String, default: "" },
+  state: { type: String, default: "" },
+  district: { type: String, default: "" },
+  pincode: { type: String, default: "" },
+  crops: { type: [String], default: [] },
+  farmingType: { type: String, default: "traditional" },
+  createdAt: { type: Date, default: Date.now },
+});
 
 module.exports = mongoose.model("User", userSchema);

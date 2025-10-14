@@ -1,274 +1,254 @@
 "use client";
-import { useState } from "react";
+
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import VoiceInput from "../../components/VoiceInput";
+import CropSelector from "../../components/CropSelector";
 import "./register.css";
+
+type LocationInfo = {
+  lat?: number;
+  lon?: number;
+  state?: string;
+  district?: string;
+  pincode?: string;
+  display_name?: string;
+};
+
+const TRANSLATIONS: any = {
+  "en-US": {
+    title: "Register to FarmAI",
+    subtitle: "Fast setup — takes 2 minutes",
+    name: "Name",
+    phone: "Phone number",
+    language: "Language",
+    detectLocation: "Use my current location",
+    locationDetected: "Detected location",
+    chooseCrops: "Choose your crops",
+    farmingType: "Farming type",
+    organic: "Organic",
+    traditional: "Traditional",
+    modern: "Modern",
+    submit: "Register",
+    success: "Registration successful!",
+    errorLocation: "Couldn't auto-detect location, please enter manually.",
+    fillAll: "All required fields must be filled",
+  },
+  "hi-IN": {
+    title: "FarmAI में पंजीकरण",
+    subtitle: "तेज़ सेटअप — 2 मिनट में पूरा करें",
+    name: "नाम",
+    phone: "फ़ोन नंबर",
+    language: "भाषा",
+    detectLocation: "मौजूदा स्थान उपयोग करें",
+    locationDetected: "पहचाना गया स्थान",
+    chooseCrops: "अपनी फसल चुनें",
+    farmingType: "खेती का प्रकार",
+    organic: "जैविक",
+    traditional: "पारंपरिक",
+    modern: "आधुनिक",
+    submit: "पंजीकरण",
+    success: "पंजीकरण सफल!",
+    errorLocation: "स्थान नहीं पाया, कृपया मैन्युअल रूप से दर्ज करें।",
+    fillAll: "कृपया सभी आवश्यक फ़ील्ड भरें",
+  },
+  "mr-IN": {
+    title: "FarmAI मध्ये नोंदणी",
+    subtitle: "जलद सेटअप — 2 मिनिटांत पूर्ण करा",
+    name: "नाव",
+    phone: "फोन नंबर",
+    language: "भाषा",
+    detectLocation: "माझे चालू स्थान वापरा",
+    locationDetected: "ओळखलेले स्थान",
+    chooseCrops: "आपली पिके निवडा",
+    farmingType: "शेतीचा प्रकार",
+    organic: "सेंद्रिय",
+    traditional: "पारंपरिक",
+    modern: "आधुनिक",
+    submit: "नोंदणी",
+    success: "नोंदणी यशस्वी!",
+    errorLocation: "स्थान शोधले गेले नाही, कृपया मॅन्युअली भरा.",
+    fillAll: "कृपया सर्व आवश्यक फील्ड भरा",
+  },
+};
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
+  const [lang, setLang] = useState<"en-US" | "hi-IN" | "mr-IN">("en-US");
+  const t = (k: string) => TRANSLATIONS[lang][k] ?? k;
 
-  const [language, setLanguage] = useState("en-US"); // default English
-
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    password: "",
-    farmName: "",
-    farmSize: "",
-    farmLocation: "",
-    state: "",
-    district: "",
-    pincode: "",
-    primaryCrops: "",
-    farmingExperience: "",
-    farmingType: "",
-    irrigationType: "",
-    communicationPreference: "",
-  });
-
+  // Form states
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [location, setLocation] = useState<LocationInfo>({});
+  const [locLoading, setLocLoading] = useState(false);
+  const [locError, setLocError] = useState<string | null>(null);
+  const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
+  const [farmingType, setFarmingType] = useState<"organic" | "traditional" | "modern">(
+    "traditional"
+  );
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  // Detect user location
+  async function detectLocation() {
+    setLocError(null);
+    if (!navigator.geolocation) {
+      setLocError(t("errorLocation"));
+      return;
+    }
+    setLocLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`
+          );
+          const data = await res.json();
+          const address = data.address || {};
+          const loc: LocationInfo = {
+            lat,
+            lon,
+            state: address.state || address.region || "",
+            district: address.county || address.state_district || address.village || address.town || "",
+            pincode: address.postcode || "",
+            display_name: data.display_name || "",
+          };
+          setLocation(loc);
+        } catch (err) {
+          console.error("Reverse geocode error:", err);
+          setLocError(t("errorLocation"));
+        } finally {
+          setLocLoading(false);
+        }
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        setLocLoading(false);
+        setLocError(t("errorLocation"));
+      },
+      { timeout: 15000 }
+    );
+  }
 
-  const handleNext = () => setStep((prev) => prev + 1);
-  const handleBack = () => setStep((prev) => prev - 1);
+  function toggleCrop(crop: string) {
+    setSelectedCrops((prev) =>
+      prev.includes(crop) ? prev.filter((c) => c !== crop) : [...prev, crop]
+    );
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle registration submit
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // ✅ Validate required fields
+    if (
+      !name.trim() ||
+      !phone.trim() ||
+      !location.state ||
+      !location.district ||
+      selectedCrops.length === 0 ||
+      !farmingType
+    ) {
+      alert(t("fillAll"));
+      return;
+    }
+
     setLoading(true);
+
     try {
+      const payload = {
+        fullName: name,
+        phone,
+        preferredLanguage: lang,
+        farmLocation: location.display_name || "",
+        state: location.state || "",
+        district: location.district || "",
+        pincode: location.pincode || "",
+        crops: selectedCrops, // keep as array
+        farmingType,
+      };
+
+      console.log("Submitting payload:", payload);
+
       const res = await fetch("http://localhost:5000/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
+
       const data = await res.json();
       if (!res.ok) {
         alert(data.message || "Registration failed");
       } else {
-        alert("Registration successful! Please login.");
-        router.push("/login");
+        alert(t("success"));
+        router.push("/login"); // Redirect to OTP login
       }
-    } catch (error) {
-      console.error("Register error:", error);
+    } catch (err) {
+      console.error("Register error:", err);
       alert("Something went wrong");
     } finally {
       setLoading(false);
     }
-  };
-
-  // Translation labels
-  const translations: { [key: string]: { [key: string]: string } } = {
-    fullName: { "en-US": "Full Name", "hi-IN": "पूरा नाम", "mr-IN": "पूर्ण नाव" },
-    email: { "en-US": "Email", "hi-IN": "ईमेल", "mr-IN": "ईमेल" },
-    phone: { "en-US": "Phone", "hi-IN": "फोन", "mr-IN": "फोन" },
-    password: { "en-US": "Password", "hi-IN": "पासवर्ड", "mr-IN": "पासवर्ड" },
-    farmName: { "en-US": "Farm Name", "hi-IN": "खेती का नाम", "mr-IN": "शेताचे नाव" },
-    farmSize: { "en-US": "Farm Size (acres)", "hi-IN": "खेती का आकार (एकड़ में)", "mr-IN": "शेताचा आकार (एकरात)" },
-    farmLocation: { "en-US": "Farm Location", "hi-IN": "खेती का स्थान", "mr-IN": "शेताचे ठिकाण" },
-    state: { "en-US": "State", "hi-IN": "राज्य", "mr-IN": "राज्य" },
-    district: { "en-US": "District", "hi-IN": "जिला", "mr-IN": "जिल्हा" },
-    pincode: { "en-US": "Pincode", "hi-IN": "पिनकोड", "mr-IN": "पिनकोड" },
-    primaryCrops: { "en-US": "Primary Crops", "hi-IN": "मुख्य फसलें", "mr-IN": "मुख्य पिके" },
-    farmingExperience: { "en-US": "Farming Experience (years)", "hi-IN": "कृषि अनुभव (सालों में)", "mr-IN": "शेती अनुभव (वर्षात)" },
-    farmingType: { "en-US": "Farming Type", "hi-IN": "कृषि प्रकार", "mr-IN": "शेती प्रकार" },
-    irrigationType: { "en-US": "Irrigation Type", "hi-IN": "सिंचाई प्रकार", "mr-IN": "सिंचन प्रकार" },
-    communicationPreference: { "en-US": "Communication Preference", "hi-IN": "संचार पसंद", "mr-IN": "संपर्क प्राधान्य" },
-  };
+  }
 
   return (
-    <div className="register-page">
-      <div className="register-card">
-        <h2 className="register-title">🌱 Farm AI Registration</h2>
+    <div className="simple-register">
+      <div className="card">
+        <h1 className="title">{t("title")}</h1>
+        <p className="subtitle">{t("subtitle")}</p>
 
-        {/* Language Selector */}
-        <div className="language-selector">
-          <label>Select Language:</label>
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-          >
-            <option value="en-US">English</option>
-            <option value="hi-IN">Hindi</option>
-            <option value="mr-IN">Marathi</option>
-          </select>
+        {/* Language selector */}
+        <div className="lang-row">
+          <label>{t("language")}</label>
+          <div className="lang-buttons">
+            <button className={lang === "en-US" ? "active" : ""} type="button" onClick={() => setLang("en-US")}>English</button>
+            <button className={lang === "hi-IN" ? "active" : ""} type="button" onClick={() => setLang("hi-IN")}>हिन्दी</button>
+            <button className={lang === "mr-IN" ? "active" : ""} type="button" onClick={() => setLang("mr-IN")}>मराठी</button>
+          </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="progress-bar">
-          <div className={`progress-step ${step >= 1 ? "active" : ""}`}>1</div>
-          <div className={`progress-step ${step >= 2 ? "active" : ""}`}>2</div>
-          <div className={`progress-step ${step >= 3 ? "active" : ""}`}>3</div>
-        </div>
+        <form onSubmit={handleSubmit} className="form">
+          <label className="label">{t("name")}</label>
+          <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("name")} />
 
-        <form onSubmit={handleSubmit} className="register-form">
-          {/* Step 1: Personal Info */}
-          {step === 1 && (
-            <div className="form-section">
-              <VoiceInput
-                labelKey="fullName"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <VoiceInput
-                labelKey="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <VoiceInput
-                labelKey="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <VoiceInput
-                labelKey="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <button type="button" className="next-btn" onClick={handleNext}>
-                Next →
-              </button>
-            </div>
-          )}
+          <label className="label">{t("phone")}</label>
+          <input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("phone")} inputMode="numeric" />
 
-          {/* Step 2: Farm Info */}
-          {step === 2 && (
-            <div className="form-section">
-              <VoiceInput
-                labelKey="farmName"
-                name="farmName"
-                value={formData.farmName}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <VoiceInput
-                labelKey="farmSize"
-                name="farmSize"
-                value={formData.farmSize}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <VoiceInput
-                labelKey="farmLocation"
-                name="farmLocation"
-                value={formData.farmLocation}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <VoiceInput
-                labelKey="state"
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <VoiceInput
-                labelKey="district"
-                name="district"
-                value={formData.district}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <VoiceInput
-                labelKey="pincode"
-                name="pincode"
-                value={formData.pincode}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <VoiceInput
-                labelKey="primaryCrops"
-                name="primaryCrops"
-                value={formData.primaryCrops}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <div className="step-actions">
-                <button type="button" className="back-btn" onClick={handleBack}>
-                  ← Back
-                </button>
-                <button type="button" className="next-btn" onClick={handleNext}>
-                  Next →
-                </button>
+          <div className="location-row">
+            <button type="button" className="location-btn" onClick={detectLocation} disabled={locLoading}>
+              {locLoading ? "Detecting…" : t("detectLocation")}
+            </button>
+
+            {location.display_name && (
+              <div className="location-info">
+                <strong>{t("locationDetected")}:</strong>
+                <div>{location.display_name}</div>
+                <div>{location.district} {location.state} {location.pincode}</div>
               </div>
-            </div>
-          )}
+            )}
+            {locError && <div className="error">{locError}</div>}
+          </div>
 
-          {/* Step 3: Preferences */}
-          {step === 3 && (
-            <div className="form-section">
-              <VoiceInput
-                labelKey="farmingExperience"
-                name="farmingExperience"
-                value={formData.farmingExperience}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <VoiceInput
-                labelKey="farmingType"
-                name="farmingType"
-                value={formData.farmingType}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <VoiceInput
-                labelKey="irrigationType"
-                name="irrigationType"
-                value={formData.irrigationType}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
-              <VoiceInput
-                labelKey="communicationPreference"
-                name="communicationPreference"
-                value={formData.communicationPreference}
-                onChange={handleChange}
-                language={language}
-                translations={translations}
-              />
+          <div className="crops-block">
+            <label className="label">{t("chooseCrops")}</label>
+            <CropSelector selected={selectedCrops} toggleCrop={toggleCrop} lang={lang} />
+          </div>
 
-              <div className="step-actions">
-                <button type="button" className="back-btn" onClick={handleBack}>
-                  ← Back
-                </button>
-                <button
-                  type="submit"
-                  className="submit-btn"
-                  disabled={loading}
-                >
-                  {loading ? "Registering..." : "Register"}
-                </button>
-              </div>
+          <div className="farming-type">
+            <label className="label">{t("farmingType")}</label>
+            <div className="farming-buttons">
+              <button type="button" className={farmingType === "traditional" ? "active" : ""} onClick={() => setFarmingType("traditional")}>{t("traditional")}</button>
+              <button type="button" className={farmingType === "modern" ? "active" : ""} onClick={() => setFarmingType("modern")}>{t("modern")}</button>
+              <button type="button" className={farmingType === "organic" ? "active" : ""} onClick={() => setFarmingType("organic")}>{t("organic")}</button>
             </div>
-          )}
+          </div>
+
+          <div className="submit-row">
+            <button className="submit-btn" type="submit" disabled={loading}>
+              {loading ? "Please wait…" : t("submit")}
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -1,8 +1,8 @@
- "use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Camera,
   MapPin,
@@ -15,28 +15,96 @@ import {
   Droplets,
   Sun,
   Wind,
-} from "lucide-react"
-import Link from "next/link"
-import { DashboardLayout } from "@/components/dashboard-layout"
+} from "lucide-react";
+import Link from "next/link";
+import { DashboardLayout } from "@/components/dashboard-layout";
 
 export default function DashboardPage() {
-  const [weatherData] = useState({
-    temperature: "28°C",
-    humidity: "65%",
-    rainfall: "12mm",
-    windSpeed: "8 km/h",
-  })
+  const [weatherData, setWeatherData] = useState({
+    temperature: "--°C",
+    humidity: "--%",
+    rainfall: "--mm",
+    windSpeed: "-- km/h",
+  });
+  const [user, setUser] = useState<any>(null);
+  const [city, setCity] = useState<string>("Pune"); // ✅ Default fallback city
+  const [loading, setLoading] = useState(true);
 
-  const [user, setUser] = useState<any>(null)
+  const apiKey = process.env.NEXT_PUBLIC_WEATHER_API_KEY || "ebfcc89daac4187ada714518e13a3375";
 
-  useEffect(() => {
-    // Fetch user from localStorage
-    const storedUser = localStorage.getItem("user")
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+  // ✅ Function to fetch weather
+  const fetchWeather = async (cityName: string) => {
+    try {
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}&units=metric`
+      );
+      const data = await response.json();
+
+      if (data.cod === 200) {
+        setWeatherData({
+          temperature: `${data.main.temp}°C`,
+          humidity: `${data.main.humidity}%`,
+          rainfall: data.rain ? `${data.rain["1h"] || data.rain["3h"] || 0} mm` : "0 mm",
+          windSpeed: `${data.wind.speed} km/h`,
+        });
+        setCity(data.name);
+      } else {
+        console.warn("Weather not found for city:", cityName);
+      }
+    } catch (error) {
+      console.error("Error fetching weather:", error);
+    } finally {
+      setLoading(false);
     }
-  }, [])
+  };
 
+  // ✅ On mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+
+      if (parsedUser.farmLocation && parsedUser.farmLocation.trim() !== "") {
+        fetchWeather(parsedUser.farmLocation);
+        return;
+      }
+    }
+
+    // ✅ If user not found or no farmLocation → Try geolocation
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const { latitude, longitude } = pos.coords;
+          try {
+            const response = await fetch(
+              `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`
+            );
+            const data = await response.json();
+            if (data.name) {
+              setCity(data.name);
+              setWeatherData({
+                temperature: `${data.main.temp}°C`,
+                humidity: `${data.main.humidity}%`,
+                rainfall: data.rain ? `${data.rain["1h"] || data.rain["3h"] || 0} mm` : "0 mm",
+                windSpeed: `${data.wind.speed} km/h`,
+              });
+            } else {
+              fetchWeather("Pune");
+            }
+          } catch {
+            fetchWeather("Pune");
+          }
+        },
+        () => fetchWeather("Pune")
+      );
+    } else {
+      fetchWeather("Pune");
+    }
+  }, []);
+
+  // ✅ Services data
   const services = [
     {
       id: "disease-detection",
@@ -86,15 +154,16 @@ export default function DashboardPage() {
       color: "bg-indigo-500",
       href: "/dashboard/voice-support",
     },
-  ]
+  ];
 
   const recentActivities = [
     { action: "Disease detected in tomato crop", time: "2 hours ago", status: "warning" },
     { action: "Weather alert: Heavy rain expected", time: "4 hours ago", status: "info" },
     { action: "Market price update for wheat", time: "6 hours ago", status: "success" },
     { action: "Soil test results available", time: "1 day ago", status: "info" },
-  ]
+  ];
 
+  // ✅ JSX UI
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -105,7 +174,7 @@ export default function DashboardPage() {
               {user ? `Welcome back, ${user.fullName}!` : "Welcome back, Farmer!"}
             </h1>
             <p className="text-muted-foreground">
-              {"Here's what's happening with your farm today"}
+              Here's what's happening with your farm today
             </p>
           </div>
 
@@ -114,28 +183,34 @@ export default function DashboardPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Sun className="h-5 w-5 text-yellow-500" />
-                Today's Weather
+                {loading
+                  ? "Fetching Weather..."
+                  : `Today's Weather in ${city || "your area"}`}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Thermometer className="h-4 w-4 text-red-500" />
-                  <span className="text-sm font-medium">{weatherData.temperature}</span>
+              {loading ? (
+                <p className="text-muted-foreground text-sm">Loading weather data...</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Thermometer className="h-4 w-4 text-red-500" />
+                    <span className="text-sm font-medium">{weatherData.temperature}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Droplets className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm font-medium">{weatherData.humidity}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CloudRain className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm font-medium">{weatherData.rainfall}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Wind className="h-4 w-4 text-green-500" />
+                    <span className="text-sm font-medium">{weatherData.windSpeed}</span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Droplets className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm font-medium">{weatherData.humidity}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CloudRain className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm font-medium">{weatherData.rainfall}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Wind className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-medium">{weatherData.windSpeed}</span>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -145,7 +220,7 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-semibold text-foreground mb-6">Our Services</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map((service) => {
-              const IconComponent = service.icon
+              const IconComponent = service.icon;
               return (
                 <Link key={service.id} href={service.href}>
                   <Card className="border-border hover:shadow-lg transition-all duration-300 cursor-pointer group h-full">
@@ -171,7 +246,7 @@ export default function DashboardPage() {
                     </CardContent>
                   </Card>
                 </Link>
-              )
+              );
             })}
           </div>
         </div>
@@ -193,8 +268,8 @@ export default function DashboardPage() {
                           activity.status === "warning"
                             ? "bg-yellow-500"
                             : activity.status === "success"
-                              ? "bg-green-500"
-                              : "bg-blue-500"
+                            ? "bg-green-500"
+                            : "bg-blue-500"
                         }`}
                       />
                       <span className="text-sm text-foreground">{activity.action}</span>
@@ -250,5 +325,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </DashboardLayout>
-  )
+  );
 }

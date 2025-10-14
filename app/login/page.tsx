@@ -1,41 +1,78 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import "./login.css"; // Import CSS file
 
 export default function LoginPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState(1); // 1 = request OTP, 2 = verify OTP
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  // Request OTP
+  const requestOtp = async () => {
+    if (!phone.trim()) {
+      alert("Please enter phone number");
+      return;
+    }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
     setLoading(true);
-
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch(`${API_URL}/api/auth/otp/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ phone }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message || "Login failed");
+        alert(data.message || "Failed to send OTP");
       } else {
+        alert("OTP sent to your phone!");
+        setStep(2);
+      }
+    } catch (err) {
+      console.error("OTP request error:", err);
+      alert("Something went wrong while sending OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Verify OTP
+  const verifyOtp = async () => {
+    if (!otp.trim()) {
+      alert("Please enter OTP");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/otp/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, otp }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "OTP verification failed");
+      } else {
+        // Store token & user
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
+
         alert("Login successful!");
         router.push("/dashboard");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      alert("Something went wrong");
+    } catch (err) {
+      console.error("OTP verify error:", err);
+      alert("Something went wrong while verifying OTP");
     } finally {
       setLoading(false);
     }
@@ -43,33 +80,35 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
-      <div className="login-card">
-        <h2 className="login-title">🌱 Farm AI Login</h2>
-        <p className="login-subtitle">Empowering Farmers with AI</p>
-        <form onSubmit={handleSubmit} className="login-form">
+      <h2>🌱 FarmAI Login</h2>
+
+      {step === 1 && (
+        <>
           <input
-            className="login-input"
-            name="email"
-            placeholder="Email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
+            type="text"
+            placeholder="Phone number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
           />
-          <input
-            className="login-input"
-            name="password"
-            placeholder="Password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-          <button className="login-btn" type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+          <button onClick={requestOtp} disabled={loading}>
+            {loading ? "Sending..." : "Send OTP"}
           </button>
-        </form>
-      </div>
+        </>
+      )}
+
+      {step === 2 && (
+        <>
+          <input
+            type="text"
+            placeholder="Enter OTP"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+          />
+          <button onClick={verifyOtp} disabled={loading}>
+            {loading ? "Verifying..." : "Verify OTP"}
+          </button>
+        </>
+      )}
     </div>
   );
 }
