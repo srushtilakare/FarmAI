@@ -7,14 +7,14 @@ export default function LoginPage() {
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  const [phone, setPhone] = useState("");
+  const [number, setNumber] = useState(""); // Phone number
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState(1); // 1 = request OTP, 2 = verify OTP
   const [loading, setLoading] = useState(false);
 
   // Request OTP
   const requestOtp = async () => {
-    if (!phone.trim()) {
+    if (!number.trim()) {
       alert("Please enter phone number");
       return;
     }
@@ -24,7 +24,7 @@ export default function LoginPage() {
       const res = await fetch(`${API_URL}/api/auth/otp/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ number }), // ✅ Send number key
       });
 
       const data = await res.json();
@@ -32,7 +32,7 @@ export default function LoginPage() {
       if (!res.ok) {
         alert(data.message || "Failed to send OTP");
       } else {
-        alert("OTP sent to your phone!");
+        alert(`OTP sent to your phone! (Check server console if using test)`);
         setStep(2);
       }
     } catch (err) {
@@ -55,7 +55,7 @@ export default function LoginPage() {
       const res = await fetch(`${API_URL}/api/auth/otp/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, otp }),
+        body: JSON.stringify({ number, otp }), // ✅ Same keys as backend expects
       });
 
       const data = await res.json();
@@ -63,7 +63,7 @@ export default function LoginPage() {
       if (!res.ok) {
         alert(data.message || "OTP verification failed");
       } else {
-        // Store token & user
+        // Store token & user data
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
 
@@ -87,8 +87,9 @@ export default function LoginPage() {
           <input
             type="text"
             placeholder="Phone number"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
+            inputMode="numeric"
           />
           <button onClick={requestOtp} disabled={loading}>
             {loading ? "Sending..." : "Send OTP"}

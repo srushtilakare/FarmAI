@@ -1,72 +1,60 @@
+// ----------------- routes/otp.js -----------------
 const express = require("express");
-const User = require("../models/User");
-const axios = require("axios");
-const jwt = require("jsonwebtoken");
-
 const router = express.Router();
+const axios = require("axios");
 
-// Store OTPs temporarily (for demo; use Redis in production)
-const otpStore = {};
-
-// Step 1: Request OTP
+// POST /api/auth/otp/request
 router.post("/request", async (req, res) => {
   try {
-    const { phone } = req.body;
-    if (!phone) return res.status(400).json({ message: "Phone number required" });
+    const { number } = req.body;
 
-    // Check if user exists
-    let user = await User.findOne({ phone });
-    if (!user) {
-      // Create minimal user for OTP login
-      user = await User.create({
-        phone,
-        fullName: "Farmer",
-        preferredLanguage: "en-US",
-      });
+    if (!number) {
+      return res.status(400).json({ success: false, message: "Phone number is required" });
     }
 
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStore[phone] = otp;
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000);
 
-    // Send SMS via Fast2SMS
-    await axios.get(`https://www.fast2sms.com/dev/bulkV2`, {
-      headers: { Authorization: process.env.FAST2SMS_KEY },
-      params: {
-        route: "v3",
-        numbers: phone,
-        message: `Your FarmAI OTP is ${otp}. It is valid for 5 minutes.`,
+    // ✅ Send OTP using Fast2SMS API (POST method)
+    const response = await axios.post(
+      "https://www.fast2sms.com/dev/bulkV2",
+      {
+        route: "otp",
+        variables_values: otp,
+        numbers: number,
       },
-    });
+      {
+        headers: {
+          authorization: process.env.FAST2SMS_KEY, // ✅ ensure key is correct
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    console.log("OTP for", phone, otp);
-    res.json({ message: "OTP sent" });
-  } catch (err) {
-    console.error("OTP request error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+    console.log("Fast2SMS response:", response.data);
 
-// Step 2: Verify OTP
-router.post("/verify", async (req, res) => {
-  try {
-    const { phone, otp } = req.body;
-    if (!phone || !otp) return res.status(400).json({ message: "Phone and OTP required" });
+    if (response.data.return === true) {
+      return res.status(200).json({
+        success: true,
+        message: "OTP sent successfully",
+        otp, // For debugging — remove in production
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: response.data.message || "Failed to send OTP",
+      });
+    }
+  } catch (error) {
+    console.error("OTP request error:", error.response?.data || error.message);
 
-    if (otpStore[phone] !== otp) return res.status(400).json({ message: "Invalid OTP" });
+    if (error.response?.status === 401 || error.response?.status === 412) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid Fast2SMS API key or request format" });
+    }
 
-    delete otpStore[phone]; // OTP used
-
-    const user = await User.findOne({ phone });
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    // Issue JWT
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-    res.json({ message: "Login successful", token, user });
-  } catch (err) {
-    console.error("OTP verify error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 

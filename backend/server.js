@@ -1,9 +1,12 @@
+// ----------------- server.js -----------------
 const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const path = require("path");
 
-dotenv.config();
+// Load environment variables from .env or .env.local
+dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 
 const app = express();
 app.use(express.json());
@@ -19,10 +22,11 @@ mongoose
   .catch((err) => console.error("MongoDB connection error:", err));
 
 // ----------------- Routes -----------------
-const authRoutes = require("./routes/auth");      // optional if you still want old registration
-const otpRoutes = require("./routes/otp");        // OTP-based login/register
+const authRoutes = require("./routes/auth"); // optional old registration
+const otpRoutes = require("./routes/otp");   // OTP login/register
+
 app.use("/api/auth", authRoutes);
-app.use("/api/auth/otp", otpRoutes);             // OTP routes
+app.use("/api/auth/otp", otpRoutes);        // OTP routes
 
 // ----------------- Default route -----------------
 app.get("/", (req, res) => {
