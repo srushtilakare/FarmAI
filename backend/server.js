@@ -22,11 +22,8 @@ mongoose
   .catch((err) => console.error("MongoDB connection error:", err));
 
 // ----------------- Routes -----------------
-const authRoutes = require("./routes/auth"); // optional old registration
-const otpRoutes = require("./routes/otp");   // OTP login/register
-
-app.use("/api/auth", authRoutes);
-app.use("/api/auth/otp", otpRoutes);        // OTP routes
+const authRoutes = require("./routes/auth"); // handles registration + OTP
+app.use("/api/auth", authRoutes);           // all auth & OTP routes are under /api/auth
 
 // ----------------- Default route -----------------
 app.get("/", (req, res) => {

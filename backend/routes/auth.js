@@ -1,9 +1,15 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 const router = express.Router();
 
-// Full Registration
+// In-memory OTP store (for demo)
+const otpStore = new Map();
+
+/**
+ * 1️⃣ Register user (keep existing registration as it is)
+ */
 router.post("/register", async (req, res) => {
   try {
     const {
@@ -18,18 +24,15 @@ router.post("/register", async (req, res) => {
       farmingType,
     } = req.body;
 
-    // Validate required fields
     if (!fullName || !phone || !preferredLanguage || !farmLocation || !state || !district || !crops || !farmingType) {
       return res.status(400).json({ message: "All required fields must be filled" });
     }
 
-    // Check if phone already registered
     const existingUser = await User.findOne({ phone });
     if (existingUser) {
       return res.status(400).json({ message: "User already registered with this phone" });
     }
 
-    // Save user
     const user = new User({
       fullName,
       phone,
@@ -47,6 +50,70 @@ router.post("/register", async (req, res) => {
   } catch (error) {
     console.error("Register error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+/**
+ * 2️⃣ Request OTP — only for registered users
+ */
+router.post("/otp/request", async (req, res) => {
+  try {
+    const { number } = req.body;
+    if (!number) return res.status(400).json({ success: false, message: "Phone number required" });
+
+    const user = await User.findOne({ phone: number });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "This number is not registered" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+    otpStore.set(number, otp);
+
+    console.log(`Generated OTP for ${number}: ${otp}`); // For demo
+    // You can later plug real SMS gateway here
+
+    res.status(200).json({ success: true, message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("OTP request error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+/**
+ * 3️⃣ Verify OTP — issue JWT on success
+ */
+router.post("/otp/verify", async (req, res) => {
+  try {
+    const { number, otp } = req.body;
+    if (!number || !otp)
+      return res.status(400).json({ success: false, message: "Phone and OTP required" });
+
+    const validOtp = otpStore.get(number);
+    if (!validOtp || validOtp !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+    }
+
+    // OTP valid → remove from store
+    otpStore.delete(number);
+
+    const user = await User.findOne({ phone: number });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const token = jwt.sign({ id: user._id, phone: user.phone }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+      token,
+      user,
+    });
+  } catch (error) {
+    console.error("OTP verify error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
