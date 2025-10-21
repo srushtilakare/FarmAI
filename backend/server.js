@@ -1,35 +1,64 @@
 // ----------------- server.js -----------------
+import farmiiRouter from "./farmii/chatbot.js";
+
+
 const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
 
-// Load environment variables from .env or .env.local
+
+// ----------------- Load environment variables -----------------
 dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 
+// ----------------- Initialize Express -----------------
 const app = express();
-app.use(express.json());
-app.use(cors());
+app.use("/farmii", farmiiRouter);
 
-// ----------------- Connect to MongoDB -----------------
+
+// ----------------- Middleware -----------------
+app.use(express.json());
+
+// ✅ Global CORS middleware (no need for .options() anymore)
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// ----------------- MongoDB Connection -----------------
 mongoose
   .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
   })
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+  .then(() => console.log("✅ MongoDB connected successfully"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err.message));
 
-// ----------------- Routes -----------------
-const authRoutes = require("./routes/auth"); // handles registration + OTP
-app.use("/api/auth", authRoutes);           // all auth & OTP routes are under /api/auth
+// ----------------- Import Routes -----------------
+const authRoutes = require("./routes/auth");
+const profileRoutes = require("./routes/profile");
 
-// ----------------- Default route -----------------
+// ----------------- Use Routes -----------------
+app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
+
+// ----------------- Default Route -----------------
 app.get("/", (req, res) => {
-  res.send("Backend is running...");
+  res.send("🌾 FarmAI Backend is running successfully ✅");
 });
 
-// ----------------- Start server -----------------
+// ----------------- Global Error Handler -----------------
+app.use((err, req, res, next) => {
+  console.error("🔥 Global Error:", err.stack);
+  res.status(500).json({ message: "Internal Server Error", error: err.message });
+});
+
+// ----------------- Start Server -----------------
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://127.0.0.1:${PORT}`);
+});
