@@ -10,179 +10,210 @@ import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 
 interface DashboardLayoutProps {
-  children: React.ReactNode
+	children: React.ReactNode
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const pathname = usePathname()
-  const router = useRouter()
+	const [sidebarOpen, setSidebarOpen] = useState(false)
+	// State for the authenticated user
+	const [user, setUser] = useState<any>(null)
+	const pathname = usePathname()
+	const router = useRouter()
 
-  const sidebarItems = [
-    { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { title: "History", href: "/dashboard/history", icon: History },
-    { title: "Talk with Farmii", href: "/dashboard/chat", icon: MessageSquare },
-    { title: "Change Language", href: "/dashboard/language", icon: Globe },
-  ]
+	const sidebarItems = [
+		{ title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+		{ title: "History", href: "/dashboard/history", icon: History },
+		{ title: "Talk with Farmii", href: "/dashboard/chat", icon: MessageSquare },
+		{ title: "Change Language", href: "/dashboard/language", icon: Globe },
+	]
 
-  // Fetch logged-in user info
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem("token")
-        if (!token) return
-        const res = await fetch("/api/user", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!res.ok) throw new Error("Failed to fetch user")
-        const data = await res.json()
-        setUser(data)
-      } catch (err) {
-        console.error("Error fetching user:", err)
-      }
-    }
-    fetchUser()
-  }, [])
+	// ✅ UPDATED: Fetch logged-in user info, prioritizing localStorage for quick render
+	useEffect(() => {
+		// 1. Try to load user from localStorage immediately (like page.tsx)
+		const storedUser = localStorage.getItem("user")
+		if (storedUser) {
+			const parsedUser = JSON.parse(storedUser)
+			setUser(parsedUser)
+		}
 
-  const handleLogout = () => {
-    localStorage.removeItem("token")
-    router.push("/")
-  }
+		// 2. Then, try to fetch the latest user data from API (if a token exists)
+		const fetchUser = async () => {
+			try {
+				const token = localStorage.getItem("token")
+				if (!token) {
+					// If no token, and no stored user, ensure user is null
+					if (!storedUser) {
+						setUser(null)
+					}
+					return
+				}
+				
+				const res = await fetch("/api/user", {
+					headers: { Authorization: `Bearer ${token}` },
+				})
+				
+				if (!res.ok) {
+					throw new Error("Failed to fetch user")
+				}
+				
+				const data = await res.json()
+				setUser(data)
+				// Optional: Update localStorage with the latest API data
+				localStorage.setItem("user", JSON.stringify(data)); 
+			} catch (err) {
+				console.error("Error fetching user:", err)
+				// Handle case where API fetch fails, but a stored user exists
+				if (!storedUser) {
+					// If no user could be fetched or found in storage, you might want to redirect to login
+					// router.push("/login") 
+				}
+			}
+		}
+		
+		fetchUser()
+	}, [router]) // Added router to dependencies for Next.js
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
+	const handleLogout = () => {
+		localStorage.removeItem("token")
+		// Also remove stored user info
+		localStorage.removeItem("user")
+		router.push("/")
+	}
 
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed top-0 left-0 z-50 h-full w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-300 ease-in-out lg:translate-x-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
-            <div className="flex items-center space-x-2">
-              <Leaf className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold text-sidebar-foreground">Farm AI</span>
-            </div>
-            <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+	return (
+		<div className="min-h-screen bg-background">
+			{/* Mobile sidebar overlay */}
+			{sidebarOpen && (
+				<div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+			)}
 
-          {/* User Profile */}
-          <div className="p-6 border-b border-sidebar-border">
-            <div className="flex items-center space-x-3">
-              <Avatar className="h-12 w-12">
-                {user?.profilePhoto ? (
-                  <AvatarImage src={user.profilePhoto} />
-                ) : (
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {user?.fullName
-                      ? user.fullName
-                          .split(" ")
-                          .map((n: string) => n[0])
-                          .join("")
-                      : "RF"}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">
-                  {user?.fullName || "Loading..."}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {user?.farmLocation || "Loading..."}
-                </p>
-              </div>
-            </div>
-          </div>
+			{/* Sidebar */}
+			<aside
+				className={cn(
+					"fixed top-0 left-0 z-50 h-full w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-300 ease-in-out lg:translate-x-0",
+					sidebarOpen ? "translate-x-0" : "-translate-x-full",
+				)}
+			>
+				<div className="flex flex-col h-full">
+					{/* Logo */}
+					<div className="flex items-center justify-between p-6 border-b border-sidebar-border">
+						<div className="flex items-center space-x-2">
+							<Leaf className="h-8 w-8 text-primary" />
+							<span className="text-xl font-bold text-sidebar-foreground">Farm AI</span>
+						</div>
+						<Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
+							<X className="h-4 w-4" />
+						</Button>
+					</div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4">
-            <ul className="space-y-2">
-              {sidebarItems.map((item) => {
-                const IconComponent = item.icon
-                const isActive = pathname === item.href
+					{/* User Profile */}
+					<div className="p-6 border-b border-sidebar-border">
+						<div className="flex items-center space-x-3">
+							<Avatar className="h-12 w-12">
+								{user?.profilePhoto ? (
+									<AvatarImage src={user.profilePhoto} />
+								) : (
+									<AvatarFallback className="bg-primary text-primary-foreground">
+										{/* Display initials or 'RF' for default/loading */}
+										{user?.fullName
+											? user.fullName
+													.split(" ")
+													.map((n: string) => n[0])
+													.join("")
+											: "RF"}
+									</AvatarFallback>
+								)}
+							</Avatar>
+							<div className="flex-1 min-w-0">
+								<p className="text-sm font-medium text-sidebar-foreground truncate">
+									{user?.fullName || "Loading Farmer..."}
+								</p>
+								<p className="text-xs text-muted-foreground truncate">
+									{user?.farmLocation || "Loading Location..."}
+								</p>
+							</div>
+						</div>
+					</div>
 
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
-                      )}
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <IconComponent className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </nav>
+					{/* Navigation */}
+					<nav className="flex-1 p-4">
+						<ul className="space-y-2">
+							{sidebarItems.map((item) => {
+								const IconComponent = item.icon
+								const isActive = pathname === item.href
 
-          {/* Bottom Actions */}
-          <div className="p-4 border-t border-sidebar-border">
-            <div className="space-y-2">
-              <Link
-                href="/dashboard/profile"
-                className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <User className="h-4 w-4" />
-                <span>Profile</span>
-              </Link>
-              <Link
-                href="/dashboard/settings"
-                className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-red-500/10 hover:text-red-500 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </aside>
+								return (
+									<li key={item.href}>
+										<Link
+											href={item.href}
+											className={cn(
+												"flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+												isActive
+													? "bg-sidebar-accent text-sidebar-accent-foreground"
+													: "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+											)}
+											onClick={() => setSidebarOpen(false)}
+										>
+											<IconComponent className="h-4 w-4" />
+											<span>{item.title}</span>
+										</Link>
+									</li>
+								)
+							})}
+						</ul>
+					</nav>
 
-      {/* Main Content */}
-      <div className="lg:ml-64">
-        {/* Top Bar */}
-        <header className="bg-background border-b border-border px-4 py-3 lg:px-6">
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
-              <Menu className="h-5 w-5" />
-            </Button>
+					{/* Bottom Actions */}
+					<div className="p-4 border-t border-sidebar-border">
+						<div className="space-y-2">
+							<Link
+								href="/dashboard/profile"
+								className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+								onClick={() => setSidebarOpen(false)}
+							>
+								<User className="h-4 w-4" />
+								<span>Profile</span>
+							</Link>
+							<Link
+								href="/dashboard/settings"
+								className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+								onClick={() => setSidebarOpen(false)}
+							>
+								<Settings className="h-4 w-4" />
+								<span>Settings</span>
+							</Link>
+							<button
+								onClick={handleLogout}
+								className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-red-500/10 hover:text-red-500 transition-colors"
+							>
+								<LogOut className="h-4 w-4" />
+								<span>Logout</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			</aside>
 
-            <div className="flex items-center space-x-4 ml-auto">
-              <span className="text-sm text-muted-foreground hidden sm:inline">
-                Last updated: {new Date().toLocaleDateString()}
-              </span>
-            </div>
-          </div>
-        </header>
+			{/* Main Content */}
+			<div className="lg:ml-64">
+				{/* Top Bar */}
+				<header className="bg-background border-b border-border px-4 py-3 lg:px-6">
+					<div className="flex items-center justify-between">
+						<Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
+							<Menu className="h-5 w-5" />
+						</Button>
 
-        {/* Page Content */}
-        <main className="p-4 lg:p-6">{children}</main>
-      </div>
-    </div>
-  )
+						<div className="flex items-center space-x-4 ml-auto">
+							<span className="text-sm text-muted-foreground hidden sm:inline">
+								Last updated: {new Date().toLocaleDateString()}
+							</span>
+						</div>
+					</div>
+				</header>
+
+				{/* Page Content */}
+				<main className="p-4 lg:p-6">{children}</main>
+			</div>
+		</div>
+	)
 }

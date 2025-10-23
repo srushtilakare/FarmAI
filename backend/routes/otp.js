@@ -1,10 +1,10 @@
-// ----------------- backend/routes/otp.js -----------------
 const express = require("express");
 const jwt = require("jsonwebtoken");
+const User = require("../models/User"); // Import User model
 
 const router = express.Router();
 
-// Temporary OTP store (for demo only — use Redis/DB for production)
+// Temporary OTP store (demo only — use Redis/DB in production)
 let otpStore = {}; // { phone: { otp: "123456", expiresAt: 1690000000000 } }
 
 // Helper: generate random 6-digit OTP
@@ -24,7 +24,6 @@ router.post("/request", async (req, res) => {
 
   otpStore[number] = { otp, expiresAt };
 
-  // Simulate sending OTP (no actual SMS)
   console.log(`✅ Simulated OTP for ${number}: ${otp}`);
 
   res.json({
@@ -57,18 +56,47 @@ router.post("/verify", async (req, res) => {
   // ✅ OTP verified
   delete otpStore[number];
 
-  // For demo: create a fake user object and token
-  const user = { phone: number };
-  const token = jwt.sign(user, process.env.JWT_SECRET || "farmai_secret", {
-    expiresIn: "1h",
-  });
+  try {
+    // Fetch actual user from DB
+    let user = await User.findOne({ phone: number });
 
-  return res.json({
-    success: true,
-    message: "OTP verified successfully!",
-    token,
-    user,
-  });
+    // If user does not exist (first time login), you can optionally create it
+    if (!user) {
+      return res.status(404).json({ message: "User not found. Please register first." });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, phone: user.phone },
+      process.env.JWT_SECRET || "farmai_secret",
+      { expiresIn: "1h" }
+    );
+
+    // Return full user data for frontend
+    const userResponse = {
+      _id: user._id,
+      fullName: user.fullName,
+      phone: user.phone,
+      preferredLanguage: user.preferredLanguage,
+      farmLocation: user.farmLocation,
+      state: user.state,
+      district: user.district,
+      pincode: user.pincode,
+      crops: user.crops,
+      farmingType: user.farmingType,
+      profilePhoto: user.profilePhoto,
+    };
+
+    return res.json({
+      success: true,
+      message: "OTP verified successfully!",
+      token,
+      user: userResponse,
+    });
+  } catch (err) {
+    console.error("OTP verification error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
 });
 
 module.exports = router;
