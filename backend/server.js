@@ -1,6 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+require("dotenv").config();
+
 const app = express();
 
 // Middleware
@@ -18,11 +20,14 @@ mongoose
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
-app.use("/api/auth/otp", require("./routes/otp")); // your existing OTP route
+app.use("/api/auth/otp", require("./routes/otp"));
 app.use("/api/predict", require("./routes/predict"));
 app.use("/api/profile", require("./routes/profile"));
 app.use("/api/user", require("./routes/userRoutes"));
+// Add at the end of your routes
+app.use("/api/chatbot", require("./routes/chatbot"));
 
-// Start server
+
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

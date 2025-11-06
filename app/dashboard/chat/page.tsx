@@ -1,97 +1,105 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Send, Bot, User, Mic, MicOff } from "lucide-react"
-import { DashboardLayout } from "@/components/dashboard-layout"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Send, Bot, User, Mic, MicOff } from "lucide-react";
+import { DashboardLayout } from "@/components/dashboard-layout";
 
 interface Message {
-  id: string
-  content: string
-  sender: "user" | "bot"
-  timestamp: Date
+  id: string;
+  content: string;
+  sender: "user" | "bot";
+  timestamp: Date;
 }
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "Hello! I'm Farmii, your AI farming assistant. How can I help you today?",
+      content: "Hello! I'm Farmii 🌱 — your AI farming assistant. How can I help you today?",
       sender: "bot",
       timestamp: new Date(),
     },
-  ])
-  const [inputMessage, setInputMessage] = useState("")
-  const [isRecording, setIsRecording] = useState(false)
-  const [isTyping, setIsTyping] = useState(false)
+  ]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [location, setLocation] = useState<{ lat: number; lon: number }>({ lat: 19.07, lon: 72.88 });
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+        () => setLocation({ lat: 19.07, lon: 72.88 })
+      );
+    }
+  }, []);
 
-    const userMessage: Message = {
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
+
+    const userMsg: Message = {
       id: Date.now().toString(),
       content: inputMessage,
       sender: "user",
       timestamp: new Date(),
-    }
+    };
 
-    setMessages((prev) => [...prev, userMessage])
-    setInputMessage("")
-    setIsTyping(true)
+    setMessages((prev) => [...prev, userMsg]);
+    setInputMessage("");
+    setIsTyping(true);
 
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse: Message = {
+    try {
+      const res = await fetch("http://localhost:5000/api/chatbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: inputMessage, location }),
+      });
+
+      const data = await res.json();
+
+      const botMsg: Message = {
         id: (Date.now() + 1).toString(),
-        content: getBotResponse(inputMessage),
+        content: data.reply || data.error || "⚠️ Something went wrong.",
         sender: "bot",
         timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, botResponse])
-      setIsTyping(false)
-    }, 2000)
-  }
-
-  const getBotResponse = (userInput: string): string => {
-    const input = userInput.toLowerCase()
-
-    if (input.includes("disease") || input.includes("pest")) {
-      return "I can help you identify crop diseases! Please describe the symptoms you're seeing, or better yet, use our Disease Detection feature to upload a photo of the affected crop. What specific symptoms are you noticing?"
-    } else if (input.includes("weather") || input.includes("rain")) {
-      return "Weather is crucial for farming decisions! Based on current forecasts for your area, I recommend checking our Weather Alerts section. Are you planning any specific farming activities that depend on weather conditions?"
-    } else if (input.includes("crop") || input.includes("plant")) {
-      return "Great question about crops! I can provide recommendations based on your location, soil type, and season. Have you tried our Crop Advisory feature? It gives personalized suggestions for your specific farming conditions."
-    } else if (input.includes("price") || input.includes("market")) {
-      return "Market prices are important for planning! Our Market Price Tracking feature provides real-time prices for various crops. Which crops are you interested in selling, and would you like me to guide you to the market section?"
-    } else if (input.includes("soil") || input.includes("fertilizer")) {
-      return "Soil health is the foundation of good farming! I recommend using our Soil Health feature for detailed analysis. In general, regular soil testing, organic matter addition, and proper pH management are key. What specific soil concerns do you have?"
-    } else {
-      return "I'm here to help with all your farming needs! I can assist with crop diseases, weather alerts, soil health, market prices, and crop recommendations. What specific farming challenge are you facing today?"
+      };
+      setMessages((prev) => [...prev, botMsg]);
+    } catch (err) {
+      console.error("Chat error:", err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 2).toString(),
+          content: "⚠️ Server error. Please try again.",
+          sender: "bot",
+          timestamp: new Date(),
+        },
+      ]);
+    } finally {
+      setIsTyping(false);
     }
-  }
+  };
 
   const toggleRecording = () => {
-    setIsRecording(!isRecording)
+    setIsRecording(!isRecording);
     if (!isRecording) {
-      // Simulate voice recording
       setTimeout(() => {
-        setIsRecording(false)
-        setInputMessage("My tomato plants have yellow leaves, what should I do?")
-      }, 3000)
+        setIsRecording(false);
+        setInputMessage("My tomato plants have yellow leaves, what should I do?");
+      }, 3000);
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
+      e.preventDefault();
+      handleSendMessage();
     }
-  }
+  };
 
   return (
     <DashboardLayout>
@@ -100,38 +108,37 @@ export default function ChatPage() {
           <CardHeader className="border-b border-border">
             <CardTitle className="flex items-center gap-2">
               <Bot className="h-6 w-6 text-primary" />
-              Chat with Farmii
+              Chat with Farmii (Gemini)
             </CardTitle>
           </CardHeader>
 
           <CardContent className="flex-1 flex flex-col p-0">
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((message) => (
+              {messages.map((msg) => (
                 <div
-                  key={message.id}
-                  className={`flex gap-3 ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+                  key={msg.id}
+                  className={`flex gap-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  {message.sender === "bot" && (
+                  {msg.sender === "bot" && (
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-primary text-primary-foreground">
                         <Bot className="h-4 w-4" />
                       </AvatarFallback>
                     </Avatar>
                   )}
-
                   <div
                     className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                      message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                      msg.sender === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground"
                     }`}
                   >
-                    <p className="text-sm">{message.content}</p>
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     <p className="text-xs opacity-70 mt-1">
-                      {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
-
-                  {message.sender === "user" && (
+                  {msg.sender === "user" && (
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-secondary text-secondary-foreground">
                         <User className="h-4 w-4" />
@@ -165,7 +172,6 @@ export default function ChatPage() {
               )}
             </div>
 
-            {/* Input */}
             <div className="border-t border-border p-4">
               <div className="flex gap-2">
                 <div className="flex-1 relative">
@@ -195,11 +201,11 @@ export default function ChatPage() {
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
-              {isRecording && <p className="text-sm text-red-500 mt-2 animate-pulse">Recording... Speak now</p>}
+              {isRecording && <p className="text-sm text-red-500 mt-2 animate-pulse">🎙 Recording... Speak now</p>}
             </div>
           </CardContent>
         </Card>
       </div>
     </DashboardLayout>
-  )
+  );
 }
