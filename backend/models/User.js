@@ -1,9 +1,10 @@
+// backend/models/User.js
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
-  email: { type: String },       // optional
-  password: { type: String },    // optional
+  email: { type: String },
+  password: { type: String },
   phone: { type: String, required: true, unique: true },
   preferredLanguage: { type: String, default: "en-US" },
   farmLocation: { type: String, required: true },
@@ -13,6 +14,9 @@ const userSchema = new mongoose.Schema({
   crops: { type: [String], required: true },
   farmingType: { type: String, required: true },
   profilePhoto: { type: String },
+
+  // NEW: favorite crops for quick access (stored as uppercase strings)
+  favoriteCrops: { type: [String], default: [] },
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);

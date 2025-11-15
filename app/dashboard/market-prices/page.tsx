@@ -1,300 +1,687 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useRef } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, TrendingDown, Search, MapPin, Calendar, RefreshCw } from "lucide-react";
-import { DashboardLayout } from "@/components/dashboard-layout";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import {
+  Mic,
+  ArrowLeft,
+  Star,
+  StarOff,
+  BarChart2,
+  Activity,
+} from "lucide-react";
 
-type MarketItem = {
-  crop: string;
-  variety: string;
-  currentPrice: number;
-  previousPrice: number | null;
-  change: number | null;
-  market: string;
-  date: string;
-  unit: string;
-};
+import { Line, Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+  Legend,
+  BarElement,
+} from "chart.js";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+  Legend,
+  BarElement
+);
+
+// ⭐ Bright Theme 4 colors
+const COLORS = [
+  "#ff7f7f", // red
+  "#7fb3ff", // blue
+  "#7fffac", // mint
+  "#ffa07f", // orange
+  "#e07fff", // purple
+];
+
+// ⭐ Static districts for Maharashtra
+const DISTRICTS = [
+  "Pune",
+  "Nashik",
+  "Ahmednagar",
+  "Kolhapur",
+  "Satara",
+  "Sangli",
+  "Solapur",
+  "Aurangabad",
+  "Beed",
+  "Jalgaon",
+  "Dhule",
+  "Nandurbar",
+  "Nagpur",
+  "Wardha",
+  "Amravati",
+  "Yavatmal",
+  "Akola",
+  "Buldhana",
+  "Osmanabad",
+  "Latur",
+  "Parbhani",
+  "Hingoli",
+  "Raigad",
+  "Ratnagiri",
+  "Sindhudurg",
+];
+
+// ⭐ Static crop list
+const CROPS = [
+  "Onion",
+  "Tomato",
+  "Potato",
+  "Cotton",
+  "Sugarcane",
+  "Wheat",
+  "Rice",
+  "Soybean",
+  "Tur",
+  "Moong",
+  "Urad",
+  "Banana",
+  "Pomegranate",
+  "Grapes",
+  "Chilli",
+];
 
 export default function MarketPricesPage() {
-  const [selectedState, setSelectedState] = useState("all");
-  const [selectedCrop, setSelectedCrop] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [marketData, setMarketData] = useState<MarketItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [lang, setLang] = useState<"en" | "hi" | "mr">("en");
 
-  const fetchData = async () => {
+  // Search & filters
+  const [search, setSearch] = useState("");
+  const [district, setDistrict] = useState("all");
+  const [crop, setCrop] = useState("all");
+
+  // Data states
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Heatmap
+  const [heatData, setHeatData] = useState<any[]>([]);
+  const [heatLoading, setHeatLoading] = useState(false);
+
+  // Comparison
+  const [cmpCrop1, setCmpCrop1] = useState("Onion");
+  const [cmpCrop2, setCmpCrop2] = useState("Tomato");
+  const [cmpMarket1, setCmpMarket1] = useState("");
+  const [cmpMarket2, setCmpMarket2] = useState("");
+  const [cmpResult, setCmpResult] = useState<any>(null);
+
+  // Advisory + Prediction
+  const [advisory, setAdvisory] = useState<any>(null);
+  const [predict, setPredict] = useState<any>(null);
+
+  // Voice input
+  const recRef = useRef<any>(null);
+  const [listening, setListening] = useState(false);
+
+  // =====================================================
+  //  FETCH MARKET DATA
+  // =====================================================
+
+  async function fetchData() {
     setLoading(true);
-    setError(null);
+
+    const params = new URLSearchParams();
+    if (crop !== "all") params.append("crop", crop);
+    if (district !== "all") params.append("district", district);
+
     try {
-      const params: any = {};
-      if (selectedState !== "all") params.state = selectedState;
-      if (selectedCrop !== "all") params.crop = selectedCrop;
-      const q = new URLSearchParams(params).toString();
-      const resp = await fetch(`/api/market-prices?${q}`);
-      const json = await resp.json();
-      if (json.success) {
-        // Compute change if possible
-        const enriched = json.data.map((item: any) => {
-          let change = null;
-          if (item.previousPrice != null && item.previousPrice > 0) {
-            change = ((item.currentPrice - item.previousPrice) / item.previousPrice) * 100;
-          }
-          return {
-            ...item,
-            change,
-            previousPrice: item.previousPrice
-          };
-        });
-        setMarketData(enriched);
-      } else {
-        setError("Failed to fetch data");
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Error fetching data");
-    } finally {
-      setLoading(false);
+      const res = await fetch(`/api/market-prices?${params.toString()}`);
+      const json = await res.json();
+      if (json.success) setData(json.data);
+    } catch (e) {
+      console.log("Fetch error:", e);
     }
-  };
+    setLoading(false);
+  }
 
   useEffect(() => {
     fetchData();
-  }, [selectedState, selectedCrop]);
+  }, []);
 
-  const filteredData = marketData.filter((item) => {
-    const matchesSearch =
-      item.crop.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.variety.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesState =
-      selectedState === "all" ||
-      item.market.toLowerCase().includes(selectedState.toLowerCase());
-    const matchesCrop =
-      selectedCrop === "all" ||
-      item.crop.toLowerCase() === selectedCrop.toLowerCase();
+  // =====================================================
+  //  FETCH HEATMAP
+  // =====================================================
 
-    return matchesSearch && matchesState && matchesCrop;
+  async function fetchHeat() {
+    if (crop === "all") return;
+    setHeatLoading(true);
+
+    try {
+      const res = await fetch(`/api/heatmap?crop=${crop}`);
+      const json = await res.json();
+      if (json.success) setHeatData(json.data);
+    } catch (e) {
+      console.log("Heatmap error:", e);
+    }
+
+    setHeatLoading(false);
+  }
+
+  useEffect(() => {
+    fetchHeat();
+  }, [crop]);
+
+  // =====================================================
+  //  VOICE RECOGNITION
+  // =====================================================
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognition =
+      (window as any).webkitSpeechRecognition ||
+      (window as any).SpeechRecognition;
+
+    if (!SpeechRecognition) return;
+
+    const rec = new SpeechRecognition();
+    rec.lang = lang === "en" ? "en-US" : lang === "hi" ? "hi-IN" : "mr-IN";
+    rec.interimResults = false;
+
+    rec.onresult = (e: any) => {
+      const text = e.results[0][0].transcript;
+      setSearch(text);
+      setListening(false);
+    };
+
+    rec.onend = () => setListening(false);
+
+    recRef.current = rec;
+  }, [lang]);
+
+  function startVoice() {
+    if (!recRef.current) return alert("Voice not supported");
+    recRef.current.start();
+    setListening(true);
+  }
+
+  // =====================================================
+  //  APPLY FILTERS
+  // =====================================================
+
+  const filtered = data.filter((item) => {
+    const s = search.toLowerCase();
+    if (
+      s &&
+      !item.crop.toLowerCase().includes(s) &&
+      !item.market.toLowerCase().includes(s) &&
+      !item.district.toLowerCase().includes(s)
+    )
+      return false;
+
+    if (crop !== "all" && item.crop !== crop) return false;
+    if (district !== "all" && item.district !== district) return false;
+
+    return true;
   });
+  // =====================================================
+  //  FETCH COMPARISON DATA
+  // =====================================================
 
-  const getPriceChangeColor = (change: number | null) => {
-    if (change == null) return "text-gray-600";
-    if (change > 0) return "text-green-600";
-    if (change < 0) return "text-red-600";
-    return "text-gray-600";
-  };
+  async function fetchComparison() {
+    if (!cmpCrop1 || !cmpCrop2 || !cmpMarket1 || !cmpMarket2) return;
+    try {
+      const res = await fetch(
+        `/api/compare?crop1=${cmpCrop1}&market1=${cmpMarket1}&crop2=${cmpCrop2}&market2=${cmpMarket2}`
+      );
+      const json = await res.json();
+      if (json.success) setCmpResult(json.data);
+    } catch (err) {
+      console.log("Compare error:", err);
+    }
+  }
 
-  const getPriceChangeIcon = (change: number | null) => {
-    if (change == null) return null;
-    if (change > 0) return <TrendingUp className="h-4 w-4" />;
-    if (change < 0) return <TrendingDown className="h-4 w-4" />;
-    return null;
-  };
+  // =====================================================
+  //  FETCH ADVISORY
+  // =====================================================
+
+  async function fetchAdvisory() {
+    if (filtered.length === 0) return;
+    const cropToAnalyze = crop !== "all" ? crop : filtered[0]?.crop;
+
+    try {
+      const res = await fetch(`/api/advisory?crop=${cropToAnalyze}`);
+      const json = await res.json();
+      if (json.success) setAdvisory(json.data);
+    } catch (e) {
+      console.log("Advisory err:", e);
+    }
+  }
+
+  useEffect(() => {
+    fetchAdvisory();
+  }, [filtered]);
+
+  // =====================================================
+  //  FETCH PRICE PREDICTION
+  // =====================================================
+
+  async function fetchPrediction() {
+    if (filtered.length === 0) return;
+    const cropToAnalyze = crop !== "all" ? crop : filtered[0]?.crop;
+
+    try {
+      const res = await fetch(`/api/predict-sell?crop=${cropToAnalyze}`);
+      const json = await res.json();
+      if (json.success) setPredict(json.data);
+    } catch (e) {
+      console.log("Predict err:", e);
+    }
+  }
+
+  useEffect(() => {
+    fetchPrediction();
+  }, [filtered]);
+
+  // =====================================================
+  //  UI START
+  // =====================================================
 
   return (
-    <DashboardLayout>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Market Price Tracking</h1>
-          <p className="text-muted-foreground mt-2">
-            Stay updated with real-time market prices and trends for better selling decisions
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#f7faff] p-6 space-y-10">
 
-        <Card className="border-border">
+      {/* 🔙 Back Button */}
+      <Button
+        variant="outline"
+        onClick={() => window.location.href = "/dashboard"}
+        className="flex items-center gap-2 border-gray-300"
+      >
+        <ArrowLeft size={18} />
+        Back to Dashboard
+      </Button>
+
+      {/* 🌐 Language Switch */}
+      <div className="flex gap-2">
+        <Button
+          variant={lang === "en" ? "default" : "outline"}
+          onClick={() => setLang("en")}
+        >
+          English
+        </Button>
+        <Button
+          variant={lang === "hi" ? "default" : "outline"}
+          onClick={() => setLang("hi")}
+        >
+          हिन्दी
+        </Button>
+        <Button
+          variant={lang === "mr" ? "default" : "outline"}
+          onClick={() => setLang("mr")}
+        >
+          मराठी
+        </Button>
+      </div>
+
+      {/* =====================================================
+              🔍 SEARCH + FILTERS
+      ===================================================== */}
+      <Card className="border-2 border-gray-200 shadow-sm">
+        <CardHeader>
+          <CardTitle>Search Market Prices</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+
+          {/* Search Row */}
+          <div className="flex gap-3 items-center">
+            <Input
+              placeholder="Search crop, market or district…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-white"
+            />
+
+            <Button
+              variant={listening ? "default" : "outline"}
+              onClick={startVoice}
+              className="flex items-center gap-2"
+            >
+              <Mic className={listening ? "animate-pulse text-red-500" : ""} />
+              Voice
+            </Button>
+          </div>
+
+          {/* Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            {/* District */}
+            <Select value={district} onValueChange={setDistrict}>
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Select district" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Districts</SelectItem>
+                {DISTRICTS.map((d, i) => (
+                  <SelectItem key={i} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Crop */}
+            <Select value={crop} onValueChange={setCrop}>
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Select crop" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Crops</SelectItem>
+                {CROPS.map((c, i) => (
+                  <SelectItem key={i} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Apply */}
+            <Button
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={fetchData}
+            >
+              Apply Filters
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* =====================================================
+              📊 HEATMAP SECTION
+      ===================================================== */}
+      <Card className="border-2 border-gray-200 shadow-sm">
+        <CardHeader>
+          <CardTitle>Maharashtra Price Heatmap</CardTitle>
+        </CardHeader>
+
+        <CardContent>
+          {heatLoading ? (
+            <p>Loading heatmap…</p>
+          ) : heatData.length === 0 ? (
+            <p>No heatmap data. Select a crop.</p>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {heatData.map((d, i) => (
+                <div
+                  key={i}
+                  className="p-4 rounded-lg text-white text-center shadow"
+                  style={{
+                    backgroundColor:
+                      d.avg > 3000
+                        ? "#ff4d4d"
+                        : d.avg > 1500
+                        ? "#ffa64d"
+                        : "#4da6ff",
+                  }}
+                >
+                  <h3 className="font-semibold">{d.district}</h3>
+                  <p className="text-lg font-bold">₹{d.avg}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* =====================================================
+              📈 PRICE COMPARISON
+      ===================================================== */}
+      <Card className="border-2 border-gray-200 shadow-sm">
+        <CardHeader>
+          <CardTitle>Crop Market Comparison</CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Crop 1 */}
+            <div className="flex gap-2">
+              <Select value={cmpCrop1} onValueChange={setCmpCrop1}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CROPS.map((c) => (
+                    <SelectItem value={c} key={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Input
+                placeholder="Market 1 (e.g., Pune)"
+                value={cmpMarket1}
+                onChange={(e) => setCmpMarket1(e.target.value)}
+              />
+            </div>
+
+            {/* Crop 2 */}
+            <div className="flex gap-2">
+              <Select value={cmpCrop2} onValueChange={setCmpCrop2}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CROPS.map((c) => (
+                    <SelectItem value={c} key={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Input
+                placeholder="Market 2 (e.g., Nashik)"
+                value={cmpMarket2}
+                onChange={(e) => setCmpMarket2(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <Button
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={fetchComparison}
+          >
+            Compare
+          </Button>
+
+          {cmpResult && (
+            <div className="mt-6">
+              <Line
+                data={{
+                  labels: cmpResult.crop1.series.map((s: any) => s.date),
+                  datasets: [
+                    {
+                      label: cmpCrop1,
+                      data: cmpResult.crop1.series.map((s: any) => s.avgPrice),
+                      borderColor: COLORS[0],
+                    },
+                    {
+                      label: cmpCrop2,
+                      data: cmpResult.crop2.series.map((s: any) => s.avgPrice),
+                      borderColor: COLORS[1],
+                    },
+                  ],
+                }}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* =====================================================
+              📘 MARKET ADVISORY
+      ===================================================== */}
+      {advisory && (
+        <Card className="border-2 border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-primary" />
-              Search & Filter
-            </CardTitle>
+            <CardTitle>Crop Advisory</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-4 gap-4">
-              {/* Search Crop */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Search Crop</label>
-                <Input
-                  placeholder="Search by crop name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="border-border focus:ring-primary"
-                />
-              </div>
-
-              {/* State/Market */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">State/Market</label>
-                <Select value={selectedState} onValueChange={setSelectedState}>
-                  <SelectTrigger className="border-border focus:ring-primary">
-                    <SelectValue placeholder="All states" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All States</SelectItem>
-                    <SelectItem value="punjab">Punjab</SelectItem>
-                    <SelectItem value="maharashtra">Maharashtra</SelectItem>
-                    <SelectItem value="gujarat">Gujarat</SelectItem>
-                    <SelectItem value="karnataka">Karnataka</SelectItem>
-                    <SelectItem value="delhi">Delhi</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Crop Type */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Crop Type</label>
-                <Select value={selectedCrop} onValueChange={setSelectedCrop}>
-                  <SelectTrigger className="border-border focus:ring-primary">
-                    <SelectValue placeholder="All crops" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Crops</SelectItem>
-                    <SelectItem value="rice">Rice</SelectItem>
-                    <SelectItem value="wheat">Wheat</SelectItem>
-                    <SelectItem value="cotton">Cotton</SelectItem>
-                    <SelectItem value="sugarcane">Sugarcane</SelectItem>
-                    <SelectItem value="tomato">Tomato</SelectItem>
-                    <SelectItem value="onion">Onion</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Actions */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Actions</label>
-                <Button
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                  onClick={() => fetchData()}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Prices
-                </Button>
-              </div>
-            </div>
+            <p className="text-lg">{advisory.message}</p>
           </CardContent>
         </Card>
+      )}
 
-        {/* Market Prices Grid */}
-        {loading ? (
-          <p>Loading data…</p>
-        ) : error ? (
-          <p className="text-red-600">Error: {error}</p>
-        ) : (
-          <div className="grid gap-4">
-            {filteredData.map((item, index) => (
-              <Card key={index} className="border-border hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
+      {/* =====================================================
+              🔮 SELL PRICE PREDICTION
+      ===================================================== */}
+      {predict && (
+        <Card className="border-2 border-gray-200 shadow-sm">
+          <CardHeader>
+            <CardTitle>Expected Price Trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-lg">{predict.message}</p>
+          </CardContent>
+        </Card>
+      )}
+      {/* =====================================================
+              📦 MARKET LIST (MAIN DATA DISPLAY)
+      ===================================================== */}
+      <Card className="border-2 border-gray-200 shadow-sm">
+        <CardHeader>
+          <CardTitle>Available Market Prices</CardTitle>
+        </CardHeader>
+
+        <CardContent>
+          {loading ? (
+            <p>Loading…</p>
+          ) : filtered.length === 0 ? (
+            <p>No data for selected filters.</p>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-4">
+              {filtered.map((item, i) => (
+                <Card
+                  key={i}
+                  className="border shadow-sm hover:shadow-md transition p-4 bg-white"
+                >
                   <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-card-foreground">{item.crop}</h3>
-                        <Badge variant="outline">{item.variety}</Badge>
-                      </div>
+                    <div>
+                      <h3 className="text-xl font-semibold">{item.crop}</h3>
+                      <Badge variant="outline" className="mt-1">
+                        {item.variety}
+                      </Badge>
 
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          <span>{item.market}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{new Date(item.date).toLocaleDateString()}</span>
-                        </div>
-                      </div>
+                      <p className="mt-2 text-gray-600">
+                        <strong>Market:</strong> {item.market}
+                      </p>
+                      <p className="text-gray-600">
+                        <strong>District:</strong> {item.district}
+                      </p>
+
+                      <p className="text-gray-500 text-sm">
+                        {new Date(item.date).toLocaleDateString()}
+                      </p>
                     </div>
 
+                    {/* Price */}
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-foreground">₹{item.currentPrice.toLocaleString()}</div>
-                      <div className="text-sm text-muted-foreground">{item.unit}</div>
+                      <p className="text-2xl font-bold text-blue-700">
+                        ₹{item.currentPrice}
+                      </p>
 
-                      {item.change != null && (
-                        <div className={`flex items-center justify-end gap-1 mt-1 ${getPriceChangeColor(item.change)}`}>
-                          {getPriceChangeIcon(item.change)}
-                          <span className="text-sm font-medium">
-                            {item.change > 0 ? "+" : ""}
-                            {item.change.toFixed(1)}%
-                          </span>
+                      <p className="text-sm text-gray-500">{item.unit}</p>
+
+                      {item.change !== null && (
+                        <div
+                          className={`flex items-center justify-end mt-1 gap-1 ${
+                            item.change > 0 ? "text-green-600" : "text-red-600"
+                          }`}
+                        >
+                          {item.change > 0 ? (
+                            <BarChart2 size={18} />
+                          ) : (
+                            <Activity size={18} />
+                          )}
+                          <span>{item.change.toFixed(1)}%</span>
                         </div>
                       )}
 
-                      {item.previousPrice != null && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Previous: ₹{item.previousPrice.toLocaleString()}
-                        </div>
+                      {item.previousPrice !== null && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Previous: ₹{item.previousPrice}
+                        </p>
                       )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-
-            {filteredData.length === 0 && (
-              <Card className="border-border">
-                <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">No market data found for the selected filters.</p>
-                  <Button
-                    variant="outline"
-                    className="mt-4 border-border bg-transparent"
-                    onClick={() => {
-                      setSearchTerm("");
-                      setSelectedState("all");
-                      setSelectedCrop("all");
-                    }}
-                  >
-                    Clear Filters
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
-
-        {/* Market Insights */}
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle>Market Insights</CardTitle>
-            <CardDescription>Key trends and recommendations for today</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold text-card-foreground mb-3">Price Gainers</h4>
-                <div className="space-y-2">
-                  {filteredData
-                    .filter((item) => item.change != null && item.change > 0)
-                    .sort((a, b) => (b.change || 0) - (a.change || 0))
-                    .slice(0, 3)
-                    .map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
-                        <span className="text-sm font-medium text-green-800">{item.crop}</span>
-                        <span className="text-sm text-green-600">+{(item.change || 0).toFixed(1)}%</span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-card-foreground mb-3">Price Decliners</h4>
-                <div className="space-y-2">
-                  {filteredData
-                    .filter((item) => item.change != null && item.change < 0)
-                    .sort((a, b) => (a.change || 0) - (b.change || 0))
-                    .slice(0, 3)
-                    .map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
-                        <span className="text-sm font-medium text-red-800">{item.crop}</span>
-                        <span className="text-sm text-red-600">{(item.change || 0).toFixed(1)}%</span>
-                      </div>
-                    ))}
-                </div>
-              </div>
+                </Card>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </DashboardLayout>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* =====================================================
+              ⭐ INSIGHTS (TOP GAINERS + DECLINERS)
+      ===================================================== */}
+      <Card className="border-2 border-gray-200 shadow-sm">
+        <CardHeader>
+          <CardTitle>Market Insights</CardTitle>
+        </CardHeader>
+
+        <CardContent className="grid md:grid-cols-2 gap-6">
+
+          {/* Top Gainers */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-green-700">
+              📈 Price Gainers
+            </h3>
+            <div className="space-y-2">
+              {filtered
+                .filter((i) => i.change > 0)
+                .sort((a, b) => b.change - a.change)
+                .slice(0, 3)
+                .map((i, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 rounded-lg bg-green-100"
+                  >
+                    <span>{i.crop}</span>
+                    <span className="font-bold text-green-700">
+                      +{i.change.toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          {/* Top Decliners */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-red-700">
+              📉 Price Decliners
+            </h3>
+            <div className="space-y-2">
+              {filtered
+                .filter((i) => i.change < 0)
+                .sort((a, b) => a.change - b.change)
+                .slice(0, 3)
+                .map((i, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 rounded-lg bg-red-100"
+                  >
+                    <span>{i.crop}</span>
+                    <span className="font-bold text-red-700">
+                      {i.change.toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+    </div>
   );
 }
