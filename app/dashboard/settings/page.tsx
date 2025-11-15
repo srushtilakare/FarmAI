@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -10,9 +10,14 @@ import { Separator } from "@/components/ui/separator"
 import { Settings, Bell, Globe, Shield, Smartphone, Mail, MessageSquare, Save } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 
+// 🧩 Import language context
+import { useLanguage } from "@/lib/i18n/LanguageContext"
+
 export default function SettingsPage() {
+  const { language, setLanguage, t } = useLanguage()
+
   const [settings, setSettings] = useState({
-    language: "english",
+    language: language || "english",
     notifications: {
       email: true,
       sms: true,
@@ -34,9 +39,14 @@ export default function SettingsPage() {
     },
   })
 
+  // Sync with global language
+  useEffect(() => {
+    setSettings((prev) => ({ ...prev, language }))
+  }, [language])
+
   const handleSave = () => {
     console.log("Settings saved:", settings)
-    // Here you would save to backend
+    setLanguage(settings.language) // 🔁 Update global language context
   }
 
   const updateNotificationSetting = (key: string, value: boolean) => {
@@ -75,12 +85,12 @@ export default function SettingsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-            <p className="text-muted-foreground mt-2">Customize your Farm AI experience and preferences</p>
+            <h1 className="text-3xl font-bold text-foreground">{t("settings")}</h1>
+            <p className="text-muted-foreground mt-2">{t("customizeExperience")}</p>
           </div>
           <Button onClick={handleSave} className="bg-primary text-primary-foreground hover:bg-primary/90">
             <Save className="h-4 w-4 mr-2" />
-            Save Changes
+            {t("saveChanges")}
           </Button>
         </div>
 
@@ -89,15 +99,15 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5 text-primary" />
-              Language & Region
+              {t("languageRegion")}
             </CardTitle>
-            <CardDescription>Set your preferred language and regional settings</CardDescription>
+            <CardDescription>{t("selectLanguage")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="language" className="text-foreground">
-                  Display Language
+                  {t("displayLanguage")}
                 </Label>
                 <Select
                   value={settings.language}
@@ -259,7 +269,9 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-foreground">Public Profile</p>
-                <p className="text-xs text-muted-foreground">Make your farming achievements visible to other farmers</p>
+                <p className="text-xs text-muted-foreground">
+                  Make your farming achievements visible to other farmers
+                </p>
               </div>
               <Switch
                 checked={settings.privacy.publicProfile}
@@ -270,7 +282,9 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-foreground">Location Tracking</p>
-                <p className="text-xs text-muted-foreground">Allow location-based recommendations and weather alerts</p>
+                <p className="text-xs text-muted-foreground">
+                  Allow location-based recommendations and weather alerts
+                </p>
               </div>
               <Switch
                 checked={settings.privacy.locationTracking}

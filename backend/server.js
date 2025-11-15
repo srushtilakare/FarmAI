@@ -4,6 +4,14 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
+// inside server.js
+const marketPricesRouter = require('./routes/marketPrices');
+app.use('/api/market-prices', marketPricesRouter);
+
+// in backend/server.js (or app.js)
+const weatherRouter = require("./routes/weather");
+app.use("/api/backend-weather", weatherRouter); // optional path
+
 
 // Middleware
 app.use(cors());

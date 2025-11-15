@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import "./globals.css"
+import { LanguageProvider } from "@/lib/i18n/LanguageContext"
 
 export const metadata: Metadata = {
   title: "Farm AI - Smart Crop Advisory System",
@@ -23,8 +24,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}>
       <body className="font-sans bg-background text-foreground">
-        <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
-        <Analytics />
+        <LanguageProvider>
+          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+          <Analytics />
+        </LanguageProvider>
       </body>
     </html>
   )
