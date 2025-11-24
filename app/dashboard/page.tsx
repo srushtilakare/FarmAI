@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
 	Camera,
 	MapPin,
@@ -15,11 +16,18 @@ import {
 	Droplets,
 	Sun,
 	Wind,
+	Calendar,
+	Users,
+	Building2,
+	Newspaper,
 } from "lucide-react";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import GamificationWidget from "@/components/GamificationWidget";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function DashboardPage() {
+	const { t } = useLanguage();
 	const [weatherData, setWeatherData] = useState({
 		temperature: "--°C",
 		humidity: "--%",
@@ -29,6 +37,8 @@ export default function DashboardPage() {
 	const [user, setUser] = useState<any>(null);
 	const [city, setCity] = useState<string>("Pune"); // ✅ Default fallback city
 	const [loading, setLoading] = useState(true);
+	const [recentActivities, setRecentActivities] = useState<any[]>([]);
+	const [activitiesLoading, setActivitiesLoading] = useState(true);
 
 	const apiKey = process.env.NEXT_PUBLIC_WEATHER_API_KEY || "ebfcc89daac4187ada714518e13a3375";
 
@@ -104,64 +114,207 @@ export default function DashboardPage() {
 		}
 	}, []); // Removed setUser from dependencies as it's not needed here
 
-	// ✅ Services data
+	// ✅ Fetch recent activities
+	useEffect(() => {
+		const fetchRecentActivities = async () => {
+			try {
+				setActivitiesLoading(true);
+				const token = localStorage.getItem('token');
+				
+				if (!token) {
+					console.warn('⚠️ No token found, cannot fetch recent activities');
+					setRecentActivities([]);
+					setActivitiesLoading(false);
+					return;
+				}
+				
+				const response = await fetch('http://localhost:5000/api/activities?limit=4', {
+					headers: {
+						Authorization: `Bearer ${token}`
+					}
+				});
+
+				if (response.ok) {
+					const data = await response.json();
+					setRecentActivities(data.activities || []);
+				} else {
+					console.error('❌ Failed to fetch recent activities:', response.status);
+					setRecentActivities([]);
+				}
+			} catch (error) {
+				console.error('❌ Error fetching recent activities:', error);
+				setRecentActivities([]);
+			} finally {
+				setActivitiesLoading(false);
+			}
+		};
+
+		fetchRecentActivities();
+	}, []);
+
+	// ✅ Helper functions for activity display (similar to History section)
+	const getTypeIcon = (type: string) => {
+		switch (type) {
+			case "disease-detection":
+				return <Camera className="h-4 w-4" />;
+			case "crop-advisory":
+				return <MapPin className="h-4 w-4" />;
+			case "crop-calendar":
+				return <Calendar className="h-4 w-4" />;
+			case "community-forum":
+				return <MessageSquare className="h-4 w-4" />;
+			case "government-scheme":
+				return <Building2 className="h-4 w-4" />;
+			case "soil-report":
+				return <Beaker className="h-4 w-4" />;
+			case "weather-alert":
+				return <CloudRain className="h-4 w-4" />;
+			case "market-prices":
+				return <TrendingUp className="h-4 w-4" />;
+			case "agri-news":
+				return <Newspaper className="h-4 w-4" />;
+			case "chat":
+				return <MessageSquare className="h-4 w-4" />;
+			default:
+				return <Calendar className="h-4 w-4" />;
+		}
+	};
+
+	const getTypeColor = (type: string) => {
+		switch (type) {
+			case "disease-detection":
+				return "bg-red-500";
+			case "crop-advisory":
+				return "bg-green-500";
+			case "crop-calendar":
+				return "bg-teal-500";
+			case "community-forum":
+				return "bg-indigo-500";
+			case "government-scheme":
+				return "bg-orange-500";
+			case "soil-report":
+				return "bg-amber-500";
+			case "weather-alert":
+				return "bg-blue-500";
+			case "market-prices":
+				return "bg-purple-500";
+			case "agri-news":
+				return "bg-cyan-500";
+			case "chat":
+				return "bg-blue-500";
+			default:
+				return "bg-gray-500";
+		}
+	};
+
+	const getStatusBadge = (status: string) => {
+		switch (status) {
+			case "completed":
+				return <Badge variant="default">{t("completed")}</Badge>;
+			case "active":
+				return <Badge variant="secondary">{t("active")}</Badge>;
+			case "viewed":
+				return <Badge variant="outline">{t("viewed")}</Badge>;
+			default:
+				return <Badge variant="outline">{t("unknown")}</Badge>;
+		}
+	};
+
+	const formatTimeAgo = (dateString: string, timeString: string) => {
+		try {
+			const date = new Date(dateString);
+			const now = new Date();
+			const diffMs = now.getTime() - date.getTime();
+			const diffMins = Math.floor(diffMs / 60000);
+			const diffHours = Math.floor(diffMs / 3600000);
+			const diffDays = Math.floor(diffMs / 86400000);
+
+			if (diffMins < 1) return t("justNow");
+			if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? t("minuteAgo") : t("minutesAgo")}`;
+			if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? t("hourAgo") : t("hoursAgo")}`;
+			if (diffDays < 7) return `${diffDays} ${diffDays === 1 ? t("dayAgo") : t("daysAgo")}`;
+			return new Date(dateString).toLocaleDateString();
+		} catch {
+			return timeString || t("recently");
+		}
+	};
+
+	// ✅ Services data - All features matching sidebar navigation
 	const services = [
 		{
 			id: "disease-detection",
-			title: "Crop Disease Detection",
-			description: "AI-powered disease identification with instant treatment recommendations",
+			titleKey: "serviceDiseaseDetection",
+			descriptionKey: "serviceDiseaseDetectionDesc",
 			icon: Camera,
 			color: "bg-red-500",
 			href: "/dashboard/disease-detection",
 		},
 		{
 			id: "crop-advisory",
-			title: "Location Specific Crop Advisory",
-			description: "Get personalized crop recommendations based on your location and soil",
+			titleKey: "serviceCropAdvisory",
+			descriptionKey: "serviceCropAdvisoryDesc",
 			icon: MapPin,
 			color: "bg-green-500",
 			href: "/dashboard/crop-advisory",
 		},
 		{
+			id: "crop-calendar",
+			titleKey: "serviceCropCalendar",
+			descriptionKey: "serviceCropCalendarDesc",
+			icon: Calendar,
+			color: "bg-teal-500",
+			href: "/dashboard/crop-calendar",
+		},
+		{
+			id: "community-forum",
+			titleKey: "serviceCommunityForum",
+			descriptionKey: "serviceCommunityForumDesc",
+			icon: Users,
+			color: "bg-indigo-500",
+			href: "/dashboard/community",
+		},
+		{
+			id: "government-schemes",
+			titleKey: "serviceGovernmentSchemes",
+			descriptionKey: "serviceGovernmentSchemesDesc",
+			icon: Building2,
+			color: "bg-orange-500",
+			href: "/dashboard/schemes",
+		},
+		{
 			id: "soil-health",
-			title: "Soil Health & Fertilizer Guidance",
-			description: "Comprehensive soil analysis and fertilizer recommendations",
+			titleKey: "serviceSoilHealth",
+			descriptionKey: "serviceSoilHealthDesc",
 			icon: Beaker,
 			color: "bg-amber-500",
-			href: "/dashboard/soil-health",
+			href: "/dashboard/soil-report",
 		},
 		{
 			id: "weather-alerts",
-			title: "Weather-based Alerts",
-			description: "Real-time weather updates and predictive insights for farming",
+			titleKey: "serviceWeatherAlerts",
+			descriptionKey: "serviceWeatherAlertsDesc",
 			icon: CloudRain,
 			color: "bg-blue-500",
 			href: "/dashboard/weather-alerts",
 		},
 		{
 			id: "market-prices",
-			title: "Market Price Tracking",
-			description: "Live market prices and trends for better selling decisions",
+			titleKey: "serviceMarketPrices",
+			descriptionKey: "serviceMarketPricesDesc",
 			icon: TrendingUp,
 			color: "bg-purple-500",
 			href: "/dashboard/market-prices",
 		},
 		{
-			id: "voice-support",
-			title: "Voice Support",
-			description: "Voice-enabled assistance for low-literate users",
-			icon: Mic,
-			color: "bg-indigo-500",
-			href: "/dashboard/voice-support",
+			id: "agri-news",
+			titleKey: "serviceAgriNews",
+			descriptionKey: "serviceAgriNewsDesc",
+			icon: Newspaper,
+			color: "bg-cyan-500",
+			href: "/dashboard/news",
 		},
 	];
 
-	const recentActivities = [
-		{ action: "Disease detected in tomato crop", time: "2 hours ago", status: "warning" },
-		{ action: "Weather alert: Heavy rain expected", time: "4 hours ago", status: "info" },
-		{ action: "Market price update for wheat", time: "6 hours ago", status: "success" },
-		{ action: "Soil test results available", time: "1 day ago", status: "info" },
-	];
 
 	// ✅ JSX UI
 	return (
@@ -171,28 +324,29 @@ export default function DashboardPage() {
 				<div className="flex flex-col space-y-4">
 					<div>
 						<h1 className="text-3xl font-bold text-foreground">
-							{user ? `Welcome back, ${user.fullName}!` : "Welcome back, Farmer!"}
+							{user ? `${t("welcomeBack")}, ${user.fullName}!` : t("welcomeBackFarmer")}
 						</h1>
 						<p className="text-muted-foreground">
-							Here's what's happening with your farm today
+							{t("whatsHappening")}
 						</p>
 					</div>
 
-					{/* Weather Widget */}
+					{/* Weather & Gamification Widgets */}
+					<div className="grid md:grid-cols-2 gap-6">
 					<Card className="border-border">
 						<CardHeader className="pb-3">
 							<CardTitle className="text-lg flex items-center gap-2">
 								<Sun className="h-5 w-5 text-yellow-500" />
 								{loading
-									? "Fetching Weather..."
-									: `Today's Weather in ${city || "your area"}`}
+									? t("fetchingWeather")
+									: `${t("todaysWeather")} ${city ? t("inYourArea").replace("your area", city) : t("inYourArea")}`}
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
 							{loading ? (
-								<p className="text-muted-foreground text-sm">Loading weather data...</p>
+								<p className="text-muted-foreground text-sm">{t("loadingWeatherData")}</p>
 							) : (
-								<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+									<div className="grid grid-cols-2 gap-4">
 									<div className="flex items-center space-x-2">
 										<Thermometer className="h-4 w-4 text-red-500" />
 										<span className="text-sm font-medium">{weatherData.temperature}</span>
@@ -213,11 +367,15 @@ export default function DashboardPage() {
 							)}
 						</CardContent>
 					</Card>
+						
+						{/* Gamification Widget */}
+						<GamificationWidget />
+					</div>
 				</div>
 
 				{/* Services Grid */}
 				<div>
-					<h2 className="text-2xl font-semibold text-foreground mb-6">Our Services</h2>
+					<h2 className="text-2xl font-semibold text-foreground mb-6">{t("ourServices")}</h2>
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 						{services.map((service) => {
 							const IconComponent = service.icon;
@@ -232,16 +390,16 @@ export default function DashboardPage() {
 											</div>
 											<div className="space-y-2 flex-1">
 												<h3 className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors">
-													{service.title}
+													{t(service.titleKey)}
 												</h3>
-												<p className="text-sm text-muted-foreground">{service.description}</p>
+												<p className="text-sm text-muted-foreground">{t(service.descriptionKey)}</p>
 											</div>
 											<Button
 												variant="outline"
 												size="sm"
 												className="border-border group-hover:border-primary group-hover:text-primary transition-colors bg-transparent"
 											>
-												Get Started
+												{t("getStarted")}
 											</Button>
 										</CardContent>
 									</Card>
@@ -253,46 +411,69 @@ export default function DashboardPage() {
 
 				{/* Recent Activities */}
 				<div>
-					<h2 className="text-2xl font-semibold text-foreground mb-6">Recent Activities</h2>
+					<div className="flex items-center justify-between mb-6">
+						<h2 className="text-2xl font-semibold text-foreground">{t("recentActivities")}</h2>
+						<Link href="/dashboard/history">
+							<Button variant="outline" size="sm" className="border-border bg-transparent">
+								{t("viewAll")}
+							</Button>
+						</Link>
+					</div>
 					<Card className="border-border">
 						<CardContent className="p-6">
-							<div className="space-y-4">
-								{recentActivities.map((activity, index) => (
-									<div
-										key={index}
-										className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
-									>
-										<div className="flex items-center space-x-3">
-											<div
-												className={`w-2 h-2 rounded-full ${
-													activity.status === "warning"
-														? "bg-yellow-500"
-														: activity.status === "success"
-														? "bg-green-500"
-														: "bg-blue-500"
-												}`}
-											/>
-											<span className="text-sm text-foreground">{activity.action}</span>
+							{activitiesLoading ? (
+								<div className="text-center py-8">
+									<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+									<p className="text-muted-foreground mt-4 text-sm">{t("loadingActivities")}</p>
+								</div>
+							) : recentActivities.length === 0 ? (
+								<div className="text-center py-8">
+									<p className="text-muted-foreground">{t("noRecentActivities")}</p>
+									<p className="text-muted-foreground text-sm mt-2">{t("startUsingFarmAI")}</p>
+								</div>
+							) : (
+								<div className="space-y-4">
+									{recentActivities.map((activity) => (
+										<div
+											key={activity.id}
+											className="flex items-start gap-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/50 rounded-lg px-2 -mx-2 transition-colors"
+										>
+											<div className={`p-2 rounded-full ${getTypeColor(activity.type)} text-white flex-shrink-0`}>
+												{getTypeIcon(activity.type)}
+											</div>
+											<div className="flex-1 min-w-0">
+												<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+													<h3 className="text-sm font-semibold text-card-foreground truncate">{activity.title}</h3>
+													{getStatusBadge(activity.status)}
+												</div>
+												<p className="text-xs text-muted-foreground mb-2 line-clamp-1">{activity.description}</p>
+												<div className="flex items-center gap-4 text-xs text-muted-foreground">
+													<div className="flex items-center gap-1">
+														<Calendar className="h-3 w-3" />
+														<span>{new Date(activity.date).toLocaleDateString()}</span>
+													</div>
+													<span>{formatTimeAgo(activity.date, activity.time)}</span>
+												</div>
+											</div>
 										</div>
-										<span className="text-xs text-muted-foreground">{activity.time}</span>
-									</div>
-								))}
-							</div>
+									))}
+								</div>
+							)}
 						</CardContent>
 					</Card>
 				</div>
 
 				{/* Quick Actions */}
 				<div>
-					<h2 className="text-2xl font-semibold text-foreground mb-6">Quick Actions</h2>
+					<h2 className="text-2xl font-semibold text-foreground mb-6">{t("quickActions")}</h2>
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 						<Link href="/dashboard/chat">
 							<Card className="border-border hover:shadow-md transition-shadow cursor-pointer">
 								<CardContent className="p-4 flex items-center space-x-3">
 									<MessageSquare className="h-8 w-8 text-primary" />
 									<div>
-										<h3 className="font-medium text-card-foreground">Talk with Farmii</h3>
-										<p className="text-sm text-muted-foreground">Get instant AI assistance</p>
+										<h3 className="font-medium text-card-foreground">{t("talkWithFarmii")}</h3>
+										<p className="text-sm text-muted-foreground">{t("getInstantAIAssistance")}</p>
 									</div>
 								</CardContent>
 							</Card>
@@ -303,8 +484,8 @@ export default function DashboardPage() {
 								<CardContent className="p-4 flex items-center space-x-3">
 									<Mic className="h-8 w-8 text-primary" />
 									<div>
-										<h3 className="font-medium text-card-foreground">Voice Assistant</h3>
-										<p className="text-sm text-muted-foreground">Speak your queries</p>
+										<h3 className="font-medium text-card-foreground">{t("voiceAssistant")}</h3>
+										<p className="text-sm text-muted-foreground">{t("speakYourQueries")}</p>
 									</div>
 								</CardContent>
 							</Card>
@@ -315,8 +496,8 @@ export default function DashboardPage() {
 								<CardContent className="p-4 flex items-center space-x-3">
 									<TrendingUp className="h-8 w-8 text-primary" />
 									<div>
-										<h3 className="font-medium text-card-foreground">View History</h3>
-										<p className="text-sm text-muted-foreground">Check past activities</p>
+										<h3 className="font-medium text-card-foreground">{t("viewHistory")}</h3>
+										<p className="text-sm text-muted-foreground">{t("checkPastActivities")}</p>
 									</div>
 								</CardContent>
 							</Card>

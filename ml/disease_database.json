@@ -1,0 +1,1964 @@
+{
+  "Tomato": {
+    "Early_Blight": {
+      "name": {
+        "en": "Early Blight (Alternaria)",
+        "hi": "अर्ली ब्लाइट (अल्टरनेरिया)",
+        "mr": "अर्ली ब्लाइट (अल्टरनेरिया)"
+      },
+      "description": {
+        "en": "Early Blight is a fungal disease causing dark brown spots with concentric rings on leaves. Common in warm, humid weather.",
+        "hi": "अर्ली ब्लाइट एक कवक रोग है जो पत्तियों पर गोलाकार धब्बे बनाता है। गर्म और नम मौसम में आम है।",
+        "mr": "अर्ली ब्लाइट ही एक बुरशीजन्य रोग आहे जो पानांवर गोलाकार ठिपके बनवते। उबदार आणि ओलसर हवामानात सामान्य आहे।"
+      },
+      "severity": "Moderate to High",
+      "affectedParts": [
+        "Leaves",
+        "Stems",
+        "Fruits (in severe cases)"
+      ],
+      "causes": {
+        "en": [
+          "Fungus Alternaria solani",
+          "High humidity (above 80%)",
+          "Temperature between 24-29°C",
+          "Poor air circulation",
+          "Overhead watering"
+        ],
+        "hi": [
+          "अल्टरनेरिया सोलानी कवक",
+          "उच्च आर्द्रता (80% से अधिक)",
+          "24-29°C के बीच तापमान",
+          "खराब हवा संचार",
+          "ऊपर से पानी देना"
+        ],
+        "mr": [
+          "अल्टरनेरिया सोलानी बुरशी",
+          "जास्त आर्द्रता (80% पेक्षा जास्त)",
+          "24-29°C दरम्यान तापमान",
+          "खराब हवा परिसंचरण",
+          "वरून पाणी देणे"
+        ]
+      },
+      "treatment": {
+        "en": [
+          "Remove and destroy infected leaves immediately",
+          "Apply Mancozeb 75% WP @ 2.5g per liter of water",
+          "Alternative: Chlorothalonil @ 2ml per liter",
+          "Spray every 7-10 days, total 3-4 sprays",
+          "Water at the base of plants, avoid wetting leaves",
+          "Improve air circulation by pruning lower leaves"
+        ],
+        "hi": [
+          "संक्रमित पत्तियों को तुरंत हटाकर नष्ट करें",
+          "मैनकोजेब 75% WP @ 2.5 ग्राम प्रति लीटर पानी में छिड़कें",
+          "विकल्प: क्लोरोथैलोनिल @ 2 मिली प्रति लीटर",
+          "हर 7-10 दिन में छिड़काव करें, कुल 3-4 बार",
+          "पौधों की जड़ में पानी दें, पत्तियां गीली न करें",
+          "निचली पत्तियों की छंटाई करके हवा का संचार सुधारें"
+        ],
+        "mr": [
+          "संक्रमित पाने लगेच काढून नष्ट करा",
+          "मॅनकोझेब 75% WP @ 2.5 ग्रॅम प्रति लिटर पाण्यात फवारणी करा",
+          "पर्याय: क्लोरोथॅलोनिल @ 2 मिली प्रति लिटर",
+          "दर 7-10 दिवसांनी फवारणी करा, एकूण 3-4 वेळा",
+          "रोपांच्या पायथ्याशी पाणी द्या, पाने ओली करू नका",
+          "खालची पाने छाटून हवा परिसंचरण सुधारा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use disease-resistant varieties like Pusa Ruby, Arka Vikas",
+          "Maintain 2-3 feet spacing between plants",
+          "Remove infected plant debris after harvest",
+          "Rotate with non-solanaceous crops (wheat, maize, legumes)",
+          "Apply balanced fertilizer: NPK 19:19:19 @ 5g per plant",
+          "Mulch with straw or plastic to prevent soil splash",
+          "Install drip irrigation instead of overhead sprinklers"
+        ],
+        "hi": [
+          "पूसा रूबी, अर्का विकास जैसी प्रतिरोधी किस्मों का उपयोग करें",
+          "पौधों के बीच 2-3 फीट की दूरी रखें",
+          "फसल कटाई के बाद संक्रमित अवशेष हटाएं",
+          "गैर-सोलानेसियस फसलों (गेहूं, मक्का, दाल) के साथ चक्र अपनाएं",
+          "संतुलित उर्वरक डालें: NPK 19:19:19 @ 5 ग्राम प्रति पौधा",
+          "मिट्टी के छींटे रोकने के लिए पुआल या प्लास्टिक से मल्चिंग करें",
+          "ओवरहेड स्प्रिंकलर के बजाय ड्रिप सिंचाई लगाएं"
+        ],
+        "mr": [
+          "पूसा रुबी, अर्का विकास सारख्या प्रतिरोधक जाती वापरा",
+          "रोपांमध्ये 2-3 फूट अंतर ठेवा",
+          "कापणीनंतर संक्रमित अवशेष काढून टाका",
+          "गैर-सोलॅनेशियस पिकांसह (गहू, मका, डाळी) आवर्तन करा",
+          "संतुलित खत घाला: NPK 19:19:19 @ 5 ग्रॅम प्रति रोप",
+          "मातीचे शिडकाव टाळण्यासाठी पेंढा किंवा प्लास्टिकचा पालापाचोळा घाला",
+          "ओव्हरहेड स्प्रिंकलर ऐवजी ठिबक सिंचन बसवा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Spray Neem oil (1500 ppm) @ 5ml per liter weekly",
+          "Apply Trichoderma viride @ 5g per liter as soil drench",
+          "Use Pseudomonas fluorescens @ 10g per liter spray",
+          "Prepare copper fungicide: Mix 200g copper sulfate + 200g lime in 20L water",
+          "Baking soda spray: 1 tablespoon + 1 liter water + few drops dish soap"
+        ],
+        "hi": [
+          "साप्ताहिक नीम तेल (1500 पीपीएम) @ 5 मिली प्रति लीटर छिड़कें",
+          "ट्राइकोडर्मा विरिडे @ 5 ग्राम प्रति लीटर मिट्टी में डालें",
+          "स्यूडोमोनास फ्लोरेसेंस @ 10 ग्राम प्रति लीटर छिड़काव करें",
+          "तांबा कवकनाशी बनाएं: 200 ग्राम कॉपर सल्फेट + 200 ग्राम चूना 20 लीटर पानी में",
+          "बेकिंग सोडा स्प्रे: 1 चम्मच + 1 लीटर पानी + कुछ बूंद डिश सोप"
+        ],
+        "mr": [
+          "साप्ताहिक कडुलिंबाचे तेल (1500 पीपीएम) @ 5 मिली प्रति लिटर फवारणी करा",
+          "ट्रायकोडर्मा विरिडे @ 5 ग्रॅम प्रति लिटर मातीत घाला",
+          "स्यूडोमोनास फ्लोरेसेन्स @ 10 ग्रॅम प्रति लिटर फवारणी करा",
+          "तांबे बुरशीनाशक तयार करा: 200 ग्रॅम कॉपर सल्फेट + 200 ग्रॅम चुना 20 लिटर पाण्यात",
+          "बेकिंग सोडा फवारणी: 1 चमचा + 1 लिटर पाणी + काही थेंब डिश सोप"
+        ]
+      },
+      "doAndDont": {
+        "do": {
+          "en": [
+            "✓ Water in the morning so leaves dry during the day",
+            "✓ Remove bottom 4-6 inches of leaves for better airflow",
+            "✓ Disinfect pruning tools with bleach solution",
+            "✓ Apply fungicide before rain if forecast predicts humidity"
+          ],
+          "hi": [
+            "✓ सुबह पानी दें ताकि पत्तियां दिन में सूख जाएं",
+            "✓ बेहतर हवा प्रवाह के लिए नीचे की 4-6 इंच पत्तियां हटाएं",
+            "✓ ब्लीच घोल से छंटाई के औजार कीटाणुरहित करें",
+            "✓ यदि आर्द्रता की भविष्यवाणी हो तो बारिश से पहले कवकनाशी लगाएं"
+          ],
+          "mr": [
+            "✓ सकाळी पाणी द्या जेणेकरून पाने दिवसा सुकतील",
+            "✓ चांगल्या हवा प्रवाहासाठी खालची 4-6 इंच पाने काढा",
+            "✓ ब्लीच द्रावणाने छाटणी साधने निर्जंतुक करा",
+            "✓ आर्द्रतेचा अंदाज असल्यास पावसापूर्वी बुरशीनाशक लावा"
+          ]
+        },
+        "dont": {
+          "en": [
+            "✗ Don't water in evening or night",
+            "✗ Don't overcrowd plants - maintain proper spacing",
+            "✗ Don't compost infected plant material",
+            "✗ Don't use excessive nitrogen fertilizer"
+          ],
+          "hi": [
+            "✗ शाम या रात में पानी न दें",
+            "✗ पौधों को भीड़ न करें - उचित दूरी बनाए रखें",
+            "✗ संक्रमित पौधों को खाद न बनाएं",
+            "✗ अधिक नाइट्रोजन उर्वरक का उपयोग न करें"
+          ],
+          "mr": [
+            "✗ संध्याकाळी किंवा रात्री पाणी देऊ नका",
+            "✗ रोपांना गर्दी करू नका - योग्य अंतर राखा",
+            "✗ संक्रमित रोपांचे कंपोस्ट करू नका",
+            "✗ जास्त नायट्रोजन खत वापरू नका"
+          ]
+        }
+      }
+    },
+    "Late_Blight": {
+      "name": {
+        "en": "Late Blight (Phytophthora)",
+        "hi": "लेट ब्लाइट (फाइटोफ्थोरा)",
+        "mr": "लेट ब्लाइट (फायटोफ्थोरा)"
+      },
+      "description": {
+        "en": "Late Blight is a devastating disease causing large, dark, water-soaked lesions on leaves and stems. Can destroy entire crop within days in favorable conditions.",
+        "hi": "लेट ब्लाइट एक विनाशकारी रोग है जो पत्तियों और तनों पर बड़े, काले, पानी से भीगे घाव बनाता है। अनुकूल परिस्थितियों में दिनों में पूरी फसल नष्ट कर सकता है।",
+        "mr": "लेट ब्लाइट हा एक विनाशकारी रोग आहे जो पानांवर आणि खोडांवर मोठे, काळे, पाण्याने भिजलेले जखम बनवतो। अनुकूल परिस्थितीत दिवसांत संपूर्ण पीक नष्ट करू शकतो।"
+      },
+      "severity": "Very High - Emergency",
+      "affectedParts": [
+        "Leaves",
+        "Stems",
+        "Fruits",
+        "Entire plant"
+      ],
+      "causes": {
+        "en": [
+          "Oomycete pathogen Phytophthora infestans",
+          "Cool temperatures (15-25°C)",
+          "Very high humidity (90%+)",
+          "Prolonged leaf wetness (12+ hours)",
+          "Spreads rapidly through wind and rain"
+        ],
+        "hi": [
+          "ओमाइसीट रोगजनक फाइटोफ्थोरा इन्फेस्टन्स",
+          "ठंडा तापमान (15-25°C)",
+          "बहुत अधिक आर्द्रता (90%+)",
+          "लंबे समय तक पत्ती गीली रहना (12+ घंटे)",
+          "हवा और बारिश के माध्यम से तेजी से फैलता है"
+        ],
+        "mr": [
+          "ओमायसीट रोगजनक फायटोफ्थोरा इन्फेस्टन्स",
+          "थंड तापमान (15-25°C)",
+          "खूप जास्त आर्द्रता (90%+)",
+          "दीर्घ काळ पान ओले राहणे (12+ तास)",
+          "वारा आणि पावसाद्वारे वेगाने पसरते"
+        ]
+      },
+      "treatment": {
+        "en": [
+          "⚠️ ACT IMMEDIATELY - This is an emergency!",
+          "Remove and burn all infected plants completely",
+          "Spray Metalaxyl + Mancozeb @ 2.5g per liter immediately",
+          "Alternative: Cymoxanil + Mancozeb @ 2g per liter",
+          "Repeat spray every 5-7 days until disease is controlled",
+          "Cover entire plant including underside of leaves",
+          "Spray in morning when dew has dried",
+          "Isolate healthy plants from infected area"
+        ],
+        "hi": [
+          "⚠️ तुरंत कार्रवाई करें - यह आपातकाल है!",
+          "सभी संक्रमित पौधों को पूरी तरह से हटाकर जला दें",
+          "मेटालैक्सिल + मैनकोजेब @ 2.5 ग्राम प्रति लीटर तुरंत छिड़कें",
+          "विकल्प: सिमोक्सानिल + मैनकोजेब @ 2 ग्राम प्रति लीटर",
+          "रोग नियंत्रित होने तक हर 5-7 दिन में छिड़काव दोहराएं",
+          "पत्तियों के निचले हिस्से सहित पूरे पौधे को कवर करें",
+          "सुबह ओस सूखने के बाद छिड़काव करें",
+          "स्वस्थ पौधों को संक्रमित क्षेत्र से अलग करें"
+        ],
+        "mr": [
+          "⚠️ तात्काळ कृती करा - ही आणीबाणी आहे!",
+          "सर्व संक्रमित रोपे पूर्णपणे काढून जाळून टाका",
+          "मेटलॅक्झिल + मॅनकोझेब @ 2.5 ग्रॅम प्रति लिटर तात्काळ फवारणी करा",
+          "पर्याय: सायमोक्झॅनिल + मॅनकोझेब @ 2 ग्रॅम प्रति लिटर",
+          "रोग नियंत्रित होईपर्यंत दर 5-7 दिवसांनी फवारणी पुन्हा करा",
+          "पानांच्या खालच्या बाजूसह संपूर्ण रोप झाका",
+          "सकाळी दव सुकल्यावर फवारणी करा",
+          "निरोगी रोपे संक्रमित भागातून वेगळे करा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use resistant varieties: Pusa Sadabahar, Naveen 2000+",
+          "CRITICAL: Start preventive spray BEFORE disease appears",
+          "Monitor weather - spray before rainy periods",
+          "Maintain wide spacing (3 feet minimum)",
+          "Use raised beds for better drainage",
+          "Avoid overhead irrigation completely",
+          "Apply copper-based fungicide as protective spray",
+          "Destroy volunteer tomato plants and potato crops nearby"
+        ],
+        "hi": [
+          "प्रतिरोधी किस्में उगाएं: पूसा सदाबहार, नवीन 2000+",
+          "महत्वपूर्ण: रोग आने से पहले निवारक छिड़काव शुरू करें",
+          "मौसम की निगरानी करें - बारिश के समय से पहले छिड़काव करें",
+          "व्यापक दूरी बनाए रखें (न्यूनतम 3 फीट)",
+          "बेहतर जल निकासी के लिए उठी हुई क्यारियों का उपयोग करें",
+          "ओवरहेड सिंचाई पूरी तरह से बंद करें",
+          "सुरक्षात्मक छिड़काव के रूप में तांबा आधारित कवकनाशी लगाएं",
+          "आस-पास के स्वयंसेवी टमाटर के पौधों और आलू की फसलों को नष्ट करें"
+        ],
+        "mr": [
+          "प्रतिरोधक जाती वापरा: पूसा सदाबहार, नवीन 2000+",
+          "महत्त्वाचे: रोग येण्यापूर्वी प्रतिबंधक फवारणी सुरू करा",
+          "हवामानाचे निरीक्षण करा - पावसाच्या काळापूर्वी फवारणी करा",
+          "रुंद अंतर राखा (किमान 3 फूट)",
+          "चांगल्या निचरासाठी उंच बेड वापरा",
+          "ओव्हरहेड सिंचन पूर्णपणे टाळा",
+          "संरक्षणात्मक फवारणी म्हणून तांबे आधारित बुरशीनाशक लावा",
+          "जवळपासच्या स्वयंसेवी टोमॅटो रोपे आणि बटाटा पिके नष्ट करा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Copper hydroxide spray @ 3g per liter (repeat every 7 days)",
+          "Bordeaux mixture (1% solution): Mix 10g copper sulfate + 10g lime in 1L water",
+          "Milk spray: Mix 1 part milk + 9 parts water, spray weekly",
+          "Baking soda: 2 tablespoons + 1 liter water + few drops oil",
+          "NOTE: Organic methods work ONLY as prevention, not treatment"
+        ],
+        "hi": [
+          "कॉपर हाइड्रॉक्साइड स्प्रे @ 3 ग्राम प्रति लीटर (हर 7 दिन दोहराएं)",
+          "बोर्डो मिश्रण (1% घोल): 1 लीटर पानी में 10 ग्राम कॉपर सल्फेट + 10 ग्राम चूना मिलाएं",
+          "दूध का छिड़काव: 1 भाग दूध + 9 भाग पानी मिलाएं, साप्ताहिक छिड़काव करें",
+          "बेकिंग सोडा: 2 चम्मच + 1 लीटर पानी + कुछ बूंद तेल",
+          "नोट: जैविक तरीके केवल रोकथाम के लिए काम करते हैं, उपचार के लिए नहीं"
+        ],
+        "mr": [
+          "कॉपर हायड्रॉक्साईड फवारणी @ 3 ग्रॅम प्रति लिटर (दर 7 दिवसांनी पुन्हा)",
+          "बोर्डो मिश्रण (1% द्रावण): 1 लिटर पाण्यात 10 ग्रॅम कॉपर सल्फेट + 10 ग्रॅम चुना मिसळा",
+          "दूध फवारणी: 1 भाग दूध + 9 भाग पाणी मिसळा, साप्ताहिक फवारणी करा",
+          "बेकिंग सोडा: 2 चमचे + 1 लिटर पाणी + काही थेंब तेल",
+          "टीप: सेंद्रिय पद्धती केवळ प्रतिबंधासाठी काम करतात, उपचारासाठी नाही"
+        ]
+      },
+      "doAndDont": {
+        "do": {
+          "en": [
+            "✓ Act within 24 hours of spotting symptoms",
+            "✓ Inspect fields daily during monsoon",
+            "✓ Remove infected material in sealed plastic bags",
+            "✓ Start protective sprays 2 weeks before expected outbreak",
+            "✓ Keep alternate hosts (potato, petunia) away"
+          ],
+          "hi": [
+            "✓ लक्षण दिखने के 24 घंटे के भीतर कार्रवाई करें",
+            "✓ मानसून के दौरान खेतों का दैनिक निरीक्षण करें",
+            "✓ सीलबंद प्लास्टिक बैग में संक्रमित सामग्री हटाएं",
+            "✓ अपेक्षित प्रकोप से 2 सप्ताह पहले सुरक्षात्मक छिड़काव शुरू करें",
+            "✓ वैकल्पिक मेजबानों (आलू, पेटुनिया) को दूर रखें"
+          ],
+          "mr": [
+            "✓ लक्षणे दिसल्यानंतर 24 तासांच्या आत कृती करा",
+            "✓ पावसाळ्यात शेतांची दररोज तपासणी करा",
+            "✓ सीलबंद प्लास्टिक पिशव्यांमध्ये संक्रमित सामग्री काढा",
+            "✓ अपेक्षित उद्रेकाच्या 2 आठवडे आधी संरक्षणात्मक फवारणी सुरू करा",
+            "✓ पर्यायी यजमान (बटाटा, पेटुनिया) दूर ठेवा"
+          ]
+        },
+        "dont": {
+          "en": [
+            "✗ DON'T delay treatment - disease spreads in hours",
+            "✗ DON'T leave infected plants in field",
+            "✗ DON'T plant tomatoes after potatoes or vice versa",
+            "✗ DON'T water late in the day",
+            "✗ DON'T use saved seeds from infected plants"
+          ],
+          "hi": [
+            "✗ उपचार में देरी न करें - रोग घंटों में फैलता है",
+            "✗ संक्रमित पौधों को खेत में न छोड़ें",
+            "✗ आलू के बाद टमाटर या इसके विपरीत न लगाएं",
+            "✗ दिन के अंत में पानी न दें",
+            "✗ संक्रमित पौधों से सहेजे गए बीज का उपयोग न करें"
+          ],
+          "mr": [
+            "✗ उपचारात विलंब करू नका - रोग तासांत पसरतो",
+            "✗ संक्रमित रोपे शेतात सोडू नका",
+            "✗ बटाट्यानंतर टोमॅटो किंवा उलट लावू नका",
+            "✗ दिवसाच्या शेवटी पाणी देऊ नका",
+            "✗ संक्रमित रोपांपासून जतन केलेले बियाणे वापरू नका"
+          ]
+        }
+      },
+      "emergencyContact": {
+        "en": "For severe outbreaks, immediately contact your local Krishi Vigyan Kendra (KVK) or Agricultural Extension Officer",
+        "hi": "गंभीर प्रकोप के लिए, तुरंत अपने स्थानीय कृषि विज्ञान केंद्र (केवीके) या कृषि विस्तार अधिकारी से संपर्क करें",
+        "mr": "गंभीर उद्रेकासाठी, तात्काळ तुमच्या स्थानिक कृषि विज्ञान केंद्र (KVK) किंवा कृषी विस्तार अधिकाऱ्याशी संपर्क साधा"
+      }
+    },
+    "healthy": {
+      "name": {
+        "en": "Healthy Plant",
+        "hi": "स्वस्थ पौधा",
+        "mr": "निरोगी रोप"
+      },
+      "description": {
+        "en": "Your tomato plant is healthy! Continue with regular care.",
+        "hi": "आपका टमाटर का पौधा स्वस्थ है! नियमित देखभाल जारी रखें।",
+        "mr": "तुमचा टोमॅटोचा रोप निरोगी आहे! नियमित काळजी चालू ठेवा।"
+      },
+      "severity": "None",
+      "affectedParts": [],
+      "treatment": {
+        "en": [
+          "No treatment needed",
+          "Continue regular watering",
+          "Maintain good soil fertility",
+          "Monitor plants weekly for any changes"
+        ],
+        "hi": [
+          "कोई उपचार की आवश्यकता नहीं",
+          "नियमित पानी देना जारी रखें",
+          "मिट्टी की उर्वरता बनाए रखें",
+          "साप्ताहिक रूप से पौधों की निगरानी करें"
+        ],
+        "mr": [
+          "उपचाराची गरज नाही",
+          "नियमित पाणी देणे चालू ठेवा",
+          "मातीची सुपीकता राखा",
+          "साप्ताहिक पाहणी करा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use disease-free seeds",
+          "Practice crop rotation every season",
+          "Ensure proper spacing between plants (45-60 cm)",
+          "Remove weeds regularly",
+          "Apply organic compost monthly"
+        ],
+        "hi": [
+          "रोगमुक्त बीज का उपयोग करें",
+          "हर मौसम में फसल चक्र अपनाएं",
+          "पौधों के बीच उचित दूरी रखें (45-60 सेमी)",
+          "नियमित रूप से खरपतवार हटाएं",
+          "मासिक जैविक खाद डालें"
+        ],
+        "mr": [
+          "रोगमुक्त बियाणे वापरा",
+          "प्रत्येक हंगामात पीक आवर्तन करा",
+          "रोपांमध्ये योग्य अंतर ठेवा (45-60 सेमी)",
+          "नियमितपणे तण काढा",
+          "मासिक सेंद्रिय खत घाला"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Apply neem oil spray monthly as preventive measure",
+          "Use vermicompost for natural nutrients",
+          "Mulch with dry leaves to retain moisture"
+        ],
+        "hi": [
+          "रोकथाम के लिए मासिक नीम तेल का छिड़काव करें",
+          "प्राकृतिक पोषक तत्वों के लिए वर्मीकम्पोस्ट का उपयोग करें",
+          "नमी बनाए रखने के लिए सूखे पत्तों से मल्चिंग करें"
+        ],
+        "mr": [
+          "प्रतिबंधासाठी मासिक कडुलिंबाच्या तेलाची फवारणी करा",
+          "नैसर्गिक पोषक घटकांसाठी गांडूळ खत वापरा",
+          "आर्द्रता टिकवण्यासाठी कोरड्या पानांचा पालापाचोळा घाला"
+        ]
+      }
+    }
+  },
+  "Potato": {
+    "Early_Blight": {
+      "name": {
+        "en": "Early Blight (Alternaria)",
+        "hi": "अर्ली ब्लाइट (अल्टरनेरिया)",
+        "mr": "अर्ली ब्लाइट (अल्टरनेरिया)"
+      },
+      "description": {
+        "en": "Early Blight causes dark brown concentric spots on older leaves. Common in potato crops, especially during warm humid weather.",
+        "hi": "अर्ली ब्लाइट पुरानी पत्तियों पर गहरे भूरे गोलाकार धब्बे पैदा करता है। गर्म आर्द्र मौसम में आलू की फसलों में आम है।",
+        "mr": "अर्ली ब्लाइट जुन्या पानांवर गडद तपकिरी गोलाकार ठिपके बनवते। उबदार ओलसर हवामानात बटाट्याच्या पिकांमध्ये सामान्य आहे।"
+      },
+      "severity": "Moderate",
+      "affectedParts": [
+        "Leaves (starting from bottom)",
+        "Stems",
+        "Tubers (rarely)"
+      ],
+      "treatment": {
+        "en": [
+          "Spray Mancozeb 75% WP @ 2.5g per liter water",
+          "Alternate with Chlorothalonil @ 2ml per liter",
+          "Apply at 10-day intervals, 3-4 applications",
+          "Ensure good coverage on lower leaves",
+          "Remove severely affected lower leaves"
+        ],
+        "hi": [
+          "मैनकोजेब 75% WP @ 2.5 ग्राम प्रति लीटर पानी छिड़कें",
+          "क्लोरोथैलोनिल @ 2 मिली प्रति लीटर के साथ बदलें",
+          "10 दिन के अंतराल पर लगाएं, 3-4 बार",
+          "निचली पत्तियों पर अच्छी कवरेज सुनिश्चित करें",
+          "गंभीर रूप से प्रभावित निचली पत्तियों को हटाएं"
+        ],
+        "mr": [
+          "मॅनकोझेब 75% WP @ 2.5 ग्रॅम प्रति लिटर पाणी फवारणी करा",
+          "क्लोरोथॅलोनिल @ 2 मिली प्रति लिटर सह बदला",
+          "10 दिवसांच्या अंतराने लावा, 3-4 वेळा",
+          "खालच्या पानांवर चांगले व्याप्ती सुनिश्चित करा",
+          "गंभीरपणे प्रभावित खालची पाने काढा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use resistant varieties like Kufri Jyoti, Kufri Chandramukhi",
+          "Practice 3-year crop rotation",
+          "Remove crop debris after harvest",
+          "Avoid over-fertilization with nitrogen",
+          "Hill up properly to prevent tuber exposure"
+        ],
+        "hi": [
+          "कुफरी ज्योति, कुफरी चंद्रमुखी जैसी प्रतिरोधी किस्मों का उपयोग करें",
+          "3 साल का फसल चक्र अपनाएं",
+          "कटाई के बाद फसल के अवशेष हटाएं",
+          "नाइट्रोजन के साथ अधिक उर्वरकन से बचें",
+          "कंद के संपर्क को रोकने के लिए ठीक से मिट्टी चढ़ाएं"
+        ],
+        "mr": [
+          "कुफरी ज्योती, कुफरी चंद्रमुखी सारख्या प्रतिरोधक जाती वापरा",
+          "3 वर्षांचे पीक आवर्तन करा",
+          "कापणीनंतर पिकाचे अवशेष काढा",
+          "नायट्रोजनसह जास्त खतीकरण टाळा",
+          "कंद उघडकीस येऊ नये म्हणून योग्यरित्या माती चढवा"
+        ]
+      }
+    },
+    "Late_Blight": {
+      "name": {
+        "en": "Late Blight (Phytophthora)",
+        "hi": "लेट ब्लाइट (फाइटोफ्थोरा)",
+        "mr": "लेट ब्लाइट (फायटोफ्थोरा)"
+      },
+      "description": {
+        "en": "CRITICAL ALERT: Late Blight is the most destructive potato disease. Water-soaked lesions rapidly turn black. Can destroy entire fields within 10 days.",
+        "hi": "गंभीर चेतावनी: लेट ब्लाइट आलू की सबसे विनाशकारी बीमारी है। पानी से भीगे घाव तेजी से काले हो जाते हैं। 10 दिनों में पूरे खेत को नष्ट कर सकता है।",
+        "mr": "गंभीर सूचना: लेट ब्लाइट हा बटाट्याचा सर्वात विनाशकारी रोग आहे। पाण्याने भिजलेले जखम वेगाने काळे होतात। 10 दिवसांत संपूर्ण शेत नष्ट करू शकतो।"
+      },
+      "severity": "CRITICAL - Emergency Action Required",
+      "affectedParts": [
+        "Leaves",
+        "Stems",
+        "Tubers",
+        "Entire plant"
+      ],
+      "treatment": {
+        "en": [
+          "⚠️ EMERGENCY PROTOCOL:",
+          "1. Spray Metalaxyl-M + Mancozeb @ 2.5g/L IMMEDIATELY",
+          "2. Destroy all severely infected plants by burning",
+          "3. Repeat sprays every 5-7 days",
+          "4. Apply Cymoxanil + Mancozeb alternately",
+          "5. Ensure thorough coverage including stems",
+          "6. DO NOT HARVEST for 2 weeks after last spray",
+          "7. Cure tubers properly before storage"
+        ],
+        "hi": [
+          "⚠️ आपातकालीन प्रोटोकॉल:",
+          "1. मेटालैक्सिल-एम + मैनकोजेब @ 2.5 ग्राम/लीटर तुरंत छिड़कें",
+          "2. सभी गंभीर रूप से संक्रमित पौधों को जलाकर नष्ट करें",
+          "3. हर 5-7 दिन में छिड़काव दोहराएं",
+          "4. सिमोक्सानिल + मैनकोजेब वैकल्पिक रूप से लगाएं",
+          "5. तनों सहित अच्छी कवरेज सुनिश्चित करें",
+          "6. अंतिम छिड़काव के 2 सप्ताह तक कटाई न करें",
+          "7. भंडारण से पहले कंदों को ठीक से ठीक करें"
+        ],
+        "mr": [
+          "⚠️ आणीबाणी प्रोटोकॉल:",
+          "1. मेटलॅक्झिल-एम + मॅनकोझेब @ 2.5 ग्रॅम/लिटर तात्काळ फवारणी करा",
+          "2. सर्व गंभीरपणे संक्रमित रोपे जाळून नष्ट करा",
+          "3. दर 5-7 दिवसांनी फवारणी पुन्हा करा",
+          "4. सायमोक्झॅनिल + मॅनकोझेब पर्यायाने लावा",
+          "5. खोडांसह संपूर्ण व्याप्ती सुनिश्चित करा",
+          "6. शेवटच्या फवारणीनंतर 2 आठवडे कापणी करू नका",
+          "7. साठवणुकीपूर्वी कंद योग्यरित्या बरे करा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Plant disease-free certified seeds ONLY",
+          "Use resistant varieties: Kufri Giriraj, Kufri Jawahar",
+          "START PREVENTIVE SPRAYS from 45 days after planting",
+          "Monitor weather - spray before rain if forecast shows 90%+ humidity",
+          "Destroy cull piles and volunteer plants",
+          "Maintain 30cm hilling height",
+          "Harvest only in dry weather",
+          "Contact local agricultural officer immediately on first signs"
+        ],
+        "hi": [
+          "केवल रोगमुक्त प्रमाणित बीज ही लगाएं",
+          "प्रतिरोधी किस्में उगाएं: कुफरी गिरिराज, कुफरी जवाहर",
+          "रोपण के 45 दिन बाद से निवारक छिड़काव शुरू करें",
+          "मौसम की निगरानी करें - यदि पूर्वानुमान 90%+ आर्द्रता दिखाए तो बारिश से पहले छिड़काव करें",
+          "खराब ढेर और स्वयंसेवी पौधों को नष्ट करें",
+          "30 सेमी ऊंचाई की मिट्टी चढ़ाना बनाए रखें",
+          "केवल सूखे मौसम में कटाई करें",
+          "पहले संकेत पर तुरंत स्थानीय कृषि अधिकारी से संपर्क करें"
+        ],
+        "mr": [
+          "फक्त रोगमुक्त प्रमाणित बियाणे लावा",
+          "प्रतिरोधक जाती वापरा: कुफरी गिरिराज, कुफरी जवाहर",
+          "लागवडीनंतर 45 दिवसांपासून प्रतिबंधक फवारणी सुरू करा",
+          "हवामानाचे निरीक्षण करा - अंदाज 90%+ आर्द्रता दर्शवित असल्यास पावसापूर्वी फवारणी करा",
+          "खराब ढीग आणि स्वयंसेवी रोपे नष्ट करा",
+          "30 सेमी उंची माती चढवणे राखा",
+          "फक्त कोरड्या हवामानात कापणी करा",
+          "पहिल्या लक्षणांवर तात्काळ स्थानिक कृषी अधिकाऱ्याशी संपर्क साधा"
+        ]
+      }
+    },
+    "healthy": {
+      "name": {
+        "en": "Healthy Plant",
+        "hi": "स्वस्थ पौधा",
+        "mr": "निरोगी रोप"
+      },
+      "description": {
+        "en": "Your potato plant is healthy! Keep up the good care.",
+        "hi": "आपका आलू का पौधा स्वस्थ है! अच्छी देखभाल जारी रखें।",
+        "mr": "तुमचा बटाट्याचा रोप निरोगी आहे! चांगली काळजी चालू ठेवा।"
+      },
+      "severity": "None",
+      "affectedParts": [],
+      "treatment": {
+        "en": [
+          "No treatment needed",
+          "Continue regular monitoring",
+          "Maintain soil moisture",
+          "Apply earthing up when plants are 6-8 inches tall"
+        ],
+        "hi": [
+          "कोई उपचार की आवश्यकता नहीं",
+          "नियमित निगरानी जारी रखें",
+          "मिट्टी की नमी बनाए रखें",
+          "पौधे 6-8 इंच लंबे होने पर मिट्टी चढ़ाएं"
+        ],
+        "mr": [
+          "उपचाराची गरज नाही",
+          "नियमित देखरेख चालू ठेवा",
+          "मातीची ओलावा राखा",
+          "रोपे 6-8 इंच उंच झाल्यावर माती चढवा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Plant certified disease-free seed tubers",
+          "Maintain 60cm × 20cm spacing",
+          "Apply well-decomposed organic manure (10 tons per acre)",
+          "Ensure good drainage to prevent waterlogging",
+          "Monitor for Colorado potato beetle and aphids"
+        ],
+        "hi": [
+          "प्रमाणित रोगमुक्त बीज कंद लगाएं",
+          "60 सेमी × 20 सेमी की दूरी बनाए रखें",
+          "अच्छी तरह से विघटित जैविक खाद डालें (10 टन प्रति एकड़)",
+          "जलभराव से बचने के लिए अच्छी जल निकासी सुनिश्चित करें",
+          "कोलोराडो आलू बीटल और एफिड्स की निगरानी करें"
+        ],
+        "mr": [
+          "प्रमाणित रोगमुक्त बियाणे कंद लावा",
+          "60 सेमी × 20 सेमी अंतर राखा",
+          "चांगले विघटित सेंद्रिय खत घाला (10 टन प्रति एकर)",
+          "पाणी साचू नये म्हणून चांगला निचरा सुनिश्चित करा",
+          "कोलोरॅडो बटाटा बीटल आणि अॅफिड्सचे निरीक्षण करा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Apply vermicompost @ 2 tons per acre",
+          "Use Azotobacter and PSB biofertilizers",
+          "Mulch with paddy straw to conserve moisture"
+        ],
+        "hi": [
+          "वर्मीकम्पोस्ट @ 2 टन प्रति एकड़ लगाएं",
+          "एजोटोबैक्टर और पीएसबी जैव-उर्वरक का उपयोग करें",
+          "नमी संरक्षण के लिए धान की पुआल से मल्चिंग करें"
+        ],
+        "mr": [
+          "गांडूळ खत @ 2 टन प्रति एकर घाला",
+          "ऍझोटोबॅक्टर आणि PSB जैव खते वापरा",
+          "ओलावा टिकवण्यासाठी तांदूळ पेंढ्याचा पालापाचोळा घाला"
+        ]
+      }
+    }
+  },
+  "Apple": {
+    "healthy": {
+      "name": {
+        "en": "Healthy Plant",
+        "hi": "स्वस्थ पौधा",
+        "mr": "निरोगी रोप"
+      },
+      "description": {
+        "en": "Your apple plant is healthy! Continue with regular care.",
+        "hi": "आपका सेब स्वस्थ है! नियमित देखभाल जारी रखें।",
+        "mr": "तुमचे सफरचंद निरोगी आहे! नियमित काळजी चालू ठेवा।"
+      },
+      "severity": "None",
+      "affectedParts": [],
+      "treatment": {
+        "en": [
+          "No treatment needed",
+          "Continue regular care",
+          "Monitor weekly"
+        ],
+        "hi": [
+          "कोई उपचार की आवश्यकता नहीं",
+          "नियमित देखभाल जारी रखें",
+          "साप्ताहिक निगरानी करें"
+        ],
+        "mr": [
+          "उपचाराची गरज नाही",
+          "नियमित काळजी चालू ठेवा",
+          "साप्ताहिक पाहणी करा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use disease-free seeds/plants",
+          "Maintain proper spacing",
+          "Remove weeds regularly"
+        ],
+        "hi": [
+          "रोगमुक्त बीज/पौधे का उपयोग करें",
+          "उचित दूरी बनाए रखें",
+          "नियमित रूप से खरपतवार हटाएं"
+        ],
+        "mr": [
+          "रोगमुक्त बियाणे/रोपे वापरा",
+          "योग्य अंतर राखा",
+          "नियमितपणे तण काढा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Apply neem oil spray monthly",
+          "Use compost"
+        ],
+        "hi": [
+          "मासिक नीम तेल छिड़काव",
+          "खाद का उपयोग करें"
+        ],
+        "mr": [
+          "मासिक कडुलिंबाचे तेल फवारणी",
+          "कंपोस्ट वापरा"
+        ]
+      }
+    },
+    "Apple_scab": {
+      "name": {
+        "en": "Apple Scab",
+        "hi": "सेब स्कैब",
+        "mr": "सफरचंद स्कॅब"
+      },
+      "description": {
+        "en": "Fungal disease with dark spots on leaves and fruits",
+        "hi": "पत्तियों और फलों पर काले धब्बे वाला कवक रोग",
+        "mr": "पानांवर आणि फळांवर गडद ठिपके असलेला बुरशीजन्य रोग"
+      },
+      "severity": "High",
+      "affectedParts": [
+        "Leaves",
+        "Fruits"
+      ],
+      "treatment": {
+        "en": [
+          "Remove infected leaves",
+          "Spray Mancozeb @ 2.5g/L",
+          "Repeat every 10-14 days"
+        ],
+        "hi": [
+          "संक्रमित पत्ते हटाएं",
+          "मैनकोजेब @ 2.5g/L छिड़कें",
+          "10-14 दिन में दोहराएं"
+        ],
+        "mr": [
+          "संक्रमित पाने काढा",
+          "मॅनकोझेब @ 2.5g/L फवारणी",
+          "10-14 दिवसांनी पुन्हा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use resistant varieties",
+          "Remove fallen leaves",
+          "Prune for air circulation"
+        ],
+        "hi": [
+          "प्रतिरोधी किस्में उगाएं",
+          "गिरे पत्ते हटाएं",
+          "वायु संचार के लिए छंटाई करें"
+        ],
+        "mr": [
+          "प्रतिरोधक जाती वापरा",
+          "पडलेली पाने काढा",
+          "हवा परिसंचरणासाठी छाटणी"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Sulfur dust @ 3g/L weekly",
+          "Neem oil @ 5ml/L"
+        ],
+        "hi": [
+          "सल्फर डस्ट @ 3g/L साप्ताहिक",
+          "नीम तेल @ 5ml/L"
+        ],
+        "mr": [
+          "सल्फर डस्ट @ 3g/L साप्ताहिक",
+          "कडुलिंबाचे तेल @ 5ml/L"
+        ]
+      }
+    },
+    "Black_rot": {
+      "name": {
+        "en": "Black Rot",
+        "hi": "ब्लैक रॉट",
+        "mr": "ब्लॅक रॉट"
+      },
+      "description": {
+        "en": "Fungal disease causing fruit rot and leaf spots",
+        "hi": "फल सड़न और पत्ती धब्बे पैदा करने वाला कवक रोग",
+        "mr": "फळे कुजणे आणि पानांवर ठिपके बनवणारा बुरशीजन्य रोग"
+      },
+      "severity": "Moderate to High",
+      "affectedParts": [
+        "Fruits",
+        "Leaves",
+        "Branches"
+      ],
+      "treatment": {
+        "en": [
+          "Remove mummified fruits",
+          "Spray Copper fungicide @ 2.5g/L",
+          "Prune infected branches"
+        ],
+        "hi": [
+          "सूखे फल हटाएं",
+          "कॉपर फंगीसाइड @ 2.5g/L छिड़कें",
+          "संक्रमित शाखाएं काटें"
+        ],
+        "mr": [
+          "वाळलेली फळे काढा",
+          "कॉपर बुरशीनाशक @ 2.5g/L",
+          "संक्रमित फांद्या छाटा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Remove mummies before spring",
+          "Prune dead wood",
+          "Maintain tree vigor"
+        ],
+        "hi": [
+          "वसंत से पहले सूखे फल हटाएं",
+          "मृत लकड़ी काटें",
+          "पेड़ की ताकत बनाए रखें"
+        ],
+        "mr": [
+          "वसंत ऋतूपूर्वी वाळलेली फळे काढा",
+          "मृत लाकूड छाटा",
+          "झाडाची शक्ती राखा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Bordeaux mixture 1%",
+          "Copper hydroxide @ 3g/L"
+        ],
+        "hi": [
+          "बोर्डो मिश्रण 1%",
+          "कॉपर हाइड्रॉक्साइड @ 3g/L"
+        ],
+        "mr": [
+          "बोर्डो मिश्रण 1%",
+          "कॉपर हायड्रॉक्साईड @ 3g/L"
+        ]
+      }
+    },
+    "Cedar_apple_rust": {
+      "name": {
+        "en": "Cedar Apple Rust",
+        "hi": "सीडर सेब रस्ट",
+        "mr": "सीडर सफरचंद रस्ट"
+      },
+      "description": {
+        "en": "Fungal disease with orange spots on leaves",
+        "hi": "पत्तियों पर नारंगी धब्बे वाला कवक रोग",
+        "mr": "पानांवर केशरी ठिपके असलेला बुरशीजन्य रोग"
+      },
+      "severity": "Moderate",
+      "affectedParts": [
+        "Leaves",
+        "Fruits (rare)"
+      ],
+      "treatment": {
+        "en": [
+          "Remove nearby cedar trees if possible",
+          "Spray fungicide @ 2g/L",
+          "Apply in spring"
+        ],
+        "hi": [
+          "संभव हो तो पास के देवदार के पेड़ हटाएं",
+          "फंगीसाइड @ 2g/L छिड़कें",
+          "वसंत में लगाएं"
+        ],
+        "mr": [
+          "शक्य असल्यास जवळची देवदार झाडे काढा",
+          "बुरशीनाशक @ 2g/L",
+          "वसंत ऋतूत लावा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Plant resistant varieties",
+          "Remove alternate hosts (cedar)",
+          "Fungicide sprays in spring"
+        ],
+        "hi": [
+          "प्रतिरोधी किस्में लगाएं",
+          "वैकल्पिक मेजबान (देवदार) हटाएं",
+          "वसंत में फंगीसाइड छिड़काव"
+        ],
+        "mr": [
+          "प्रतिरोधक जाती लावा",
+          "पर्यायी यजमान (देवदार) काढा",
+          "वसंत ऋतूत बुरशीनाशक फवारणी"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Sulfur spray @ 3g/L",
+          "Neem oil @ 5ml/L"
+        ],
+        "hi": [
+          "सल्फर स्प्रे @ 3g/L",
+          "नीम तेल @ 5ml/L"
+        ],
+        "mr": [
+          "सल्फर फवारणी @ 3g/L",
+          "कडुलिंबाचे तेल @ 5ml/L"
+        ]
+      }
+    }
+  },
+  "Cherry_(including_sour)": {
+    "healthy": {
+      "name": {
+        "en": "Healthy Plant",
+        "hi": "स्वस्थ पौधा",
+        "mr": "निरोगी रोप"
+      },
+      "description": {
+        "en": "Your cherry plant is healthy! Continue with regular care.",
+        "hi": "आपका चेरी स्वस्थ है! नियमित देखभाल जारी रखें।",
+        "mr": "तुमचे चेरी निरोगी आहे! नियमित काळजी चालू ठेवा।"
+      },
+      "severity": "None",
+      "affectedParts": [],
+      "treatment": {
+        "en": [
+          "No treatment needed",
+          "Continue regular care",
+          "Monitor weekly"
+        ],
+        "hi": [
+          "कोई उपचार की आवश्यकता नहीं",
+          "नियमित देखभाल जारी रखें",
+          "साप्ताहिक निगरानी करें"
+        ],
+        "mr": [
+          "उपचाराची गरज नाही",
+          "नियमित काळजी चालू ठेवा",
+          "साप्ताहिक पाहणी करा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use disease-free seeds/plants",
+          "Maintain proper spacing",
+          "Remove weeds regularly"
+        ],
+        "hi": [
+          "रोगमुक्त बीज/पौधे का उपयोग करें",
+          "उचित दूरी बनाए रखें",
+          "नियमित रूप से खरपतवार हटाएं"
+        ],
+        "mr": [
+          "रोगमुक्त बियाणे/रोपे वापरा",
+          "योग्य अंतर राखा",
+          "नियमितपणे तण काढा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Apply neem oil spray monthly",
+          "Use compost"
+        ],
+        "hi": [
+          "मासिक नीम तेल छिड़काव",
+          "खाद का उपयोग करें"
+        ],
+        "mr": [
+          "मासिक कडुलिंबाचे तेल फवारणी",
+          "कंपोस्ट वापरा"
+        ]
+      }
+    },
+    "Powdery_mildew": {
+      "name": {
+        "en": "Powdery Mildew",
+        "hi": "पाउडरी मिल्ड्यू",
+        "mr": "पावडरी मिल्ड्यू"
+      },
+      "description": {
+        "en": "White powdery fungal growth on leaves and shoots",
+        "hi": "पत्तियों और टहनियों पर सफेद पाउडर जैसी कवक वृद्धि",
+        "mr": "पानांवर आणि कोंबांवर पांढरी पावडरसारखी बुरशी"
+      },
+      "severity": "Moderate",
+      "affectedParts": [
+        "Leaves",
+        "Shoots",
+        "Fruits"
+      ],
+      "treatment": {
+        "en": [
+          "Spray Sulfur @ 3g/L",
+          "Apply every 7-10 days",
+          "Remove heavily infected parts"
+        ],
+        "hi": [
+          "सल्फर @ 3g/L छिड़कें",
+          "7-10 दिन में लगाएं",
+          "भारी संक्रमित भाग हटाएं"
+        ],
+        "mr": [
+          "सल्फर @ 3g/L फवारणी",
+          "7-10 दिवसांनी लावा",
+          "जास्त संक्रमित भाग काढा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Plant in full sun",
+          "Ensure good air flow",
+          "Avoid overhead watering",
+          "Prune regularly"
+        ],
+        "hi": [
+          "पूर्ण धूप में लगाएं",
+          "अच्छी हवा का प्रवाह सुनिश्चित करें",
+          "ऊपर से पानी देने से बचें",
+          "नियमित छंटाई करें"
+        ],
+        "mr": [
+          "पूर्ण सूर्यप्रकाशात लावा",
+          "चांगला हवा प्रवाह सुनिश्चित करा",
+          "वरून पाणी देणे टाळा",
+          "नियमित छाटणी करा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Sulfur dust @ 3g/L weekly",
+          "Baking soda: 2 tbsp + 1L water",
+          "Neem oil @ 5ml/L"
+        ],
+        "hi": [
+          "सल्फर डस्ट @ 3g/L साप्ताहिक",
+          "बेकिंग सोडा: 2 चम्मच + 1L पानी",
+          "नीम तेल @ 5ml/L"
+        ],
+        "mr": [
+          "सल्फर डस्ट @ 3g/L साप्ताहिक",
+          "बेकिंग सोडा: 2 चमचे + 1L पाणी",
+          "कडुलिंबाचे तेल @ 5ml/L"
+        ]
+      }
+    }
+  },
+  "Corn_(maize)": {
+    "healthy": {
+      "name": {
+        "en": "Healthy Plant",
+        "hi": "स्वस्थ पौधा",
+        "mr": "निरोगी रोप"
+      },
+      "description": {
+        "en": "Your corn plant is healthy! Continue with regular care.",
+        "hi": "आपका मक्का स्वस्थ है! नियमित देखभाल जारी रखें।",
+        "mr": "तुमचे मका निरोगी आहे! नियमित काळजी चालू ठेवा।"
+      },
+      "severity": "None",
+      "affectedParts": [],
+      "treatment": {
+        "en": [
+          "No treatment needed",
+          "Continue regular care",
+          "Monitor weekly"
+        ],
+        "hi": [
+          "कोई उपचार की आवश्यकता नहीं",
+          "नियमित देखभाल जारी रखें",
+          "साप्ताहिक निगरानी करें"
+        ],
+        "mr": [
+          "उपचाराची गरज नाही",
+          "नियमित काळजी चालू ठेवा",
+          "साप्ताहिक पाहणी करा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use disease-free seeds/plants",
+          "Maintain proper spacing",
+          "Remove weeds regularly"
+        ],
+        "hi": [
+          "रोगमुक्त बीज/पौधे का उपयोग करें",
+          "उचित दूरी बनाए रखें",
+          "नियमित रूप से खरपतवार हटाएं"
+        ],
+        "mr": [
+          "रोगमुक्त बियाणे/रोपे वापरा",
+          "योग्य अंतर राखा",
+          "नियमितपणे तण काढा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Apply neem oil spray monthly",
+          "Use compost"
+        ],
+        "hi": [
+          "मासिक नीम तेल छिड़काव",
+          "खाद का उपयोग करें"
+        ],
+        "mr": [
+          "मासिक कडुलिंबाचे तेल फवारणी",
+          "कंपोस्ट वापरा"
+        ]
+      }
+    },
+    "Common_rust_": {
+      "name": {
+        "en": "Common Rust",
+        "hi": "कॉमन रस्ट",
+        "mr": "कॉमन रस्ट"
+      },
+      "description": {
+        "en": "Fungal disease with brown pustules on leaves",
+        "hi": "पत्तियों पर भूरे फुंसी वाला कवक रोग",
+        "mr": "पानांवर तपकिरी पुस्ट्युल्स असलेला बुरशीजन्य रोग"
+      },
+      "severity": "Moderate",
+      "affectedParts": [
+        "Leaves"
+      ],
+      "treatment": {
+        "en": [
+          "Spray Mancozeb @ 2.5g/L",
+          "Apply at first sign",
+          "Repeat every 7-10 days"
+        ],
+        "hi": [
+          "मैनकोजेब @ 2.5g/L छिड़कें",
+          "पहले लक्षण पर लगाएं",
+          "7-10 दिन में दोहराएं"
+        ],
+        "mr": [
+          "मॅनकोझेब @ 2.5g/L फवारणी",
+          "पहिल्या लक्षणावर लावा",
+          "7-10 दिवसांनी पुन्हा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Plant resistant hybrids",
+          "Maintain balanced fertilization",
+          "Avoid late planting"
+        ],
+        "hi": [
+          "प्रतिरोधी संकर लगाएं",
+          "संतुलित उर्वरक बनाए रखें",
+          "देर से रोपण से बचें"
+        ],
+        "mr": [
+          "प्रतिरोधक संकर लावा",
+          "संतुलित खत राखा",
+          "उशीरा लागवड टाळा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Sulfur spray @ 3g/L",
+          "Neem oil @ 5ml/L"
+        ],
+        "hi": [
+          "सल्फर स्प्रे @ 3g/L",
+          "नीम तेल @ 5ml/L"
+        ],
+        "mr": [
+          "सल्फर फवारणी @ 3g/L",
+          "कडुलिंबाचे तेल @ 5ml/L"
+        ]
+      }
+    },
+    "Northern_Leaf_Blight": {
+      "name": {
+        "en": "Northern Leaf Blight",
+        "hi": "नॉर्दर्न लीफ ब्लाइट",
+        "mr": "नॉर्दर्न लीफ ब्लाइट"
+      },
+      "description": {
+        "en": "Gray-green lesions on lower leaves spreading upward",
+        "hi": "निचली पत्तियों पर भूरे-हरे घाव ऊपर की ओर फैलते हैं",
+        "mr": "खालच्या पानांवर राखाडी-हिरवे जखम वर पसरतात"
+      },
+      "severity": "High",
+      "affectedParts": [
+        "Leaves"
+      ],
+      "treatment": {
+        "en": [
+          "Spray Mancozeb @ 2.5g/L",
+          "Apply fungicide early",
+          "Remove infected debris"
+        ],
+        "hi": [
+          "मैनकोजेब @ 2.5g/L छिड़कें",
+          "फंगीसाइड जल्दी लगाएं",
+          "संक्रमित अवशेष हटाएं"
+        ],
+        "mr": [
+          "मॅनकोझेब @ 2.5g/L फवारणी",
+          "बुरशीनाशक लवकर लावा",
+          "संक्रमित अवशेष काढा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use resistant hybrids",
+          "Crop rotation (2-3 years)",
+          "Plow under debris after harvest"
+        ],
+        "hi": [
+          "प्रतिरोधी संकर उगाएं",
+          "फसल चक्र (2-3 साल)",
+          "कटाई के बाद अवशेष जोतें"
+        ],
+        "mr": [
+          "प्रतिरोधक संकर वापरा",
+          "पीक आवर्तन (2-3 वर्षे)",
+          "कापणीनंतर अवशेष नांगरा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Neem oil @ 5ml/L",
+          "Copper fungicide @ 2.5g/L"
+        ],
+        "hi": [
+          "नीम तेल @ 5ml/L",
+          "कॉपर फंगीसाइड @ 2.5g/L"
+        ],
+        "mr": [
+          "कडुलिंबाचे तेल @ 5ml/L",
+          "कॉपर बुरशीनाशक @ 2.5g/L"
+        ]
+      }
+    },
+    "Cercospora_leaf_spot Gray_leaf_spot": {
+      "name": {
+        "en": "Gray Leaf Spot",
+        "hi": "ग्रे लीफ स्पॉट",
+        "mr": "ग्रे लीफ स्पॉट"
+      },
+      "description": {
+        "en": "Rectangular lesions between leaf veins",
+        "hi": "पत्ती की नसों के बीच आयताकार घाव",
+        "mr": "पानाच्या नसांमध्ये आयताकृती जखम"
+      },
+      "severity": "Moderate to High",
+      "affectedParts": [
+        "Leaves"
+      ],
+      "treatment": {
+        "en": [
+          "Apply Azoxystrobin @ 1ml/L",
+          "Spray at tasseling stage",
+          "Repeat if needed"
+        ],
+        "hi": [
+          "एजोक्सीस्ट्रोबिन @ 1ml/L लगाएं",
+          "टैसलिंग चरण में छिड़कें",
+          "जरूरत पड़ने पर दोहराएं"
+        ],
+        "mr": [
+          "अझोक्सिस्ट्रोबिन @ 1ml/L लावा",
+          "टॅसलिंग अवस्थेत फवारणी",
+          "गरज पडल्यास पुन्हा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Plant resistant hybrids",
+          "Rotate crops",
+          "Tillage to bury residue"
+        ],
+        "hi": [
+          "प्रतिरोधी संकर लगाएं",
+          "फसल चक्र अपनाएं",
+          "अवशेष दबाने के लिए जुताई करें"
+        ],
+        "mr": [
+          "प्रतिरोधक संकर लावा",
+          "पीक आवर्तन करा",
+          "अवशेष दाबण्यासाठी नांगरणी"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Copper fungicide @ 2.5g/L",
+          "Neem oil @ 5ml/L"
+        ],
+        "hi": [
+          "कॉपर फंगीसाइड @ 2.5g/L",
+          "नीम तेल @ 5ml/L"
+        ],
+        "mr": [
+          "कॉपर बुरशीनाशक @ 2.5g/L",
+          "कडुलिंबाचे तेल @ 5ml/L"
+        ]
+      }
+    }
+  },
+  "Grape": {
+    "healthy": {
+      "name": {
+        "en": "Healthy Plant",
+        "hi": "स्वस्थ पौधा",
+        "mr": "निरोगी रोप"
+      },
+      "description": {
+        "en": "Your grape plant is healthy! Continue with regular care.",
+        "hi": "आपका अंगूर स्वस्थ है! नियमित देखभाल जारी रखें।",
+        "mr": "तुमचे द्राक्ष निरोगी आहे! नियमित काळजी चालू ठेवा।"
+      },
+      "severity": "None",
+      "affectedParts": [],
+      "treatment": {
+        "en": [
+          "No treatment needed",
+          "Continue regular care",
+          "Monitor weekly"
+        ],
+        "hi": [
+          "कोई उपचार की आवश्यकता नहीं",
+          "नियमित देखभाल जारी रखें",
+          "साप्ताहिक निगरानी करें"
+        ],
+        "mr": [
+          "उपचाराची गरज नाही",
+          "नियमित काळजी चालू ठेवा",
+          "साप्ताहिक पाहणी करा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use disease-free seeds/plants",
+          "Maintain proper spacing",
+          "Remove weeds regularly"
+        ],
+        "hi": [
+          "रोगमुक्त बीज/पौधे का उपयोग करें",
+          "उचित दूरी बनाए रखें",
+          "नियमित रूप से खरपतवार हटाएं"
+        ],
+        "mr": [
+          "रोगमुक्त बियाणे/रोपे वापरा",
+          "योग्य अंतर राखा",
+          "नियमितपणे तण काढा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Apply neem oil spray monthly",
+          "Use compost"
+        ],
+        "hi": [
+          "मासिक नीम तेल छिड़काव",
+          "खाद का उपयोग करें"
+        ],
+        "mr": [
+          "मासिक कडुलिंबाचे तेल फवारणी",
+          "कंपोस्ट वापरा"
+        ]
+      }
+    },
+    "Black_rot": {
+      "name": {
+        "en": "Black Rot",
+        "hi": "ब्लैक रॉट",
+        "mr": "ब्लॅक रॉट"
+      },
+      "description": {
+        "en": "Fungal disease causing fruit mummification",
+        "hi": "फल सूखने का कारण बनने वाला कवक रोग",
+        "mr": "फळे वाळवणारा बुरशीजन्य रोग"
+      },
+      "severity": "High",
+      "affectedParts": [
+        "Fruits",
+        "Leaves",
+        "Shoots"
+      ],
+      "treatment": {
+        "en": [
+          "Remove mummies",
+          "Spray Mancozeb @ 2.5g/L",
+          "Apply every 10-14 days during wet weather"
+        ],
+        "hi": [
+          "सूखे फल हटाएं",
+          "मैनकोजेब @ 2.5g/L छिड़कें",
+          "गीले मौसम में 10-14 दिन में लगाएं"
+        ],
+        "mr": [
+          "वाळलेली फळे काढा",
+          "मॅनकोझेब @ 2.5g/L",
+          "ओल्या हवामानात 10-14 दिवसांनी"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Prune for air circulation",
+          "Remove mummified berries",
+          "Fungicide sprays from bloom"
+        ],
+        "hi": [
+          "हवा संचार के लिए छंटाई",
+          "सूखे बेरीज हटाएं",
+          "फूल से फंगीसाइड छिड़काव"
+        ],
+        "mr": [
+          "हवा परिसंचरणासाठी छाटणी",
+          "वाळलेली बेरी काढा",
+          "फुलांपासून बुरशीनाशक"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Copper fungicide @ 2.5g/L",
+          "Sulfur @ 3g/L"
+        ],
+        "hi": [
+          "कॉपर फंगीसाइड @ 2.5g/L",
+          "सल्फर @ 3g/L"
+        ],
+        "mr": [
+          "कॉपर बुरशीनाशक @ 2.5g/L",
+          "सल्फर @ 3g/L"
+        ]
+      }
+    },
+    "Esca_(Black_Measles)": {
+      "name": {
+        "en": "Esca (Black Measles)",
+        "hi": "एस्का (ब्लैक मीजल्स)",
+        "mr": "एस्का (ब्लॅक मीझल्स)"
+      },
+      "description": {
+        "en": "Wood disease causing leaf discoloration and berry spots",
+        "hi": "पत्ती मलिनकिरण और बेरी धब्बे पैदा करने वाला लकड़ी रोग",
+        "mr": "पान मलिनीकरण आणि बेरी ठिपके बनवणारा लाकूड रोग"
+      },
+      "severity": "Very High",
+      "affectedParts": [
+        "Wood",
+        "Leaves",
+        "Fruits"
+      ],
+      "treatment": {
+        "en": [
+          "Remove infected wood",
+          "No cure available",
+          "Prune in dry weather",
+          "Disinfect tools"
+        ],
+        "hi": [
+          "संक्रमित लकड़ी हटाएं",
+          "कोई इलाज उपलब्ध नहीं",
+          "सूखे मौसम में छंटाई",
+          "औजार कीटाणुरहित करें"
+        ],
+        "mr": [
+          "संक्रमित लाकूड काढा",
+          "कोणताही उपचार नाही",
+          "कोरड्या हवामानात छाटणी",
+          "साधने निर्जंतुक करा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use clean planting material",
+          "Avoid large pruning cuts",
+          "Maintain vine health"
+        ],
+        "hi": [
+          "स्वच्छ रोपण सामग्री का उपयोग करें",
+          "बड़े छंटाई कट से बचें",
+          "बेल स्वास्थ्य बनाए रखें"
+        ],
+        "mr": [
+          "स्वच्छ लागवड साहित्य वापरा",
+          "मोठे छाटणी कट टाळा",
+          "वेलीचे आरोग्य राखा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Prevention only",
+          "Good cultural practices",
+          "Proper nutrition"
+        ],
+        "hi": [
+          "केवल रोकथाम",
+          "अच्छी खेती प्रथाएं",
+          "उचित पोषण"
+        ],
+        "mr": [
+          "फक्त प्रतिबंध",
+          "चांगल्या शेती पद्धती",
+          "योग्य पोषण"
+        ]
+      },
+      "emergencyContact": {
+        "en": "Contact grape specialist immediately - no cure available",
+        "hi": "तुरंत अंगूर विशेषज्ञ से संपर्क करें - कोई इलाज उपलब्ध नहीं",
+        "mr": "तात्काळ द्राक्ष तज्ञाशी संपर्क साधा - कोणताही उपचार नाही"
+      }
+    },
+    "Leaf_blight_(Isariopsis_Leaf_Spot)": {
+      "name": {
+        "en": "Leaf Blight",
+        "hi": "लीफ ब्लाइट",
+        "mr": "लीफ ब्लाइट"
+      },
+      "description": {
+        "en": "Brown leaf spots leading to defoliation",
+        "hi": "भूरे पत्ती धब्बे जो पत्ती गिरने की ओर ले जाते हैं",
+        "mr": "तपकिरी पान ठिपके जे पाने गळणे कारणीभूत"
+      },
+      "severity": "Moderate",
+      "affectedParts": [
+        "Leaves"
+      ],
+      "treatment": {
+        "en": [
+          "Spray Copper oxychloride @ 2.5g/L",
+          "Apply at 15-day intervals",
+          "Remove infected leaves"
+        ],
+        "hi": [
+          "कॉपर ऑक्सीक्लोराइड @ 2.5g/L छिड़कें",
+          "15 दिन के अंतराल पर लगाएं",
+          "संक्रमित पत्ते हटाएं"
+        ],
+        "mr": [
+          "कॉपर ऑक्सिक्लोराईड @ 2.5g/L",
+          "15 दिवसांच्या अंतराने",
+          "संक्रमित पाने काढा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Improve air circulation",
+          "Avoid overhead irrigation",
+          "Fungicide sprays"
+        ],
+        "hi": [
+          "हवा संचार सुधारें",
+          "ऊपर से सिंचाई से बचें",
+          "फंगीसाइड छिड़काव"
+        ],
+        "mr": [
+          "हवा परिसंचरण सुधारा",
+          "वरून सिंचन टाळा",
+          "बुरशीनाशक फवारणी"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Bordeaux mixture 1%",
+          "Neem oil @ 5ml/L"
+        ],
+        "hi": [
+          "बोर्डो मिश्रण 1%",
+          "नीम तेल @ 5ml/L"
+        ],
+        "mr": [
+          "बोर्डो मिश्रण 1%",
+          "कडुलिंबाचे तेल @ 5ml/L"
+        ]
+      }
+    }
+  },
+  "Peach": {
+    "healthy": {
+      "name": {
+        "en": "Healthy Plant",
+        "hi": "स्वस्थ पौधा",
+        "mr": "निरोगी रोप"
+      },
+      "description": {
+        "en": "Your peach plant is healthy! Continue with regular care.",
+        "hi": "आपका आड़ू स्वस्थ है! नियमित देखभाल जारी रखें।",
+        "mr": "तुमचे पीच निरोगी आहे! नियमित काळजी चालू ठेवा।"
+      },
+      "severity": "None",
+      "affectedParts": [],
+      "treatment": {
+        "en": [
+          "No treatment needed",
+          "Continue regular care",
+          "Monitor weekly"
+        ],
+        "hi": [
+          "कोई उपचार की आवश्यकता नहीं",
+          "नियमित देखभाल जारी रखें",
+          "साप्ताहिक निगरानी करें"
+        ],
+        "mr": [
+          "उपचाराची गरज नाही",
+          "नियमित काळजी चालू ठेवा",
+          "साप्ताहिक पाहणी करा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use disease-free seeds/plants",
+          "Maintain proper spacing",
+          "Remove weeds regularly"
+        ],
+        "hi": [
+          "रोगमुक्त बीज/पौधे का उपयोग करें",
+          "उचित दूरी बनाए रखें",
+          "नियमित रूप से खरपतवार हटाएं"
+        ],
+        "mr": [
+          "रोगमुक्त बियाणे/रोपे वापरा",
+          "योग्य अंतर राखा",
+          "नियमितपणे तण काढा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Apply neem oil spray monthly",
+          "Use compost"
+        ],
+        "hi": [
+          "मासिक नीम तेल छिड़काव",
+          "खाद का उपयोग करें"
+        ],
+        "mr": [
+          "मासिक कडुलिंबाचे तेल फवारणी",
+          "कंपोस्ट वापरा"
+        ]
+      }
+    },
+    "Bacterial_spot": {
+      "name": {
+        "en": "Bacterial Spot",
+        "hi": "बैक्टीरियल स्पॉट",
+        "mr": "बॅक्टेरियल स्पॉट"
+      },
+      "description": {
+        "en": "Bacterial disease with dark spots on leaves and fruits",
+        "hi": "पत्तियों और फलों पर काले धब्बे वाला बैक्टीरियल रोग",
+        "mr": "पानांवर आणि फळांवर गडद ठिपके असलेला जिवाणूजन्य रोग"
+      },
+      "severity": "Moderate to High",
+      "affectedParts": [
+        "Leaves",
+        "Fruits",
+        "Twigs"
+      ],
+      "treatment": {
+        "en": [
+          "Spray Copper compounds @ 2.5g/L",
+          "Apply Streptomycin @ 0.5g/L",
+          "Repeat every 10 days"
+        ],
+        "hi": [
+          "कॉपर यौगिक @ 2.5g/L छिड़कें",
+          "स्ट्रेप्टोमाइसिन @ 0.5g/L लगाएं",
+          "10 दिन में दोहराएं"
+        ],
+        "mr": [
+          "कॉपर संयुगे @ 2.5g/L",
+          "स्ट्रेप्टोमायसिन @ 0.5g/L",
+          "10 दिवसांनी पुन्हा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Plant resistant varieties",
+          "Prune to improve air flow",
+          "Avoid overhead irrigation",
+          "Remove infected material"
+        ],
+        "hi": [
+          "प्रतिरोधी किस्में लगाएं",
+          "हवा प्रवाह सुधारने के लिए छंटाई",
+          "ऊपर से सिंचाई से बचें",
+          "संक्रमित सामग्री हटाएं"
+        ],
+        "mr": [
+          "प्रतिरोधक जाती लावा",
+          "हवा प्रवाह सुधारण्यासाठी छाटणी",
+          "वरून सिंचन टाळा",
+          "संक्रमित साहित्य काढा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Copper hydroxide @ 2.5g/L",
+          "Bordeaux mixture preventively"
+        ],
+        "hi": [
+          "कॉपर हाइड्रॉक्साइड @ 2.5g/L",
+          "बोर्डो मिश्रण निवारक रूप से"
+        ],
+        "mr": [
+          "कॉपर हायड्रॉक्साईड @ 2.5g/L",
+          "बोर्डो मिश्रण प्रतिबंधात्मक"
+        ]
+      }
+    }
+  },
+  "Pepper_bell": {
+    "healthy": {
+      "name": {
+        "en": "Healthy Plant",
+        "hi": "स्वस्थ पौधा",
+        "mr": "निरोगी रोप"
+      },
+      "description": {
+        "en": "Your pepper plant is healthy! Continue with regular care.",
+        "hi": "आपका शिमला मिर्च स्वस्थ है! नियमित देखभाल जारी रखें।",
+        "mr": "तुमचे ढोबळी मिरची निरोगी आहे! नियमित काळजी चालू ठेवा।"
+      },
+      "severity": "None",
+      "affectedParts": [],
+      "treatment": {
+        "en": [
+          "No treatment needed",
+          "Continue regular care",
+          "Monitor weekly"
+        ],
+        "hi": [
+          "कोई उपचार की आवश्यकता नहीं",
+          "नियमित देखभाल जारी रखें",
+          "साप्ताहिक निगरानी करें"
+        ],
+        "mr": [
+          "उपचाराची गरज नाही",
+          "नियमित काळजी चालू ठेवा",
+          "साप्ताहिक पाहणी करा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use disease-free seeds/plants",
+          "Maintain proper spacing",
+          "Remove weeds regularly"
+        ],
+        "hi": [
+          "रोगमुक्त बीज/पौधे का उपयोग करें",
+          "उचित दूरी बनाए रखें",
+          "नियमित रूप से खरपतवार हटाएं"
+        ],
+        "mr": [
+          "रोगमुक्त बियाणे/रोपे वापरा",
+          "योग्य अंतर राखा",
+          "नियमितपणे तण काढा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Apply neem oil spray monthly",
+          "Use compost"
+        ],
+        "hi": [
+          "मासिक नीम तेल छिड़काव",
+          "खाद का उपयोग करें"
+        ],
+        "mr": [
+          "मासिक कडुलिंबाचे तेल फवारणी",
+          "कंपोस्ट वापरा"
+        ]
+      }
+    },
+    "Bacterial_spot": {
+      "name": {
+        "en": "Bacterial Spot",
+        "hi": "बैक्टीरियल स्पॉट",
+        "mr": "बॅक्टेरियल स्पॉट"
+      },
+      "description": {
+        "en": "Bacterial disease with dark spots on leaves and fruits",
+        "hi": "पत्तियों और फलों पर काले धब्बे वाला बैक्टीरियल रोग",
+        "mr": "पानांवर आणि फळांवर गडद ठिपके असलेला जिवाणूजन्य रोग"
+      },
+      "severity": "Moderate",
+      "affectedParts": [
+        "Leaves",
+        "Fruits",
+        "Stems"
+      ],
+      "treatment": {
+        "en": [
+          "Remove infected plants",
+          "Spray Copper compounds @ 2.5g/L",
+          "Rotate with non-solanaceous crops"
+        ],
+        "hi": [
+          "संक्रमित पौधे हटाएं",
+          "कॉपर यौगिक @ 2.5g/L छिड़कें",
+          "गैर-सोलानेसियस फसलों के साथ चक्र"
+        ],
+        "mr": [
+          "संक्रमित रोपे काढा",
+          "कॉपर संयुगे @ 2.5g/L",
+          "गैर-सोलॅनेशियस पिकांसह आवर्तन"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use disease-free seeds",
+          "Drip irrigation instead of overhead",
+          "Maintain 60cm spacing",
+          "Crop rotation"
+        ],
+        "hi": [
+          "रोगमुक्त बीज का उपयोग करें",
+          "ऊपर के बजाय ड्रिप सिंचाई",
+          "60 सेमी दूरी बनाए रखें",
+          "फसल चक्र"
+        ],
+        "mr": [
+          "रोगमुक्त बियाणे वापरा",
+          "वरून ऐवजी ठिबक सिंचन",
+          "60 सेमी अंतर राखा",
+          "पीक आवर्तन"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Copper hydroxide @ 2.5g/L",
+          "Neem oil @ 5ml/L"
+        ],
+        "hi": [
+          "कॉपर हाइड्रॉक्साइड @ 2.5g/L",
+          "नीम तेल @ 5ml/L"
+        ],
+        "mr": [
+          "कॉपर हायड्रॉक्साईड @ 2.5g/L",
+          "कडुलिंबाचे तेल @ 5ml/L"
+        ]
+      }
+    }
+  },
+  "Strawberry": {
+    "healthy": {
+      "name": {
+        "en": "Healthy Plant",
+        "hi": "स्वस्थ पौधा",
+        "mr": "निरोगी रोप"
+      },
+      "description": {
+        "en": "Your strawberry plant is healthy! Continue with regular care.",
+        "hi": "आपका स्ट्रॉबेरी स्वस्थ है! नियमित देखभाल जारी रखें।",
+        "mr": "तुमचे स्ट्रॉबेरी निरोगी आहे! नियमित काळजी चालू ठेवा।"
+      },
+      "severity": "None",
+      "affectedParts": [],
+      "treatment": {
+        "en": [
+          "No treatment needed",
+          "Continue regular care",
+          "Monitor weekly"
+        ],
+        "hi": [
+          "कोई उपचार की आवश्यकता नहीं",
+          "नियमित देखभाल जारी रखें",
+          "साप्ताहिक निगरानी करें"
+        ],
+        "mr": [
+          "उपचाराची गरज नाही",
+          "नियमित काळजी चालू ठेवा",
+          "साप्ताहिक पाहणी करा"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use disease-free seeds/plants",
+          "Maintain proper spacing",
+          "Remove weeds regularly"
+        ],
+        "hi": [
+          "रोगमुक्त बीज/पौधे का उपयोग करें",
+          "उचित दूरी बनाए रखें",
+          "नियमित रूप से खरपतवार हटाएं"
+        ],
+        "mr": [
+          "रोगमुक्त बियाणे/रोपे वापरा",
+          "योग्य अंतर राखा",
+          "नियमितपणे तण काढा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Apply neem oil spray monthly",
+          "Use compost"
+        ],
+        "hi": [
+          "मासिक नीम तेल छिड़काव",
+          "खाद का उपयोग करें"
+        ],
+        "mr": [
+          "मासिक कडुलिंबाचे तेल फवारणी",
+          "कंपोस्ट वापरा"
+        ]
+      }
+    },
+    "Leaf_scorch": {
+      "name": {
+        "en": "Leaf Scorch",
+        "hi": "लीफ स्कॉर्च",
+        "mr": "लीफ स्कॉर्च"
+      },
+      "description": {
+        "en": "Fungal disease with purple spots turning brown",
+        "hi": "बैंगनी धब्बे भूरे होने वाला कवक रोग",
+        "mr": "जांभळे ठिपके तपकिरी होणारा बुरशीजन्य रोग"
+      },
+      "severity": "Moderate",
+      "affectedParts": [
+        "Leaves"
+      ],
+      "treatment": {
+        "en": [
+          "Remove old leaves",
+          "Spray Captan @ 2.5g/L",
+          "Apply at 7-10 day intervals"
+        ],
+        "hi": [
+          "पुरानी पत्तियां हटाएं",
+          "कैप्टन @ 2.5g/L छिड़कें",
+          "7-10 दिन के अंतराल पर लगाएं"
+        ],
+        "mr": [
+          "जुनी पाने काढा",
+          "कॅप्टन @ 2.5g/L फवारणी",
+          "7-10 दिवसांच्या अंतराने"
+        ]
+      },
+      "prevention": {
+        "en": [
+          "Use resistant varieties",
+          "Maintain row spacing",
+          "Drip irrigation",
+          "Remove old foliage after harvest"
+        ],
+        "hi": [
+          "प्रतिरोधी किस्में उगाएं",
+          "पंक्ति दूरी बनाए रखें",
+          "ड्रिप सिंचाई",
+          "कटाई के बाद पुरानी पत्तियां हटाएं"
+        ],
+        "mr": [
+          "प्रतिरोधक जाती वापरा",
+          "ओळीतील अंतर राखा",
+          "ठिबक सिंचन",
+          "कापणीनंतर जुनी पाने काढा"
+        ]
+      },
+      "organicSolution": {
+        "en": [
+          "Copper fungicide @ 2.5g/L",
+          "Sulfur spray @ 3g/L"
+        ],
+        "hi": [
+          "कॉपर फंगीसाइड @ 2.5g/L",
+          "सल्फर स्प्रे @ 3g/L"
+        ],
+        "mr": [
+          "कॉपर बुरशीनाशक @ 2.5g/L",
+          "सल्फर फवारणी @ 3g/L"
+        ]
+      }
+    }
+  }
+}

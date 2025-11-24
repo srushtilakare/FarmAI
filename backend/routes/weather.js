@@ -5,6 +5,7 @@
 
 const express = require("express");
 const router = express.Router();
+const { logActivity, getUserIdFromRequest } = require("./activities");
 
 const fetchFrom = global.fetch || require("node-fetch");
 
@@ -160,6 +161,19 @@ router.get("/weather", async (req, res) => {
     }
 
     const advisories = buildAdvisories(locationName, dailyData);
+
+    // Log activity (optional - only if user is authenticated)
+    const userId = await getUserIdFromRequest(req);
+    if (userId) {
+      await logActivity(userId, {
+        activityType: 'weather-alert',
+        title: `Weather Check - ${locationName}`,
+        description: `Checked weather forecast for ${locationName} (${days} days)`,
+        status: 'completed',
+        result: `${advisories.length} advisories generated`,
+        metadata: { location: locationName, days, advisoryCount: advisories.length }
+      });
+    }
 
     return res.json({
       status: "ok",

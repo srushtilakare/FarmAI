@@ -25,6 +25,7 @@ import {
   BarChart2,
   Activity,
 } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 import { Line, Bar } from "react-chartjs-2";
 import {
@@ -106,7 +107,8 @@ const CROPS = [
 ];
 
 export default function MarketPricesPage() {
-  const [lang, setLang] = useState<"en" | "hi" | "mr">("en");
+  const { t, language } = useLanguage();
+  const [lang, setLang] = useState<"en" | "hi" | "mr">(language === "english" ? "en" : language === "hindi" ? "hi" : "mr");
 
   // Search & filters
   const [search, setSearch] = useState("");
@@ -261,9 +263,18 @@ export default function MarketPricesPage() {
   async function fetchAdvisory() {
     if (filtered.length === 0) return;
     const cropToAnalyze = crop !== "all" ? crop : filtered[0]?.crop;
+    const marketToAnalyze = district !== "all" ? district : filtered[0]?.market || "DELHI";
 
     try {
-      const res = await fetch(`/api/advisory?crop=${cropToAnalyze}`);
+      const token = localStorage.getItem('token')
+      const headers: HeadersInit = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      const res = await fetch(`/api/advisory?commodity=${cropToAnalyze}&market=${marketToAnalyze}`, {
+        headers
+      });
       const json = await res.json();
       if (json.success) setAdvisory(json.data);
     } catch (e) {
@@ -310,7 +321,7 @@ export default function MarketPricesPage() {
         className="flex items-center gap-2 border-gray-300"
       >
         <ArrowLeft size={18} />
-        Back to Dashboard
+        {t("backToDashboard")}
       </Button>
 
       {/* 🌐 Language Switch */}
@@ -340,14 +351,14 @@ export default function MarketPricesPage() {
       ===================================================== */}
       <Card className="border-2 border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle>Search Market Prices</CardTitle>
+          <CardTitle>{t("searchMarketPrices")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
 
           {/* Search Row */}
           <div className="flex gap-3 items-center">
             <Input
-              placeholder="Search crop, market or district…"
+              placeholder={t("searchCropMarketDistrict")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="bg-white"
@@ -359,7 +370,7 @@ export default function MarketPricesPage() {
               className="flex items-center gap-2"
             >
               <Mic className={listening ? "animate-pulse text-red-500" : ""} />
-              Voice
+              {t("voice")}
             </Button>
           </div>
 
@@ -369,10 +380,10 @@ export default function MarketPricesPage() {
             {/* District */}
             <Select value={district} onValueChange={setDistrict}>
               <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Select district" />
+                <SelectValue placeholder={t("selectDistrict")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Districts</SelectItem>
+                <SelectItem value="all">{t("allDistricts")}</SelectItem>
                 {DISTRICTS.map((d, i) => (
                   <SelectItem key={i} value={d}>{d}</SelectItem>
                 ))}
@@ -382,10 +393,10 @@ export default function MarketPricesPage() {
             {/* Crop */}
             <Select value={crop} onValueChange={setCrop}>
               <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Select crop" />
+                <SelectValue placeholder={t("selectCrop")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Crops</SelectItem>
+                <SelectItem value="all">{t("allCrops")}</SelectItem>
                 {CROPS.map((c, i) => (
                   <SelectItem key={i} value={c}>{c}</SelectItem>
                 ))}
@@ -397,7 +408,7 @@ export default function MarketPricesPage() {
               className="w-full bg-blue-600 hover:bg-blue-700"
               onClick={fetchData}
             >
-              Apply Filters
+              {t("applyFilters")}
             </Button>
           </div>
         </CardContent>
@@ -408,14 +419,14 @@ export default function MarketPricesPage() {
       ===================================================== */}
       <Card className="border-2 border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle>Maharashtra Price Heatmap</CardTitle>
+          <CardTitle>{t("maharashtraPriceHeatmap")}</CardTitle>
         </CardHeader>
 
         <CardContent>
           {heatLoading ? (
-            <p>Loading heatmap…</p>
+            <p>{t("loadingHeatmap")}</p>
           ) : heatData.length === 0 ? (
-            <p>No heatmap data. Select a crop.</p>
+            <p>{t("noHeatmapData")}</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {heatData.map((d, i) => (
@@ -445,7 +456,7 @@ export default function MarketPricesPage() {
       ===================================================== */}
       <Card className="border-2 border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle>Crop Market Comparison</CardTitle>
+          <CardTitle>{t("cropMarketComparison")}</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -463,7 +474,7 @@ export default function MarketPricesPage() {
               </Select>
 
               <Input
-                placeholder="Market 1 (e.g., Pune)"
+                placeholder={t("market1")}
                 value={cmpMarket1}
                 onChange={(e) => setCmpMarket1(e.target.value)}
               />
@@ -481,7 +492,7 @@ export default function MarketPricesPage() {
               </Select>
 
               <Input
-                placeholder="Market 2 (e.g., Nashik)"
+                placeholder={t("market2")}
                 value={cmpMarket2}
                 onChange={(e) => setCmpMarket2(e.target.value)}
               />
@@ -492,7 +503,7 @@ export default function MarketPricesPage() {
             className="bg-blue-600 hover:bg-blue-700"
             onClick={fetchComparison}
           >
-            Compare
+            {t("compare")}
           </Button>
 
           {cmpResult && (
@@ -525,7 +536,7 @@ export default function MarketPricesPage() {
       {advisory && (
         <Card className="border-2 border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle>Crop Advisory</CardTitle>
+            <CardTitle>{t("cropAdvisory")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-lg">{advisory.message}</p>
@@ -539,7 +550,7 @@ export default function MarketPricesPage() {
       {predict && (
         <Card className="border-2 border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle>Expected Price Trend</CardTitle>
+            <CardTitle>{t("expectedPriceTrend")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-lg">{predict.message}</p>
@@ -551,14 +562,14 @@ export default function MarketPricesPage() {
       ===================================================== */}
       <Card className="border-2 border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle>Available Market Prices</CardTitle>
+          <CardTitle>{t("availableMarketPrices")}</CardTitle>
         </CardHeader>
 
         <CardContent>
           {loading ? (
-            <p>Loading…</p>
+            <p>{t("loading")}</p>
           ) : filtered.length === 0 ? (
-            <p>No data for selected filters.</p>
+            <p>{t("noDataForFilters")}</p>
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
               {filtered.map((item, i) => (
@@ -574,10 +585,10 @@ export default function MarketPricesPage() {
                       </Badge>
 
                       <p className="mt-2 text-gray-600">
-                        <strong>Market:</strong> {item.market}
+                        <strong>{t("market")}:</strong> {item.market}
                       </p>
                       <p className="text-gray-600">
-                        <strong>District:</strong> {item.district}
+                        <strong>{t("district")}:</strong> {item.district}
                       </p>
 
                       <p className="text-gray-500 text-sm">
@@ -610,7 +621,7 @@ export default function MarketPricesPage() {
 
                       {item.previousPrice !== null && (
                         <p className="text-xs text-gray-500 mt-1">
-                          Previous: ₹{item.previousPrice}
+                          {t("previous")}: ₹{item.previousPrice}
                         </p>
                       )}
                     </div>
@@ -627,7 +638,7 @@ export default function MarketPricesPage() {
       ===================================================== */}
       <Card className="border-2 border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle>Market Insights</CardTitle>
+          <CardTitle>{t("marketInsights")}</CardTitle>
         </CardHeader>
 
         <CardContent className="grid md:grid-cols-2 gap-6">
@@ -635,7 +646,7 @@ export default function MarketPricesPage() {
           {/* Top Gainers */}
           <div>
             <h3 className="text-lg font-semibold mb-3 text-green-700">
-              📈 Price Gainers
+              📈 {t("priceGainers")}
             </h3>
             <div className="space-y-2">
               {filtered
@@ -659,7 +670,7 @@ export default function MarketPricesPage() {
           {/* Top Decliners */}
           <div>
             <h3 className="text-lg font-semibold mb-3 text-red-700">
-              📉 Price Decliners
+              📉 {t("priceDecliners")}
             </h3>
             <div className="space-y-2">
               {filtered

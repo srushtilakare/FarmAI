@@ -2,6 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
+const { logActivity, getUserIdFromRequest } = require("./activities");
 
 const RESOURCE_ID = "9ef84268-d588-465a-a308-a864a43d0070";
 const API_KEY = process.env.DATA_GOV_API_KEY;
@@ -37,6 +38,19 @@ router.get("/", async (req, res) => {
       date: r.arrival_date,
       unit: r.unit_of_measurement || "Quintal"
     }));
+
+    // Log activity (optional - only if user is authenticated)
+    const userId = await getUserIdFromRequest(req);
+    if (userId) {
+      await logActivity(userId, {
+        activityType: 'market-prices',
+        title: `Market Price Check`,
+        description: `Checked market prices${crop ? ` for ${crop}` : ''}${district ? ` in ${district}` : ''}`,
+        status: 'viewed',
+        result: `${cleaned.length} price records found`,
+        metadata: { crop, district, recordCount: cleaned.length }
+      });
+    }
 
     res.json({ success: true, data: cleaned });
 

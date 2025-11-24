@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Bot, User, Mic, MicOff } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface Message {
   id: string;
@@ -16,6 +17,7 @@ interface Message {
 }
 
 export default function ChatPage() {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -53,9 +55,15 @@ export default function ChatPage() {
     setIsTyping(true);
 
     try {
+      const token = localStorage.getItem('token')
+      const headers: HeadersInit = { "Content-Type": "application/json" }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
       const res = await fetch("http://localhost:5000/api/chatbot", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ message: inputMessage, location }),
       });
 
@@ -74,7 +82,7 @@ export default function ChatPage() {
         ...prev,
         {
           id: (Date.now() + 2).toString(),
-          content: "⚠️ Server error. Please try again.",
+          content: t("serverError"),
           sender: "bot",
           timestamp: new Date(),
         },
@@ -108,7 +116,7 @@ export default function ChatPage() {
           <CardHeader className="border-b border-border">
             <CardTitle className="flex items-center gap-2">
               <Bot className="h-6 w-6 text-primary" />
-              Chat with Farmii (Gemini)
+              {t("chatWithFarmii")}
             </CardTitle>
           </CardHeader>
 
@@ -179,7 +187,7 @@ export default function ChatPage() {
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Ask Farmii anything about farming..."
+                    placeholder={t("askFarmiiAnything")}
                     className="border-border focus:ring-primary pr-12"
                   />
                   <Button
@@ -201,7 +209,7 @@ export default function ChatPage() {
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
-              {isRecording && <p className="text-sm text-red-500 mt-2 animate-pulse">🎙 Recording... Speak now</p>}
+              {isRecording && <p className="text-sm text-red-500 mt-2 animate-pulse">🎙 {t("recording")}</p>}
             </div>
           </CardContent>
         </Card>

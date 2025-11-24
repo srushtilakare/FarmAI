@@ -22,9 +22,74 @@
 .label { font-weight:600; margin-bottom:6px; }
 .input { padding:10px; border:1px solid #ddd; border-radius:6px; width:100%; }
 
-.location-row { display:flex; gap:12px; align-items:flex-start; }
-.location-btn { padding:10px; border-radius:8px; border: 1px solid #2b9348; background:#fff; cursor:pointer; }
-.location-info { font-size:13px; margin-left:8px; color:#333; }
+.location-section { 
+  margin-bottom: 12px; 
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.location-btn { 
+  padding: 12px 20px; 
+  border-radius: 8px; 
+  border: 2px solid #2b9348; 
+  background: #fff; 
+  color: #2b9348;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.location-btn:hover:not(:disabled) { 
+  background: #2b9348; 
+  color: #fff; 
+}
+
+.location-btn:disabled { 
+  opacity: 0.6; 
+  cursor: not-allowed; 
+}
+
+.location-info { 
+  margin-top: 12px;
+  padding: 12px; 
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid #d4edda;
+  background-color: #d4edda;
+}
+
+.location-info strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #155724;
+}
+
+.detected-address {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.manual-location {
+  margin-top: 16px;
+  padding: 15px;
+  background: #fff;
+  border-radius: 8px;
+  border: 2px dashed #2b9348;
+}
+
+.manual-location select,
+.manual-location input {
+  margin-bottom: 12px;
+}
 
 .crop-grid { display:flex; flex-wrap:wrap; gap:8px; }
 .crop-card {

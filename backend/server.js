@@ -42,6 +42,19 @@ app.use("/api/market-prices", require("./routes/marketPrices"));
 app.use("/api/locations", require("./routes/locations")); // states/districts/crops
 app.use("/api/history", require("./routes/history"));     // 7-day history
 app.use("/api/favorites", require("./routes/favorites")); // favorite crops
+app.use("/api/disease-info", require("./routes/diseaseInfo")); // disease database
+
+// New features - Smart Farming System
+app.use("/api/crop-calendar", require("./routes/cropCalendar")); // Crop calendar & task management
+app.use("/api/forum", require("./routes/forum")); // Farmer community forum
+app.use("/api/schemes", require("./routes/schemes")); // Government schemes
+app.use("/api/soil-report", require("./routes/soilReport")); // Soil report analysis
+app.use("/api/news", require("./routes/agriNews")); // Agriculture news feed
+app.use("/api/gamification", require("./routes/gamification")); // Gamification system
+app.use("/api/activities", require("./routes/activities").router); // User activity history
+
+// Serve static files for uploads
+app.use('/uploads', express.static('uploads'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

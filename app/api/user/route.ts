@@ -16,6 +16,10 @@ interface IUserUpdate {
   state?: string;
   district?: string;
   pincode?: string;
+  village?: string;
+  latitude?: number;
+  longitude?: number;
+  crops?: string[];
   primaryCrops?: string;
   farmingExperience?: string;
   farmingType?: string;
@@ -29,8 +33,7 @@ async function getUserFromToken(req: NextRequest) {
   const token = req.headers.get("authorization")?.split(" ")[1];
   if (!token) return null;
 
-  const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error("JWT_SECRET is not defined");
+  const secret = process.env.JWT_SECRET || "farmai_secret";
 
   try {
     const decoded = jwt.verify(token, secret) as { id: string };
@@ -53,7 +56,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(userWithoutPassword);
 }
 
-export async function POST(req: NextRequest) {
+export async function PUT(req: NextRequest) {
   await dbConnect();
 
   const user = await getUserFromToken(req);
