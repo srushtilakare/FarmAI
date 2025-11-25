@@ -13,6 +13,9 @@ router.post("/register", async (req, res) => {
       state,
       district,
       pincode,
+      village,
+      latitude,
+      longitude,
       crops,
       farmingType,
     } = req.body;
@@ -46,6 +49,9 @@ router.post("/register", async (req, res) => {
       state,
       district,
       pincode,
+      village,
+      latitude,
+      longitude,
       crops,
       farmingType,
     });

@@ -1,21 +1,45 @@
 import json
 import os
-from flask import Flask, request, jsonify
+import sys
+import argparse
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image # type: ignore
 import numpy as np
-from flask_cors import CORS
 
-# Flask app
-app = Flask(__name__)
-CORS(app)
+# Parse command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("--image", type=str, help="Path to image file")
+parser.add_argument("--crop", type=str, default="tomato", help="Crop type (tomato, potato, etc.)")
+args = parser.parse_args()
 
-# Model path
-MODEL_PATH = os.path.join("models", "tomato_model.h5")
-CLASS_INDICES_PATH = os.path.join("models", "class_indices.json")
+# Determine model and class indices paths based on crop
+# Get the directory where this script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+crop = args.crop.lower()
+MODEL_PATH = os.path.join(SCRIPT_DIR, "models", f"{crop}_model.h5")
+CLASS_INDICES_PATH = os.path.join(SCRIPT_DIR, "models", f"{crop}_class_indices.json")
+
+# Check if model exists
+if not os.path.exists(MODEL_PATH):
+    print(json.dumps({
+        "error": f"Model for {crop} not found. Please train the model first.",
+        "modelPath": MODEL_PATH
+    }))
+    sys.exit(1)
+
+if not os.path.exists(CLASS_INDICES_PATH):
+    print(json.dumps({
+        "error": f"Class indices for {crop} not found.",
+        "classIndicesPath": CLASS_INDICES_PATH
+    }))
+    sys.exit(1)
 
 # Load model
-model = tf.keras.models.load_model(MODEL_PATH)
+try:
+    model = tf.keras.models.load_model(MODEL_PATH)
+except Exception as e:
+    print(json.dumps({"error": f"Failed to load model: {str(e)}"}))
+    sys.exit(1)
 
 # Load class indices
 with open(CLASS_INDICES_PATH, "r") as f:
@@ -26,51 +50,50 @@ CLASS_NAMES = {v: k for k, v in class_indices.items()}
 
 # Predict function
 def predict_image(img_path):
-    img = image.load_img(img_path, target_size=(224, 224))  # Adjust size to your model
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)
-    x = x / 255.0  # Normalize if your model expects normalized input
-
-    preds = model.predict(x)
-    predicted_class_index = np.argmax(preds[0])
-    predicted_class_name = CLASS_NAMES[predicted_class_index]
-    confidence = float(preds[0][predicted_class_index] * 100)
-
-    # Optional: simple severity logic
-    severity = "None" if predicted_class_name.lower() == "healthy" else ("High" if confidence > 85 else "Moderate")
-
-    return {
-        "disease": predicted_class_name,
-        "confidence": confidence,
-        "severity": severity
-    }
-
-# Routes
-@app.route("/predict/tomato", methods=["POST"])
-def predict():
-    if "image" not in request.files:
-        return jsonify({"error": "No image file provided"}), 400
-
-    file = request.files["image"]
-    if file.filename == "":
-        return jsonify({"error": "No selected file"}), 400
-
-    # Save uploaded image temporarily
-    upload_path = os.path.join("uploads", file.filename)
-    os.makedirs("uploads", exist_ok=True)
-    file.save(upload_path)
-
-    # Make prediction
     try:
-        result = predict_image(upload_path)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        # Remove temporary file
-        if os.path.exists(upload_path):
-            os.remove(upload_path)
+        img = image.load_img(img_path, target_size=(224, 224))
+        x = image.img_to_array(img)
+        x = np.expand_dims(x, axis=0)
+        x = x / 255.0  # Normalize
 
-# Run server
+        preds = model.predict(x, verbose=0)
+        predicted_class_index = np.argmax(preds[0])
+        predicted_class_name = CLASS_NAMES[predicted_class_index]
+        confidence = float(preds[0][predicted_class_index] * 100)
+
+        # Determine severity based on disease and confidence
+        is_healthy = predicted_class_name.lower() in ["healthy", "healthy_plant"]
+        
+        if is_healthy:
+            severity = "None"
+        elif confidence > 85:
+            severity = "High"
+        elif confidence > 70:
+            severity = "Moderate"
+        else:
+            severity = "Low"
+
+        return {
+            "disease": predicted_class_name,
+            "confidence": round(confidence, 2),
+            "severity": severity,
+            "crop": crop.capitalize()
+        }
+    except Exception as e:
+        return {"error": f"Prediction failed: {str(e)}"}
+
+# Main execution
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    if not args.image:
+        print(json.dumps({"error": "No image path provided"}))
+        sys.exit(1)
+    
+    if not os.path.exists(args.image):
+        print(json.dumps({"error": f"Image file not found: {args.image}"}))
+        sys.exit(1)
+    
+    result = predict_image(args.image)
+    print(json.dumps(result))
+    
+    if "error" in result:
+        sys.exit(1)

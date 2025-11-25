@@ -11,6 +11,9 @@ const userSchema = new mongoose.Schema({
   state: { type: String, required: true },
   district: { type: String, required: true },
   pincode: { type: String },
+  village: { type: String }, // More specific location
+  latitude: { type: Number }, // For accurate weather data
+  longitude: { type: Number }, // For accurate weather data
   crops: { type: [String], required: true },
   farmingType: { type: String, required: true },
   profilePhoto: { type: String },

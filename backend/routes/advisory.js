@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 const dayjs = require("dayjs");
+const { logActivity, getUserIdFromRequest } = require("./activities");
 
 const DATA_GOV_BASE = "https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070";
 const API_KEY = process.env.DATA_GOV_API_KEY || "";
@@ -61,6 +62,23 @@ router.get("/", async (req,res)=>{
     const reason = [];
     reason.push(`14d slope = ${slope.toFixed(3)}`);
     reason.push(`Average price = ₹${Math.round(avg)}, volatility = ${Math.round(vol)}`);
+
+    // Log activity (optional - only if user is authenticated)
+    const userId = await getUserIdFromRequest(req);
+    console.log('📊 Crop advisory - userId extracted:', userId);
+    if (userId) {
+      const loggedActivity = await logActivity(userId, {
+        activityType: 'crop-advisory',
+        title: `Crop Advisory - ${commodity}`,
+        description: `Got crop advisory for ${commodity} in ${market}`,
+        status: 'completed',
+        result: `Recommendation: ${recommendation}`,
+        metadata: { commodity, market, recommendation, avgPrice: Math.round(avg) }
+      });
+      console.log('📊 Crop advisory activity logged:', loggedActivity ? 'Success' : 'Failed');
+    } else {
+      console.log('⚠️ Crop advisory - No userId found, skipping activity log');
+    }
 
     res.json({ success:true, data: { recommendation, reason, series } });
   } catch(err){

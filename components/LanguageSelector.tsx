@@ -1,22 +1,27 @@
 "use client";
 import React from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface LanguageSelectorProps {
-  language: string;
-  setLanguage: (lang: string) => void;
+  language?: string;
+  setLanguage?: (lang: string) => void;
 }
 
 const LanguageSelector: React.FC<LanguageSelectorProps> = ({
-  language,
-  setLanguage,
+  language: propLanguage,
+  setLanguage: propSetLanguage,
 }) => {
+  const { language: contextLanguage, setLanguage: contextSetLanguage, t } = useLanguage();
+  const language = propLanguage || contextLanguage;
+  const setLanguage = propSetLanguage || contextSetLanguage;
+
   return (
     <div className="language-selector">
-      <label>Select Language:</label>
+      <label>{t("selectLanguage")}:</label>
       <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-        <option value="en-US">English</option>
-        <option value="hi-IN">Hindi</option>
-        <option value="mr-IN">Marathi</option>
+        <option value="english">English</option>
+        <option value="hindi">हिंदी (Hindi)</option>
+        <option value="marathi">मराठी (Marathi)</option>
       </select>
     </div>
   );

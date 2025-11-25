@@ -11,8 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Thermometer, Droplets, Calendar, TrendingUp, Leaf, Sun } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 export default function CropAdvisoryPage() {
+  const { t } = useLanguage();
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [recommendations, setRecommendations] = useState<any>(null)
   const [formData, setFormData] = useState({
@@ -24,8 +26,86 @@ export default function CropAdvisoryPage() {
     budget: "",
   })
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     setIsAnalyzing(true)
+    
+    // Log activity for crop advisory (don't await - fire and forget)
+    const logActivity = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          console.warn('⚠️ No token found, skipping crop advisory activity log')
+          return
+        }
+        
+        // Build description - ensure it's always non-empty
+        const locationPart = formData.location ? ` for ${formData.location}` : ''
+        const soilPart = formData.soilType ? ` with ${formData.soilType} soil` : ''
+        const seasonPart = formData.season ? ` in ${formData.season} season` : ''
+        const description = `Requested crop advisory${locationPart}${soilPart}${seasonPart}`.trim() || 'Requested crop advisory recommendations'
+        
+        // Build title
+        const title = formData.location 
+          ? `Crop Advisory Request - ${formData.location}`
+          : 'Crop Advisory Request'
+        
+        console.log('📊 Logging crop advisory activity...', {
+          location: formData.location,
+          soilType: formData.soilType,
+          season: formData.season,
+          title,
+          description
+        })
+        
+        const response = await fetch('http://localhost:5000/api/activities/log', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            activityType: 'crop-advisory',
+            title: title,
+            description: description,
+            status: 'completed',
+            result: 'Recommendations generated',
+            metadata: {
+              location: formData.location || '',
+              soilType: formData.soilType || '',
+              season: formData.season || '',
+              farmSize: formData.farmSize || '',
+              irrigationType: formData.irrigationType || '',
+              budget: formData.budget || ''
+            }
+          })
+        })
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          let errorData
+          try {
+            errorData = JSON.parse(errorText)
+          } catch {
+            errorData = { message: errorText }
+          }
+          console.error('❌ Failed to log crop advisory activity:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          })
+          return
+        }
+        
+        const data = await response.json()
+        console.log('✅ Crop advisory activity logged successfully:', data)
+      } catch (err) {
+        console.error('❌ Error logging crop advisory activity:', err)
+      }
+    }
+    
+    // Start logging (don't block UI)
+    logActivity()
+    
     // Simulate analysis
     setTimeout(() => {
       setRecommendations({
@@ -80,29 +160,29 @@ export default function CropAdvisoryPage() {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Location Specific Crop Advisory</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t("locationSpecificCropAdvisory")}</h1>
           <p className="text-muted-foreground mt-2">
-            Get personalized crop recommendations based on your location, soil type, and farming conditions
+            {t("getPersonalizedRecommendations")}
           </p>
         </div>
 
         {/* Input Form */}
         <Card className="border-border">
           <CardHeader>
-            <CardTitle>Farm Information</CardTitle>
-            <CardDescription>Provide details about your farm for personalized recommendations</CardDescription>
+            <CardTitle>{t("farmInformation")}</CardTitle>
+            <CardDescription>{t("provideDetailsForRecommendations")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="location" className="text-foreground">
-                  Location (District, State)
+                  {t("locationDistrictState")}
                 </Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="location"
-                    placeholder="e.g., Pune, Maharashtra"
+                    placeholder={t("locationPlaceholder")}
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     className="pl-10 border-border focus:ring-primary"
@@ -112,50 +192,50 @@ export default function CropAdvisoryPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="soilType" className="text-foreground">
-                  Soil Type
+                  {t("soilType")}
                 </Label>
                 <Select
                   value={formData.soilType}
                   onValueChange={(value) => setFormData({ ...formData, soilType: value })}
                 >
                   <SelectTrigger className="border-border focus:ring-primary">
-                    <SelectValue placeholder="Select soil type" />
+                    <SelectValue placeholder={t("selectSoilType")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="clay">Clay Soil</SelectItem>
-                    <SelectItem value="loamy">Loamy Soil</SelectItem>
-                    <SelectItem value="sandy">Sandy Soil</SelectItem>
-                    <SelectItem value="black">Black Soil</SelectItem>
-                    <SelectItem value="red">Red Soil</SelectItem>
-                    <SelectItem value="alluvial">Alluvial Soil</SelectItem>
+                    <SelectItem value="clay">{t("claySoil")}</SelectItem>
+                    <SelectItem value="loamy">{t("loamySoil")}</SelectItem>
+                    <SelectItem value="sandy">{t("sandySoil")}</SelectItem>
+                    <SelectItem value="black">{t("blackSoil")}</SelectItem>
+                    <SelectItem value="red">{t("redSoil")}</SelectItem>
+                    <SelectItem value="alluvial">{t("alluvialSoil")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="season" className="text-foreground">
-                  Planting Season
+                  {t("plantingSeason")}
                 </Label>
                 <Select value={formData.season} onValueChange={(value) => setFormData({ ...formData, season: value })}>
                   <SelectTrigger className="border-border focus:ring-primary">
-                    <SelectValue placeholder="Select season" />
+                    <SelectValue placeholder={t("selectSeason")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="kharif">Kharif (Monsoon)</SelectItem>
-                    <SelectItem value="rabi">Rabi (Winter)</SelectItem>
-                    <SelectItem value="zaid">Zaid (Summer)</SelectItem>
+                    <SelectItem value="kharif">{t("kharifMonsoon")}</SelectItem>
+                    <SelectItem value="rabi">{t("rabiWinter")}</SelectItem>
+                    <SelectItem value="zaid">{t("zaidSummer")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="farmSize" className="text-foreground">
-                  Farm Size (acres)
+                  {t("farmSizeAcres")}
                 </Label>
                 <Input
                   id="farmSize"
                   type="number"
-                  placeholder="e.g., 2.5"
+                  placeholder={t("farmSizePlaceholder")}
                   value={formData.farmSize}
                   onChange={(e) => setFormData({ ...formData, farmSize: e.target.value })}
                   className="border-border focus:ring-primary"
@@ -164,36 +244,36 @@ export default function CropAdvisoryPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="irrigationType" className="text-foreground">
-                  Irrigation Type
+                  {t("irrigationType")}
                 </Label>
                 <Select
                   value={formData.irrigationType}
                   onValueChange={(value) => setFormData({ ...formData, irrigationType: value })}
                 >
                   <SelectTrigger className="border-border focus:ring-primary">
-                    <SelectValue placeholder="Select irrigation type" />
+                    <SelectValue placeholder={t("selectIrrigationType")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="drip">Drip Irrigation</SelectItem>
-                    <SelectItem value="sprinkler">Sprinkler</SelectItem>
-                    <SelectItem value="flood">Flood Irrigation</SelectItem>
-                    <SelectItem value="rainfed">Rain-fed</SelectItem>
+                    <SelectItem value="drip">{t("dripIrrigation")}</SelectItem>
+                    <SelectItem value="sprinkler">{t("sprinkler")}</SelectItem>
+                    <SelectItem value="flood">{t("floodIrrigation")}</SelectItem>
+                    <SelectItem value="rainfed">{t("rainfed")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="budget" className="text-foreground">
-                  Budget Range (₹)
+                  {t("budgetRange")}
                 </Label>
                 <Select value={formData.budget} onValueChange={(value) => setFormData({ ...formData, budget: value })}>
                   <SelectTrigger className="border-border focus:ring-primary">
-                    <SelectValue placeholder="Select budget range" />
+                    <SelectValue placeholder={t("selectBudgetRange")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">₹10,000 - ₹50,000</SelectItem>
-                    <SelectItem value="medium">₹50,000 - ₹1,00,000</SelectItem>
-                    <SelectItem value="high">₹1,00,000+</SelectItem>
+                    <SelectItem value="low">{t("budgetLow")}</SelectItem>
+                    <SelectItem value="medium">{t("budgetMedium")}</SelectItem>
+                    <SelectItem value="high">{t("budgetHigh")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -205,7 +285,7 @@ export default function CropAdvisoryPage() {
                 disabled={!formData.location || !formData.soilType || isAnalyzing}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3"
               >
-                {isAnalyzing ? "Analyzing..." : "Get Recommendations"}
+                {isAnalyzing ? t("analyzing") : t("getRecommendations")}
               </Button>
             </div>
           </CardContent>
@@ -219,7 +299,7 @@ export default function CropAdvisoryPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Sun className="h-5 w-5 text-yellow-500" />
-                  Weather Insights
+                  {t("weatherInsights")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -227,28 +307,28 @@ export default function CropAdvisoryPage() {
                   <div className="flex items-center space-x-2">
                     <Thermometer className="h-4 w-4 text-red-500" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Temperature</p>
+                      <p className="text-sm text-muted-foreground">{t("temperature")}</p>
                       <p className="font-medium">{recommendations.weatherInsights.temperature}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Droplets className="h-4 w-4 text-blue-500" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Rainfall</p>
+                      <p className="text-sm text-muted-foreground">{t("rainfall")}</p>
                       <p className="font-medium">{recommendations.weatherInsights.rainfall}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Droplets className="h-4 w-4 text-cyan-500" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Humidity</p>
+                      <p className="text-sm text-muted-foreground">{t("humidity")}</p>
                       <p className="font-medium">{recommendations.weatherInsights.humidity}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-green-500" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Best Season</p>
+                      <p className="text-sm text-muted-foreground">{t("bestSeason")}</p>
                       <p className="font-medium">Kharif</p>
                     </div>
                   </div>
@@ -264,7 +344,7 @@ export default function CropAdvisoryPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Leaf className="h-5 w-5 text-green-500" />
-                  Recommended Crops
+                  {t("recommendedCrops")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -273,29 +353,29 @@ export default function CropAdvisoryPage() {
                     <div key={index} className="border border-border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-lg font-semibold text-card-foreground">{crop.name}</h3>
-                        <Badge variant="secondary">{crop.suitability}% suitable</Badge>
+                        <Badge variant="secondary">{crop.suitability}% {t("suitable")}</Badge>
                       </div>
                       <div className="grid md:grid-cols-3 gap-4">
                         <div>
-                          <p className="text-sm text-muted-foreground">Expected Yield</p>
+                          <p className="text-sm text-muted-foreground">{t("expectedYield")}</p>
                           <p className="font-medium text-foreground">{crop.expectedYield}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Profitability</p>
+                          <p className="text-sm text-muted-foreground">{t("profitability")}</p>
                           <Badge variant={crop.profitability === "High" ? "default" : "secondary"}>
                             {crop.profitability}
                           </Badge>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Water Requirement</p>
+                          <p className="text-sm text-muted-foreground">{t("waterRequirement")}</p>
                           <p className="font-medium text-foreground">{crop.waterRequirement}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Season</p>
+                          <p className="text-sm text-muted-foreground">{t("season")}</p>
                           <p className="font-medium text-foreground">{crop.season}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Market Demand</p>
+                          <p className="text-sm text-muted-foreground">{t("marketDemand")}</p>
                           <Badge variant="outline">{crop.marketDemand}</Badge>
                         </div>
                       </div>
@@ -310,7 +390,7 @@ export default function CropAdvisoryPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-amber-500" />
-                  Soil Management Tips
+                  {t("soilManagementTips")}
                 </CardTitle>
               </CardHeader>
               <CardContent>

@@ -4,10 +4,11 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Leaf, LayoutDashboard, History, MessageSquare, Globe, User, Settings, LogOut, Menu, X } from "lucide-react"
+import { Leaf, LayoutDashboard, History, MessageSquare, Globe, User, Settings, LogOut, Menu, X, Calendar, Users, Building2, Beaker, Newspaper, Trophy, Camera, MapPin, CloudRain, TrendingUp, Home } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 interface DashboardLayoutProps {
 	children: React.ReactNode
@@ -19,12 +20,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 	const [user, setUser] = useState<any>(null)
 	const pathname = usePathname()
 	const router = useRouter()
+	const { t } = useLanguage()
 
 	const sidebarItems = [
-		{ title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-		{ title: "History", href: "/dashboard/history", icon: History },
-		{ title: "Talk with Farmii", href: "/dashboard/chat", icon: MessageSquare },
-		{ title: "Change Language", href: "/dashboard/language", icon: Globe },
+		{ titleKey: "home", href: "/dashboard", icon: Home },
+		{ titleKey: "cropDiseaseDetection", href: "/dashboard/disease-detection", icon: Camera },
+		{ titleKey: "cropAdvisory", href: "/dashboard/crop-advisory", icon: MapPin },
+		{ titleKey: "smartCropCalendar", href: "/dashboard/crop-calendar", icon: Calendar },
+		{ titleKey: "communityForum", href: "/dashboard/community", icon: Users },
+		{ titleKey: "governmentSchemes", href: "/dashboard/schemes", icon: Building2 },
+		{ titleKey: "soilReports", href: "/dashboard/soil-report", icon: Beaker },
+		{ titleKey: "weatherAlerts", href: "/dashboard/weather-alerts", icon: CloudRain },
+		{ titleKey: "marketPrices", href: "/dashboard/market-prices", icon: TrendingUp },
+		{ titleKey: "agriNews", href: "/dashboard/news", icon: Newspaper },
+		{ titleKey: "achievements", href: "/dashboard/achievements", icon: Trophy },
+		{ titleKey: "talkWithFarmii", href: "/dashboard/chat", icon: MessageSquare },
+		{ titleKey: "history", href: "/dashboard/history", icon: History },
+		{ titleKey: "changeLanguage", href: "/dashboard/language", icon: Globe },
 	]
 
 	// ✅ UPDATED: Fetch logged-in user info, prioritizing localStorage for quick render
@@ -126,10 +138,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 							</Avatar>
 							<div className="flex-1 min-w-0">
 								<p className="text-sm font-medium text-sidebar-foreground truncate">
-									{user?.fullName || "Loading Farmer..."}
+									{user?.fullName || t("loadingFarmer")}
 								</p>
 								<p className="text-xs text-muted-foreground truncate">
-									{user?.farmLocation || "Loading Location..."}
+									{user?.farmLocation || t("loadingLocation")}
 								</p>
 							</div>
 						</div>
@@ -155,7 +167,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 											onClick={() => setSidebarOpen(false)}
 										>
 											<IconComponent className="h-4 w-4" />
-											<span>{item.title}</span>
+											<span>{t(item.titleKey)}</span>
 										</Link>
 									</li>
 								)
@@ -172,7 +184,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 								onClick={() => setSidebarOpen(false)}
 							>
 								<User className="h-4 w-4" />
-								<span>Profile</span>
+								<span>{t("profile")}</span>
 							</Link>
 							<Link
 								href="/dashboard/settings"
@@ -180,14 +192,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 								onClick={() => setSidebarOpen(false)}
 							>
 								<Settings className="h-4 w-4" />
-								<span>Settings</span>
+								<span>{t("settings")}</span>
 							</Link>
 							<button
 								onClick={handleLogout}
 								className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-red-500/10 hover:text-red-500 transition-colors"
 							>
 								<LogOut className="h-4 w-4" />
-								<span>Logout</span>
+								<span>{t("logout")}</span>
 							</button>
 						</div>
 					</div>
@@ -205,7 +217,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
 						<div className="flex items-center space-x-4 ml-auto">
 							<span className="text-sm text-muted-foreground hidden sm:inline">
-								Last updated: {new Date().toLocaleDateString()}
+								{t("lastUpdated")}: {new Date().toLocaleDateString()}
 							</span>
 						</div>
 					</div>
