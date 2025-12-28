@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MessageSquare, Plus, ThumbsUp, Eye, Search, Filter, Send, Image as ImageIcon } from 'lucide-react';
+import { MessageSquare, Plus, ThumbsUp, Eye, Search, Filter, Send, Image as ImageIcon, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -76,6 +76,8 @@ export default function CommunityForumPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [replyContent, setReplyContent] = useState('');
+  const [postImages, setPostImages] = useState<File[]>([]);
+  const [replyImages, setReplyImages] = useState<File[]>([]);
   const { toast } = useToast();
 
   // Form state
@@ -132,6 +134,11 @@ export default function CommunityForumPage() {
       formData.append('category', newPost.category);
       if (newPost.crop) formData.append('crop', newPost.crop);
       if (newPost.tags) formData.append('tags', JSON.stringify(newPost.tags.split(',').map(t => t.trim())));
+      
+      // Add images
+      postImages.forEach((image) => {
+        formData.append('images', image);
+      });
 
       const response = await fetch('http://localhost:5000/api/forum/posts', {
         method: 'POST',
@@ -140,6 +147,14 @@ export default function CommunityForumPage() {
         },
         body: formData
       });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        // If JSON parsing fails, create a default error object
+        data = { error: 'Failed to process server response' };
+      }
 
       if (response.ok) {
         // Log gamification activity
@@ -161,12 +176,38 @@ export default function CommunityForumPage() {
         });
         setIsCreateDialogOpen(false);
         setNewPost({ title: '', content: '', category: 'general', crop: '', tags: '' });
+        setPostImages([]);
         fetchPosts();
+      } else {
+        // Handle moderation responses
+        console.log('Post creation failed:', { status: response.status, data });
+        if (data.blocked) {
+          toast({
+            title: 'Access Denied',
+            description: data.error || 'You have been blocked from the forum.',
+            variant: 'destructive',
+            duration: 5000
+          });
+        } else if (data.warned) {
+          toast({
+            title: 'Content Warning',
+            description: data.error || 'Your content contains inappropriate language. Please revise your post.',
+            variant: 'destructive',
+            duration: 5000
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: data.error || 'Failed to create post',
+            variant: 'destructive'
+          });
+        }
       }
     } catch (error) {
+      console.error('Error creating post:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create post',
+        description: 'Failed to create post. Please try again.',
         variant: 'destructive'
       });
     }
@@ -212,6 +253,11 @@ export default function CommunityForumPage() {
       const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('content', replyContent);
+      
+      // Add images
+      replyImages.forEach((image) => {
+        formData.append('images', image);
+      });
 
       const response = await fetch(`http://localhost:5000/api/forum/posts/${postId}/replies`, {
         method: 'POST',
@@ -220,6 +266,14 @@ export default function CommunityForumPage() {
         },
         body: formData
       });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        // If JSON parsing fails, create a default error object
+        data = { error: 'Failed to process server response' };
+      }
 
       if (response.ok) {
         // Log gamification activity
@@ -240,15 +294,41 @@ export default function CommunityForumPage() {
           description: 'Reply added successfully!'
         });
         setReplyContent('');
+        setReplyImages([]);
         await fetchPostDetail(postId);
         await fetchPosts(); // Refresh the post list to update reply count
         console.log('🔄 Posts refreshed after reply');
         fetchPosts();
+      } else {
+        // Handle moderation responses
+        console.log('Reply creation failed:', { status: response.status, data });
+        if (data.blocked) {
+          toast({
+            title: 'Access Denied',
+            description: data.error || 'You have been blocked from the forum.',
+            variant: 'destructive',
+            duration: 5000
+          });
+        } else if (data.warned) {
+          toast({
+            title: 'Content Warning',
+            description: data.error || 'Your content contains inappropriate language. Please revise your reply.',
+            variant: 'destructive',
+            duration: 5000
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: data.error || 'Failed to add reply',
+            variant: 'destructive'
+          });
+        }
       }
     } catch (error) {
+      console.error('Error adding reply:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add reply',
+        description: 'Failed to add reply. Please try again.',
         variant: 'destructive'
       });
     }
@@ -266,6 +346,70 @@ export default function CommunityForumPage() {
     if (diffHours < 24) return `${diffHours} hours ago`;
     if (diffDays < 7) return `${diffDays} days ago`;
     return date.toLocaleDateString('en-IN');
+  };
+
+  const handlePostImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newImages = Array.from(files).slice(0, 3 - postImages.length);
+      // Validate file types and size
+      const validImages = newImages.filter(file => {
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: 'Invalid File',
+            description: `${file.name} is not an image file`,
+            variant: 'destructive'
+          });
+          return false;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: 'File Too Large',
+            description: `${file.name} is larger than 5MB`,
+            variant: 'destructive'
+          });
+          return false;
+        }
+        return true;
+      });
+      setPostImages([...postImages, ...validImages]);
+    }
+  };
+
+  const handleReplyImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newImages = Array.from(files).slice(0, 2 - replyImages.length);
+      // Validate file types and size
+      const validImages = newImages.filter(file => {
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: 'Invalid File',
+            description: `${file.name} is not an image file`,
+            variant: 'destructive'
+          });
+          return false;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: 'File Too Large',
+            description: `${file.name} is larger than 5MB`,
+            variant: 'destructive'
+          });
+          return false;
+        }
+        return true;
+      });
+      setReplyImages([...replyImages, ...validImages]);
+    }
+  };
+
+  const removePostImage = (index: number) => {
+    setPostImages(postImages.filter((_, i) => i !== index));
+  };
+
+  const removeReplyImage = (index: number) => {
+    setReplyImages(replyImages.filter((_, i) => i !== index));
   };
 
   return (
@@ -353,6 +497,53 @@ export default function CommunityForumPage() {
                   value={newPost.tags}
                   onChange={(e) => setNewPost({ ...newPost, tags: e.target.value })}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="post-images">Images (up to 3)</Label>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="post-images"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePostImageSelect}
+                      disabled={postImages.length >= 3}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPostImages([])}
+                      disabled={postImages.length === 0}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Clear
+                    </Button>
+                  </div>
+                  {postImages.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      {postImages.map((image, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={URL.createObjectURL(image)}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-24 object-cover rounded border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePostImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                          <p className="text-xs text-gray-500 truncate mt-1">{image.name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <DialogFooter>
@@ -449,6 +640,13 @@ export default function CommunityForumPage() {
                     
                     <p className="text-gray-600 mb-3 line-clamp-2">{post.content}</p>
                     
+                    {post.images && post.images.length > 0 && (
+                      <div className="flex items-center gap-1 mb-2 text-sm text-gray-500">
+                        <ImageIcon className="h-4 w-4" />
+                        <span>{post.images.length} image{post.images.length > 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center gap-4 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Avatar className="h-6 w-6">
@@ -507,6 +705,26 @@ export default function CommunityForumPage() {
             <div className="space-y-4">
               <div>
                 <p className="text-gray-700 whitespace-pre-wrap">{selectedPost.content}</p>
+                {selectedPost.images && selectedPost.images.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    {selectedPost.images.map((imageUrl, index) => (
+                      <a
+                        key={index}
+                        href={`http://localhost:5000${imageUrl}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="relative group"
+                      >
+                        <img
+                          src={`http://localhost:5000${imageUrl}`}
+                          alt={`Post image ${index + 1}`}
+                          className="w-full h-48 object-cover rounded border hover:opacity-90 transition-opacity"
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded" />
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
               
               {selectedPost.replies && selectedPost.replies.length > 0 && (
@@ -527,6 +745,26 @@ export default function CommunityForumPage() {
                           </span>
                         </div>
                         <p className="text-gray-700 text-sm">{reply.content}</p>
+                        {reply.images && reply.images.length > 0 && (
+                          <div className="mt-2 grid grid-cols-2 gap-2">
+                            {reply.images.map((imageUrl, index) => (
+                              <a
+                                key={index}
+                                href={`http://localhost:5000${imageUrl}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="relative group"
+                              >
+                                <img
+                                  src={`http://localhost:5000${imageUrl}`}
+                                  alt={`Reply image ${index + 1}`}
+                                  className="w-full h-32 object-cover rounded border hover:opacity-90 transition-opacity"
+                                />
+                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 mt-2">
                           <Button variant="ghost" size="sm" className="h-6 text-xs">
                             <ThumbsUp className="h-3 w-3 mr-1" />
@@ -549,6 +787,50 @@ export default function CommunityForumPage() {
                   onChange={(e) => setReplyContent(e.target.value)}
                   className="mt-2"
                 />
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="reply-images"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleReplyImageSelect}
+                      disabled={replyImages.length >= 2}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setReplyImages([])}
+                      disabled={replyImages.length === 0}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Clear
+                    </Button>
+                  </div>
+                  {replyImages.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {replyImages.map((image, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={URL.createObjectURL(image)}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-24 object-cover rounded border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeReplyImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                          <p className="text-xs text-gray-500 truncate mt-1">{image.name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <Button
                   onClick={() => addReply(selectedPost._id)}
                   className="mt-2 bg-green-600 hover:bg-green-700"

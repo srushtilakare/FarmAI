@@ -67,6 +67,24 @@ router.get("/:crop/:disease", (req, res) => {
     const diseaseInfo = diseaseDatabase[crop][disease];
 
     // Format response based on language
+    const treatments = diseaseInfo.treatment[lang] || diseaseInfo.treatment.en;
+    const treatmentSources = diseaseInfo.treatmentSources ? 
+      (diseaseInfo.treatmentSources[lang] || diseaseInfo.treatmentSources.en) : null;
+    
+    // Combine treatment with sources if available
+    const treatmentWithSources = treatments.map((treatment, index) => {
+      if (treatmentSources && treatmentSources[index]) {
+        return {
+          text: treatment,
+          source: treatmentSources[index]
+        };
+      }
+      return {
+        text: treatment,
+        source: null
+      };
+    });
+
     const formattedResponse = {
       crop,
       disease: disease,
@@ -75,7 +93,8 @@ router.get("/:crop/:disease", (req, res) => {
       severity: diseaseInfo.severity,
       affectedParts: diseaseInfo.affectedParts || [],
       causes: diseaseInfo.causes ? (diseaseInfo.causes[lang] || diseaseInfo.causes.en) : [],
-      treatment: diseaseInfo.treatment[lang] || diseaseInfo.treatment.en,
+      treatment: treatments, // Keep for backward compatibility
+      treatmentWithSources: treatmentWithSources, // New structured format with sources
       prevention: diseaseInfo.prevention[lang] || diseaseInfo.prevention.en,
       organicSolution: diseaseInfo.organicSolution ? 
         (diseaseInfo.organicSolution[lang] || diseaseInfo.organicSolution.en) : [],

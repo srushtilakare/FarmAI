@@ -114,6 +114,7 @@ export default function MarketPricesPage() {
   const [search, setSearch] = useState("");
   const [district, setDistrict] = useState("all");
   const [crop, setCrop] = useState("all");
+  const [userDistrict, setUserDistrict] = useState<string | null>(null);
 
   // Data states
   const [data, setData] = useState<any[]>([]);
@@ -130,13 +131,59 @@ export default function MarketPricesPage() {
   const [cmpMarket2, setCmpMarket2] = useState("");
   const [cmpResult, setCmpResult] = useState<any>(null);
 
-  // Advisory + Prediction
-  const [advisory, setAdvisory] = useState<any>(null);
-  const [predict, setPredict] = useState<any>(null);
-
   // Voice input
   const recRef = useRef<any>(null);
   const [listening, setListening] = useState(false);
+
+  // =====================================================
+  //  FETCH USER LOCATION
+  // =====================================================
+
+  async function fetchUserLocation() {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log("No token found - user may not be logged in");
+        setUserDistrict(null);
+        return;
+      }
+
+      const res = await fetch('/api/user', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (res.ok) {
+        const userData = await res.json();
+        if (userData.district) {
+          setUserDistrict(userData.district);
+          setDistrict(userData.district);
+        } else {
+          // User exists but no district set
+          console.log("User has no district information");
+          setUserDistrict(null);
+        }
+      } else {
+        // Token invalid or other error - could be 401
+        if (res.status === 401) {
+          console.warn("Authentication failed - token may be invalid or expired");
+          // Clear invalid token
+          localStorage.removeItem('token');
+        } else {
+          console.log("Failed to fetch user data:", res.status);
+        }
+        setUserDistrict(null);
+      }
+    } catch (e) {
+      console.error("Error fetching user location:", e);
+      setUserDistrict(null);
+    }
+  }
+
+  useEffect(() => {
+    fetchUserLocation();
+  }, []);
 
   // =====================================================
   //  FETCH MARKET DATA
@@ -159,9 +206,10 @@ export default function MarketPricesPage() {
     setLoading(false);
   }
 
+  // Fetch data when district changes (including when set from user location)
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [district, crop]);
 
   // =====================================================
   //  FETCH HEATMAP
@@ -256,56 +304,6 @@ export default function MarketPricesPage() {
     }
   }
 
-  // =====================================================
-  //  FETCH ADVISORY
-  // =====================================================
-
-  async function fetchAdvisory() {
-    if (filtered.length === 0) return;
-    const cropToAnalyze = crop !== "all" ? crop : filtered[0]?.crop;
-    const marketToAnalyze = district !== "all" ? district : filtered[0]?.market || "DELHI";
-
-    try {
-      const token = localStorage.getItem('token')
-      const headers: HeadersInit = {}
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-      }
-
-      const res = await fetch(`/api/advisory?commodity=${cropToAnalyze}&market=${marketToAnalyze}`, {
-        headers
-      });
-      const json = await res.json();
-      if (json.success) setAdvisory(json.data);
-    } catch (e) {
-      console.log("Advisory err:", e);
-    }
-  }
-
-  useEffect(() => {
-    fetchAdvisory();
-  }, [filtered]);
-
-  // =====================================================
-  //  FETCH PRICE PREDICTION
-  // =====================================================
-
-  async function fetchPrediction() {
-    if (filtered.length === 0) return;
-    const cropToAnalyze = crop !== "all" ? crop : filtered[0]?.crop;
-
-    try {
-      const res = await fetch(`/api/predict-sell?crop=${cropToAnalyze}`);
-      const json = await res.json();
-      if (json.success) setPredict(json.data);
-    } catch (e) {
-      console.log("Predict err:", e);
-    }
-  }
-
-  useEffect(() => {
-    fetchPrediction();
-  }, [filtered]);
 
   // =====================================================
   //  UI START
@@ -352,6 +350,16 @@ export default function MarketPricesPage() {
       <Card className="border-2 border-gray-200 shadow-sm">
         <CardHeader>
           <CardTitle>{t("searchMarketPrices")}</CardTitle>
+          {userDistrict && (
+            <p className="text-sm text-green-700 font-medium mt-2 bg-green-50 p-2 rounded">
+              📍 Showing prices for your location: <strong>{userDistrict}</strong>
+            </p>
+          )}
+          {userDistrict === null && district === "all" && (
+            <p className="text-sm text-blue-600 mt-2 bg-blue-50 p-2 rounded">
+              ℹ️ Please select a district below or log in to see prices for your location
+            </p>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
 
@@ -507,22 +515,75 @@ export default function MarketPricesPage() {
           </Button>
 
           {cmpResult && (
-            <div className="mt-6">
+            <div className="mt-6 space-y-4">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-red-50 rounded-lg">
+                  <h4 className="font-semibold text-red-800">{cmpCrop1} @ {cmpResult.crop1.market}</h4>
+                  <p className="text-sm text-gray-600">{cmpResult.crop1.series.length} days of data</p>
+                </div>
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-semibold text-blue-800">{cmpCrop2} @ {cmpResult.crop2.market}</h4>
+                  <p className="text-sm text-gray-600">{cmpResult.crop2.series.length} days of data</p>
+                </div>
+              </div>
+
+              {/* Price Trend Chart */}
               <Line
                 data={{
-                  labels: cmpResult.crop1.series.map((s: any) => s.date),
+                  labels: cmpResult.crop1.series.map((s: any) => {
+                    try {
+                      return s.date ? new Date(s.date).toLocaleDateString('en-IN', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                      }) : 'N/A';
+                    } catch (e) {
+                      return 'N/A';
+                    }
+                  }),
                   datasets: [
                     {
-                      label: cmpCrop1,
+                      label: `${cmpCrop1} (${cmpMarket1})`,
                       data: cmpResult.crop1.series.map((s: any) => s.avgPrice),
                       borderColor: COLORS[0],
+                      backgroundColor: COLORS[0] + '20',
+                      tension: 0.3,
+                      fill: true,
                     },
                     {
-                      label: cmpCrop2,
+                      label: `${cmpCrop2} (${cmpMarket2})`,
                       data: cmpResult.crop2.series.map((s: any) => s.avgPrice),
                       borderColor: COLORS[1],
+                      backgroundColor: COLORS[1] + '20',
+                      tension: 0.3,
+                      fill: true,
                     },
                   ],
+                }}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      position: 'top' as const,
+                    },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context: any) {
+                          return context.dataset.label + ': ₹' + context.parsed.y;
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: false,
+                      ticks: {
+                        callback: function(value: any) {
+                          return '₹' + value;
+                        }
+                      }
+                    }
+                  }
                 }}
               />
             </div>
@@ -530,33 +591,6 @@ export default function MarketPricesPage() {
         </CardContent>
       </Card>
 
-      {/* =====================================================
-              📘 MARKET ADVISORY
-      ===================================================== */}
-      {advisory && (
-        <Card className="border-2 border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle>{t("cropAdvisory")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg">{advisory.message}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* =====================================================
-              🔮 SELL PRICE PREDICTION
-      ===================================================== */}
-      {predict && (
-        <Card className="border-2 border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle>{t("expectedPriceTrend")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg">{predict.message}</p>
-          </CardContent>
-        </Card>
-      )}
       {/* =====================================================
               📦 MARKET LIST (MAIN DATA DISPLAY)
       ===================================================== */}
@@ -592,7 +626,11 @@ export default function MarketPricesPage() {
                       </p>
 
                       <p className="text-gray-500 text-sm">
-                        {new Date(item.date).toLocaleDateString()}
+                        {item.date ? new Date(item.date).toLocaleDateString('en-IN', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        }) : 'Date not available'}
                       </p>
                     </div>
 

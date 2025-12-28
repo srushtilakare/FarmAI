@@ -428,8 +428,23 @@ export default function DiseaseDetectionPage() {
                   <h3 className="font-semibold mb-3 text-lg flex items-center">
                     <AlertTriangle className="h-5 w-5 mr-2 text-red-500" /> Treatment Plan
                   </h3>
-                  <ul className="space-y-3">
-                    {analysisResult.treatment && analysisResult.treatment.map((step: string, i: number) => (
+                  <ul className="space-y-4">
+                    {analysisResult.treatmentWithSources && analysisResult.treatmentWithSources.map((item: any, i: number) => (
+                      <li key={i} className="border-l-2 border-green-500 pl-3 py-1">
+                        <div className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-500 mt-1 flex-shrink-0" />
+                          <div className="flex-1">
+                            <span className="text-sm block">{item.text}</span>
+                            {item.source && (
+                              <span className="text-xs text-muted-foreground italic mt-1 block">
+                                📋 Source: {item.source}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                    {!analysisResult.treatmentWithSources && analysisResult.treatment && analysisResult.treatment.map((step: string, i: number) => (
                       <li key={i} className="flex items-start gap-2">
                         <CheckCircle className="h-4 w-4 text-green-500 mt-1 flex-shrink-0" />
                         <span className="text-sm">{step}</span>

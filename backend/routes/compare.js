@@ -1,3 +1,4 @@
+/* eslint-env node */
 // backend/routes/compare.js
 const express = require("express");
 const axios = require("axios");
@@ -9,31 +10,43 @@ const API_KEY = process.env.DATA_GOV_API_KEY;
 
 async function fetchSeries(commodity, market, days = 7) {
   const end = dayjs();
-  const start = end.subtract(days, "day").format("YYYY-MM-DD");
+  const start = end.subtract(days, "day");
 
   const url =
     `https://api.data.gov.in/resource/${RESOURCE_ID}` +
     `?api-key=${API_KEY}&format=json&limit=5000` +
     `&filters[commodity]=${commodity.toUpperCase()}` +
-    `&filters[market]=${market}`;
+    `&filters[market]=${market.toUpperCase()}`;
 
   const api = await axios.get(url);
   const recs = api.data.records || [];
 
+  // Filter records by date range and group by date
   const grouped = {};
   recs.forEach(r => {
-    const date = r.arrival_date?.split("T")[0] || null;
-    if (!date) return;
+    const arrivalDate = r.arrival_date?.split("T")[0] || null;
+    if (!arrivalDate) return;
+
+    // Filter to only include records within the date range
+    const recordDate = dayjs(arrivalDate);
+    if (recordDate.isBefore(start, 'day') || recordDate.isAfter(end, 'day')) {
+      return;
+    }
 
     const price = Number(r.modal_price);
-    if (!grouped[date]) grouped[date] = [];
-    grouped[date].push(price);
+    if (price <= 0) return;
+
+    if (!grouped[arrivalDate]) grouped[arrivalDate] = [];
+    grouped[arrivalDate].push(price);
   });
 
-  return Object.entries(grouped).map(([date, arr]) => ({
-    date,
-    avgPrice: arr.reduce((a, b) => a + b, 0) / arr.length
-  }));
+  // Sort by date and calculate average for each day
+  return Object.entries(grouped)
+    .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+    .map(([date, arr]) => ({
+      date,
+      avgPrice: Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)
+    }));
 }
 
 router.get("/", async (req, res) => {

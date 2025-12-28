@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Plus, CheckCircle2, Clock, Droplets, Leaf, Spray, Wheat } from 'lucide-react';
+import { Calendar, Plus, CheckCircle2, Clock, Droplets, Leaf, Spray, Wheat, AlertCircle, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -63,6 +64,15 @@ export default function CropCalendarPage() {
   const [selectedCrop, setSelectedCrop] = useState('');
   const [sowingDate, setSowingDate] = useState('');
   const [viewCalendar, setViewCalendar] = useState<CropCalendar | null>(null);
+  const [seasonValidation, setSeasonValidation] = useState<{
+    isCompatible: boolean;
+    selectedSeason: string;
+    cropSeason: string;
+    recommendedCrops: Array<{ name: string; displayName: string; season: string }>;
+    message: string;
+  } | null>(null);
+  const [recommendedCrops, setRecommendedCrops] = useState<Array<{ name: string; displayName: string; season: string; durationDays: number }>>([]);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -104,11 +114,93 @@ export default function CropCalendarPage() {
     }
   };
 
+  const validateSeason = async (crop: string, date: string) => {
+    if (!crop || !date) {
+      setSeasonValidation(null);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/crop-calendar/validate-season', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ crop, sowingDate: date })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSeasonValidation(data);
+      }
+    } catch (error) {
+      console.error('Error validating season:', error);
+    }
+  };
+
+  const fetchRecommendedCrops = async (date: string) => {
+    if (!date) {
+      setRecommendedCrops([]);
+      setShowRecommendations(false);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/crop-calendar/recommended-crops?date=${date}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRecommendedCrops(data.recommendedCrops);
+        setShowRecommendations(true);
+      }
+    } catch (error) {
+      console.error('Error fetching recommended crops:', error);
+    }
+  };
+
+  const handleDateChange = (date: string) => {
+    setSowingDate(date);
+    if (date) {
+      fetchRecommendedCrops(date);
+      if (selectedCrop) {
+        validateSeason(selectedCrop, date);
+      }
+    } else {
+      setSeasonValidation(null);
+      setRecommendedCrops([]);
+      setShowRecommendations(false);
+    }
+  };
+
+  const handleCropChange = (crop: string) => {
+    setSelectedCrop(crop);
+    if (crop && sowingDate) {
+      validateSeason(crop, sowingDate);
+    } else {
+      setSeasonValidation(null);
+    }
+  };
+
   const createCalendar = async () => {
     if (!selectedCrop || !sowingDate) {
       toast({
         title: 'Missing Information',
         description: 'Please select a crop and sowing date',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Check season compatibility before creating
+    if (seasonValidation && !seasonValidation.isCompatible) {
+      toast({
+        title: 'Season Mismatch',
+        description: seasonValidation.message,
         variant: 'destructive'
       });
       return;
@@ -135,18 +227,37 @@ export default function CropCalendarPage() {
           description: 'Crop calendar created successfully!'
         });
         setIsCreateDialogOpen(false);
+        setSelectedCrop('');
+        setSowingDate('');
+        setSeasonValidation(null);
+        setRecommendedCrops([]);
+        setShowRecommendations(false);
         fetchCalendars();
         fetchUpcomingTasks();
       } else {
-        throw new Error('Failed to create calendar');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create calendar');
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Failed to create crop calendar',
+        description: error.message || 'Failed to create crop calendar',
         variant: 'destructive'
       });
     }
+  };
+
+  const canCompleteTask = (scheduledDate: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const taskDate = new Date(scheduledDate);
+    taskDate.setHours(0, 0, 0, 0);
+    
+    const daysDifference = Math.ceil((taskDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Can complete tasks from 1 day before onwards
+    return daysDifference <= 1;
   };
 
   const completeTask = async (calendarId: string, taskId: string) => {
@@ -185,6 +296,13 @@ export default function CropCalendarPage() {
         
         fetchCalendars();
         fetchUpcomingTasks();
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: 'Cannot Complete Task',
+          description: errorData.message || 'This task is not yet due for completion',
+          variant: 'destructive'
+        });
       }
     } catch (error) {
       toast({
@@ -252,8 +370,43 @@ export default function CropCalendarPage() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
+                <Label htmlFor="sowingDate">{t("sowingDate")}</Label>
+                <Input
+                  id="sowingDate"
+                  type="date"
+                  value={sowingDate}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                />
+                {showRecommendations && recommendedCrops.length > 0 && (
+                  <Alert className="mt-2">
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Recommended Crops for Selected Date</AlertTitle>
+                    <AlertDescription className="mt-2">
+                      <div className="flex flex-wrap gap-2">
+                        {recommendedCrops.map((crop) => (
+                          <Badge
+                            key={crop.name}
+                            variant="outline"
+                            className="cursor-pointer hover:bg-green-50"
+                            onClick={() => {
+                              handleCropChange(crop.name);
+                              setShowRecommendations(false);
+                            }}
+                          >
+                            {crop.name.charAt(0).toUpperCase() + crop.name.slice(1)}
+                            <span className="ml-1 text-xs text-gray-500">
+                              ({crop.season})
+                            </span>
+                          </Badge>
+                        ))}
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="crop">{t("selectCrop")}</Label>
-                <Select value={selectedCrop} onValueChange={setSelectedCrop}>
+                <Select value={selectedCrop} onValueChange={handleCropChange}>
                   <SelectTrigger>
                     <SelectValue placeholder={t("chooseCrop")} />
                   </SelectTrigger>
@@ -271,18 +424,45 @@ export default function CropCalendarPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="sowingDate">{t("sowingDate")}</Label>
-                <Input
-                  id="sowingDate"
-                  type="date"
-                  value={sowingDate}
-                  onChange={(e) => setSowingDate(e.target.value)}
-                />
-              </div>
+              {seasonValidation && (
+                <Alert variant={seasonValidation.isCompatible ? "default" : "destructive"}>
+                  {seasonValidation.isCompatible ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4" />
+                  )}
+                  <AlertTitle>
+                    {seasonValidation.isCompatible ? 'Season Match' : 'Season Mismatch'}
+                  </AlertTitle>
+                  <AlertDescription>
+                    {seasonValidation.message}
+                    {!seasonValidation.isCompatible && seasonValidation.recommendedCrops.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-sm font-medium mb-1">Recommended crops for {seasonValidation.selectedSeason} season:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {seasonValidation.recommendedCrops.map((crop) => (
+                            <Badge
+                              key={crop.name}
+                              variant="outline"
+                              className="cursor-pointer hover:bg-green-50"
+                              onClick={() => handleCropChange(crop.name)}
+                            >
+                              {crop.displayName}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
             <DialogFooter>
-              <Button onClick={createCalendar} className="bg-green-600 hover:bg-green-700">
+              <Button 
+                onClick={createCalendar} 
+                className="bg-green-600 hover:bg-green-700"
+                disabled={seasonValidation && !seasonValidation.isCompatible}
+              >
                 {t("createCalendar")}
               </Button>
             </DialogFooter>
@@ -306,6 +486,7 @@ export default function CropCalendarPage() {
               {upcomingTasks.slice(0, 5).map((task) => {
                 const Icon = taskIcons[task.taskType] || Clock;
                 const daysUntil = getDaysUntil(task.scheduledDate);
+                const canComplete = canCompleteTask(task.scheduledDate);
                 
                 return (
                   <div
@@ -329,7 +510,9 @@ export default function CropCalendarPage() {
                       size="sm"
                       variant="outline"
                       onClick={() => completeTask(task.calendarId!, task._id)}
-                      className="text-green-600 hover:bg-green-50"
+                      disabled={!canComplete}
+                      className={canComplete ? "text-green-600 hover:bg-green-50" : "text-gray-400 cursor-not-allowed"}
+                      title={!canComplete ? `Available from ${formatDate(new Date(new Date(task.scheduledDate).getTime() - 24 * 60 * 60 * 1000).toISOString())}` : "Mark as complete"}
                     >
                       <CheckCircle2 className="h-4 w-4 mr-1" />
                       {t("complete")}
@@ -479,6 +662,7 @@ export default function CropCalendarPage() {
                           const daysUntil = getDaysUntil(task.scheduledDate);
                           const isPast = daysUntil < 0;
                           const isToday = daysUntil === 0;
+                          const canComplete = canCompleteTask(task.scheduledDate);
                           
                           return (
                             <div
@@ -501,6 +685,11 @@ export default function CropCalendarPage() {
                                   {task.stage && (
                                     <Badge variant="outline" className="text-xs">
                                       {task.stage}
+                                    </Badge>
+                                  )}
+                                  {!task.completed && !canComplete && (
+                                    <Badge variant="outline" className="text-xs text-gray-400">
+                                      🔒 Locked
                                     </Badge>
                                   )}
                                 </div>
@@ -533,7 +722,9 @@ export default function CropCalendarPage() {
                                       if (updated) setViewCalendar(updated);
                                     }, 500);
                                   }}
-                                  className="text-green-600 hover:bg-green-50"
+                                  disabled={!canComplete}
+                                  className={canComplete ? "text-green-600 hover:bg-green-50" : "text-gray-400 cursor-not-allowed"}
+                                  title={!canComplete ? `Available from ${formatDate(new Date(new Date(task.scheduledDate).getTime() - 24 * 60 * 60 * 1000).toISOString())}` : "Mark as complete"}
                                 >
                                   <CheckCircle2 className="h-4 w-4" />
                                 </Button>

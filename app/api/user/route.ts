@@ -1,83 +1,65 @@
 // /app/api/user/route.ts
+// Proxy to Express backend for user endpoints
 import { NextRequest, NextResponse } from "next/server";
-import dbConnect from "@/backend/config/db";
-import User from "@/backend/models/User";
-import jwt from "jsonwebtoken";
 
-export const runtime = "nodejs";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-interface IUserUpdate {
-  fullName?: string;
-  email?: string;
-  phone?: string;
-  farmName?: string;
-  farmSize?: number;
-  farmLocation?: string;
-  state?: string;
-  district?: string;
-  pincode?: string;
-  village?: string;
-  latitude?: number;
-  longitude?: number;
-  crops?: string[];
-  primaryCrops?: string;
-  farmingExperience?: string;
-  farmingType?: string;
-  irrigationType?: string;
-  preferredLanguage?: string;
-  communicationPreference?: string;
-  profilePhoto?: string;
-}
-
-async function getUserFromToken(req: NextRequest) {
-  const token = req.headers.get("authorization")?.split(" ")[1];
-  if (!token) return null;
-
-  const secret = process.env.JWT_SECRET || "farmai_secret";
-
+export async function GET(req: NextRequest) {
   try {
-    const decoded = jwt.verify(token, secret) as { id: string };
-    const user = await User.findById(decoded.id).lean();
-    return user;
-  } catch {
-    return null;
+    const token = req.headers.get("authorization");
+    
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    
+    if (token) {
+      headers["Authorization"] = token;
+    }
+
+    const res = await fetch(`${BACKEND_URL}/api/user`, {
+      method: "GET",
+      headers,
+    });
+
+    const data = await res.json();
+    
+    return NextResponse.json(data, { status: res.status });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return NextResponse.json(
+      { message: "Failed to fetch user data" },
+      { status: 500 }
+    );
   }
 }
 
-export async function GET(req: NextRequest) {
-  await dbConnect();
-
-  const user = await getUserFromToken(req);
-  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-
-  // Exclude password safely
-  const { password, ...userWithoutPassword } = user;
-
-  return NextResponse.json(userWithoutPassword);
-}
-
 export async function PUT(req: NextRequest) {
-  await dbConnect();
-
-  const user = await getUserFromToken(req);
-  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-
   try {
-    const data: IUserUpdate = await req.json();
+    const token = req.headers.get("authorization");
+    const body = await req.json();
+    
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    
+    if (token) {
+      headers["Authorization"] = token;
+    }
 
-    const updatedUser = await User.findByIdAndUpdate(user._id, data, {
-      new: true,
-      runValidators: true,
-    }).lean();
+    const res = await fetch(`${BACKEND_URL}/api/user`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(body),
+    });
 
-    if (!updatedUser) return NextResponse.json({ message: "User not found" }, { status: 404 });
-
-    // Exclude password safely
-    const { password, ...userWithoutPassword } = updatedUser;
-
-    return NextResponse.json(userWithoutPassword);
+    const data = await res.json();
+    
+    return NextResponse.json(data, { status: res.status });
   } catch (error) {
     console.error("Error updating user:", error);
-    return NextResponse.json({ message: "Something went wrong" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to update user data" },
+      { status: 500 }
+    );
   }
 }

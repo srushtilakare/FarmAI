@@ -9,6 +9,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { Toaster } from "@/components/ui/toaster"
 
 interface DashboardLayoutProps {
 	children: React.ReactNode
@@ -226,6 +227,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 				{/* Page Content */}
 				<main className="p-4 lg:p-6">{children}</main>
 			</div>
+			<Toaster />
 		</div>
 	)
 }

@@ -1,10 +1,13 @@
+/* eslint-env node */
 const express = require('express');
 const router = express.Router();
 const ForumPost = require('../models/Forum');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const { logActivity } = require('./activities');
+const { moderateContent } = require('../utils/contentModeration');
 
 // Configure multer for image uploads
 const storage = multer.diskStorage({
@@ -32,20 +35,140 @@ const upload = multer({
   }
 });
 
+// Middleware to check if user is blocked from forum
+async function checkForumAccess(req, res, next) {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if user is permanently blocked
+    if (user.isBlockedFromForum) {
+      return res.status(403).json({ 
+        error: 'You have been blocked from the forum due to repeated violations of community guidelines.',
+        blocked: true,
+        warnings: user.forumWarnings
+      });
+    }
+
+    // Check if user is temporarily blocked
+    if (user.forumBlockedUntil && new Date() < user.forumBlockedUntil) {
+      const daysRemaining = Math.ceil((user.forumBlockedUntil - new Date()) / (1000 * 60 * 60 * 24));
+      return res.status(403).json({ 
+        error: `You are temporarily blocked from the forum. Access will be restored in ${daysRemaining} day(s).`,
+        blocked: true,
+        blockedUntil: user.forumBlockedUntil,
+        warnings: user.forumWarnings
+      });
+    }
+
+    // Clear temporary block if expired
+    if (user.forumBlockedUntil && new Date() >= user.forumBlockedUntil) {
+      user.forumBlockedUntil = null;
+      await user.save();
+    }
+
+    req.user = user; // Update req.user with fresh data
+    next();
+  } catch (error) {
+    console.error('Error checking forum access:', error);
+    res.status(500).json({ error: 'Failed to verify forum access' });
+  }
+}
+
+// Helper function to handle content moderation and warnings
+async function handleContentModeration(user, content, title = '') {
+  const moderationResult = moderateContent(content, title);
+  
+  if (moderationResult.isAbusive) {
+    // Increment warning count
+    user.forumWarnings = (user.forumWarnings || 0) + 1;
+    
+    // Add to warning history
+    user.forumWarningHistory = user.forumWarningHistory || [];
+    user.forumWarningHistory.push({
+      date: new Date(),
+      reason: `Detected abusive language: ${moderationResult.detectedWords.join(', ')}`,
+      content: title ? `${title} ${content}` : content
+    });
+
+    // Block user after 3 warnings
+    if (user.forumWarnings >= 3) {
+      user.isBlockedFromForum = true;
+      await user.save();
+      return {
+        blocked: true,
+        warnings: user.forumWarnings,
+        message: 'You have been permanently blocked from the forum due to repeated violations.'
+      };
+    }
+
+    // Temporary block after 2 warnings (7 days)
+    if (user.forumWarnings === 2) {
+      const blockUntil = new Date();
+      blockUntil.setDate(blockUntil.getDate() + 7);
+      user.forumBlockedUntil = blockUntil;
+      await user.save();
+      return {
+        blocked: true,
+        warnings: user.forumWarnings,
+        message: 'You have been temporarily blocked from the forum for 7 days due to repeated violations.',
+        blockedUntil: blockUntil
+      };
+    }
+
+    await user.save();
+    return {
+      blocked: false,
+      warned: true,
+      warnings: user.forumWarnings,
+      message: `Warning: Your content contains inappropriate language. You have ${user.forumWarnings} warning(s). After 3 warnings, you will be permanently blocked.`,
+      detectedWords: moderationResult.detectedWords
+    };
+  }
+
+  return { blocked: false, warned: false };
+}
+
 // Create a new forum post
-router.post('/posts', auth, upload.array('images', 3), async (req, res) => {
+router.post('/posts', auth, checkForumAccess, upload.array('images', 3), async (req, res) => {
   try {
     const { title, content, category, crop, tags } = req.body;
     
     if (!title || !content || !category) {
       return res.status(400).json({ error: 'Title, content, and category are required' });
     }
+
+    // Check content for abusive language
+    const moderationResult = await handleContentModeration(req.user, content, title);
+    
+    if (moderationResult.blocked) {
+      return res.status(403).json({
+        success: false,
+        error: moderationResult.message,
+        blocked: true,
+        warnings: moderationResult.warnings,
+        blockedUntil: moderationResult.blockedUntil
+      });
+    }
+
+    if (moderationResult.warned) {
+      return res.status(400).json({
+        success: false,
+        error: moderationResult.message,
+        warned: true,
+        warnings: moderationResult.warnings,
+        detectedWords: moderationResult.detectedWords
+      });
+    }
     
     const images = req.files ? req.files.map(file => `/uploads/forum/${file.filename}`) : [];
     
     const forumPost = new ForumPost({
       userId: req.user._id,
-      userName: req.user.name || 'Anonymous Farmer',
+      userName: req.user.fullName || 'Anonymous Farmer',
       userLocation: req.user.state || '',
       title,
       content,
@@ -131,7 +254,7 @@ router.get('/posts', async (req, res) => {
       success: true,
       posts: postsWithCount,
       totalPages: Math.ceil(count / limit),
-      currentPage: parseInt(page),
+      currentPage: parseInt(page, 10),
       totalPosts: count
     });
   } catch (error) {
@@ -161,12 +284,35 @@ router.get('/posts/:postId', async (req, res) => {
 });
 
 // Add a reply to a post
-router.post('/posts/:postId/replies', auth, upload.array('images', 2), async (req, res) => {
+router.post('/posts/:postId/replies', auth, checkForumAccess, upload.array('images', 2), async (req, res) => {
   try {
     const { content } = req.body;
     
     if (!content) {
       return res.status(400).json({ error: 'Content is required' });
+    }
+
+    // Check content for abusive language
+    const moderationResult = await handleContentModeration(req.user, content);
+    
+    if (moderationResult.blocked) {
+      return res.status(403).json({
+        success: false,
+        error: moderationResult.message,
+        blocked: true,
+        warnings: moderationResult.warnings,
+        blockedUntil: moderationResult.blockedUntil
+      });
+    }
+
+    if (moderationResult.warned) {
+      return res.status(400).json({
+        success: false,
+        error: moderationResult.message,
+        warned: true,
+        warnings: moderationResult.warnings,
+        detectedWords: moderationResult.detectedWords
+      });
     }
     
     const post = await ForumPost.findById(req.params.postId);
@@ -178,7 +324,7 @@ router.post('/posts/:postId/replies', auth, upload.array('images', 2), async (re
     
     const reply = {
       userId: req.user._id,
-      userName: req.user.name || 'Anonymous Farmer',
+      userName: req.user.fullName || 'Anonymous Farmer',
       content,
       images
     };

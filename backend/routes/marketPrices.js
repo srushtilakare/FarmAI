@@ -1,3 +1,4 @@
+/* eslint-env node */
 // backend/routes/marketPrices.js
 const express = require("express");
 const router = express.Router();
@@ -12,6 +13,9 @@ router.get("/", async (req, res) => {
     const { district, crop } = req.query;
 
     let url = `https://api.data.gov.in/resource/${RESOURCE_ID}?api-key=${API_KEY}&format=json&limit=5000`;
+
+    // Always filter by Maharashtra state
+    url += `&filters[state]=MAHARASHTRA`;
 
     // Proper gov filters:
     if (crop && crop !== "all") {

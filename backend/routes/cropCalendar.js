@@ -4,6 +4,23 @@ const CropCalendar = require('../models/CropCalendar');
 const auth = require('../middleware/auth');
 const { logActivity } = require('./activities');
 
+// Utility function to determine season from date
+// Indian agricultural seasons:
+// Kharif: June-October (monsoon)
+// Rabi: November-April (winter)
+// Zaid: March-June (summer)
+function getSeasonFromDate(date) {
+  const month = date.getMonth() + 1; // 1-12
+  if (month >= 6 && month <= 10) {
+    return 'kharif';
+  } else if (month >= 11 || month <= 4) {
+    return 'rabi';
+  } else if (month >= 3 && month <= 6) {
+    return 'zaid';
+  }
+  return 'year-round';
+}
+
 // Crop-specific task templates based on agricultural practices
 const cropTaskTemplates = {
   tomato: {
@@ -63,26 +80,116 @@ const cropTaskTemplates = {
       { type: 'harvesting', title: 'Harvest rice', offsetDays: 120, stage: 'Harvesting' }
     ]
   },
-  // Add more crops as needed
-  default: {
+  maize: {
+    season: 'kharif',
+    durationDays: 100,
+    tasks: [
+      { type: 'sowing', title: 'Sow maize seeds', offsetDays: 0, stage: 'Sowing' },
+      { type: 'irrigation', title: 'First irrigation', offsetDays: 3, stage: 'Germination' },
+      { type: 'fertilizer', title: 'Apply basal fertilizer', offsetDays: 7, stage: 'Basal' },
+      { type: 'irrigation', title: 'Regular irrigation', offsetDays: 15, stage: 'Vegetative', recurring: 7 },
+      { type: 'fertilizer', title: 'First top dressing', offsetDays: 25, stage: 'Vegetative' },
+      { type: 'pesticide', title: 'Pest control spray', offsetDays: 35, stage: 'Vegetative' },
+      { type: 'fertilizer', title: 'Second top dressing', offsetDays: 45, stage: 'Tasseling' },
+      { type: 'irrigation', title: 'Critical irrigation during tasseling', offsetDays: 50, stage: 'Tasseling' },
+      { type: 'irrigation', title: 'Silking stage irrigation', offsetDays: 60, stage: 'Silking' },
+      { type: 'harvesting', title: 'Harvest maize', offsetDays: 100, stage: 'Harvesting' }
+    ]
+  },
+  cotton: {
+    season: 'kharif',
+    durationDays: 150,
+    tasks: [
+      { type: 'sowing', title: 'Sow cotton seeds', offsetDays: 0, stage: 'Sowing' },
+      { type: 'irrigation', title: 'First irrigation', offsetDays: 5, stage: 'Germination' },
+      { type: 'fertilizer', title: 'Apply basal fertilizer', offsetDays: 10, stage: 'Basal' },
+      { type: 'irrigation', title: 'Regular irrigation', offsetDays: 15, stage: 'Vegetative', recurring: 10 },
+      { type: 'fertilizer', title: 'First top dressing', offsetDays: 30, stage: 'Vegetative' },
+      { type: 'pesticide', title: 'Bollworm management', offsetDays: 45, stage: 'Flowering' },
+      { type: 'fertilizer', title: 'Second top dressing', offsetDays: 50, stage: 'Flowering' },
+      { type: 'pesticide', title: 'Late season pest control', offsetDays: 70, stage: 'Boll Formation' },
+      { type: 'harvesting', title: 'First picking', offsetDays: 120, stage: 'Harvesting' },
+      { type: 'harvesting', title: 'Second picking', offsetDays: 140, stage: 'Harvesting' }
+    ]
+  },
+  sugarcane: {
     season: 'year-round',
+    durationDays: 365,
+    tasks: [
+      { type: 'sowing', title: 'Plant sugarcane setts', offsetDays: 0, stage: 'Planting' },
+      { type: 'irrigation', title: 'First irrigation', offsetDays: 3, stage: 'Germination' },
+      { type: 'fertilizer', title: 'Apply basal fertilizer', offsetDays: 7, stage: 'Basal' },
+      { type: 'irrigation', title: 'Regular irrigation', offsetDays: 15, stage: 'Tillering', recurring: 10 },
+      { type: 'fertilizer', title: 'First top dressing', offsetDays: 60, stage: 'Tillering' },
+      { type: 'fertilizer', title: 'Second top dressing', offsetDays: 120, stage: 'Grand Growth' },
+      { type: 'pesticide', title: 'Pest and disease control', offsetDays: 90, stage: 'Grand Growth' },
+      { type: 'harvesting', title: 'Harvest sugarcane', offsetDays: 365, stage: 'Harvesting' }
+    ]
+  },
+  potato: {
+    season: 'rabi',
     durationDays: 90,
     tasks: [
-      { type: 'sowing', title: 'Sow seeds', offsetDays: 0, stage: 'Sowing' },
-      { type: 'irrigation', title: 'First irrigation', offsetDays: 3, stage: 'Early Growth' },
+      { type: 'sowing', title: 'Plant potato tubers', offsetDays: 0, stage: 'Planting' },
+      { type: 'irrigation', title: 'First irrigation', offsetDays: 3, stage: 'Germination' },
       { type: 'fertilizer', title: 'Apply basal fertilizer', offsetDays: 7, stage: 'Basal' },
-      { type: 'irrigation', title: 'Regular irrigation', offsetDays: 15, stage: 'Growth', recurring: 7 },
-      { type: 'fertilizer', title: 'First top dressing', offsetDays: 30, stage: 'Mid Growth' },
-      { type: 'pesticide', title: 'Preventive pest control', offsetDays: 35, stage: 'Mid Growth' },
-      { type: 'fertilizer', title: 'Second top dressing', offsetDays: 50, stage: 'Late Growth' },
-      { type: 'harvesting', title: 'Harvest', offsetDays: 90, stage: 'Harvesting' }
+      { type: 'irrigation', title: 'Regular irrigation', offsetDays: 10, stage: 'Vegetative', recurring: 5 },
+      { type: 'fertilizer', title: 'First top dressing', offsetDays: 30, stage: 'Tuber Initiation' },
+      { type: 'irrigation', title: 'Critical irrigation during tuber formation', offsetDays: 40, stage: 'Tuber Formation' },
+      { type: 'pesticide', title: 'Late blight control', offsetDays: 50, stage: 'Tuber Formation' },
+      { type: 'harvesting', title: 'Harvest potatoes', offsetDays: 90, stage: 'Harvesting' }
+    ]
+  },
+  onion: {
+    season: 'rabi',
+    durationDays: 120,
+    tasks: [
+      { type: 'sowing', title: 'Sow onion seeds/transplant', offsetDays: 0, stage: 'Sowing' },
+      { type: 'irrigation', title: 'First irrigation', offsetDays: 3, stage: 'Germination' },
+      { type: 'fertilizer', title: 'Apply basal fertilizer', offsetDays: 7, stage: 'Basal' },
+      { type: 'irrigation', title: 'Regular irrigation', offsetDays: 10, stage: 'Vegetative', recurring: 7 },
+      { type: 'fertilizer', title: 'First top dressing', offsetDays: 30, stage: 'Vegetative' },
+      { type: 'fertilizer', title: 'Second top dressing', offsetDays: 60, stage: 'Bulb Formation' },
+      { type: 'irrigation', title: 'Stop irrigation before harvest', offsetDays: 100, stage: 'Maturity' },
+      { type: 'harvesting', title: 'Harvest onions', offsetDays: 120, stage: 'Harvesting' }
+    ]
+  },
+  soybean: {
+    season: 'kharif',
+    durationDays: 100,
+    tasks: [
+      { type: 'sowing', title: 'Sow soybean seeds', offsetDays: 0, stage: 'Sowing' },
+      { type: 'irrigation', title: 'First irrigation', offsetDays: 3, stage: 'Germination' },
+      { type: 'fertilizer', title: 'Apply basal fertilizer', offsetDays: 7, stage: 'Basal' },
+      { type: 'irrigation', title: 'Regular irrigation', offsetDays: 15, stage: 'Vegetative', recurring: 10 },
+      { type: 'fertilizer', title: 'First top dressing', offsetDays: 30, stage: 'Flowering' },
+      { type: 'pesticide', title: 'Pest control', offsetDays: 40, stage: 'Pod Formation' },
+      { type: 'harvesting', title: 'Harvest soybean', offsetDays: 100, stage: 'Harvesting' }
+    ]
+  },
+  groundnut: {
+    season: 'kharif',
+    durationDays: 110,
+    tasks: [
+      { type: 'sowing', title: 'Sow groundnut seeds', offsetDays: 0, stage: 'Sowing' },
+      { type: 'irrigation', title: 'First irrigation', offsetDays: 3, stage: 'Germination' },
+      { type: 'fertilizer', title: 'Apply basal fertilizer', offsetDays: 7, stage: 'Basal' },
+      { type: 'irrigation', title: 'Regular irrigation', offsetDays: 15, stage: 'Vegetative', recurring: 10 },
+      { type: 'fertilizer', title: 'First top dressing', offsetDays: 30, stage: 'Flowering' },
+      { type: 'pesticide', title: 'Pest control', offsetDays: 50, stage: 'Pod Formation' },
+      { type: 'harvesting', title: 'Harvest groundnut', offsetDays: 110, stage: 'Harvesting' }
     ]
   }
 };
 
 // Generate tasks from template
-function generateTasksFromTemplate(crop, sowingDate, location) {
-  const template = cropTaskTemplates[crop.toLowerCase()] || cropTaskTemplates.default;
+function generateTasksFromTemplate(crop, sowingDate, _location) {
+  const template = cropTaskTemplates[crop.toLowerCase()];
+  
+  if (!template) {
+    throw new Error(`Crop template not found for: ${crop}`);
+  }
+  
   const tasks = [];
   
   template.tasks.forEach(taskTemplate => {
@@ -119,6 +226,89 @@ function generateTasksFromTemplate(crop, sowingDate, location) {
   return { tasks, season: template.season, expectedHarvestDate: new Date(sowingDate.getTime() + template.durationDays * 24 * 60 * 60 * 1000) };
 }
 
+// Validate crop-season compatibility
+router.post('/validate-season', auth, async (req, res) => {
+  try {
+    const { crop, sowingDate } = req.body;
+    
+    if (!crop || !sowingDate) {
+      return res.status(400).json({ error: 'Crop and sowing date are required' });
+    }
+    
+    const date = new Date(sowingDate);
+    const selectedSeason = getSeasonFromDate(date);
+    const template = cropTaskTemplates[crop.toLowerCase()];
+    
+    if (!template) {
+      return res.status(400).json({ error: 'Crop not found' });
+    }
+    
+    const cropSeason = template.season;
+    const isCompatible = cropSeason === 'year-round' || cropSeason === selectedSeason;
+    
+    // Get recommended crops for the selected date
+    const recommendedCrops = Object.keys(cropTaskTemplates)
+      .filter(key => {
+        const t = cropTaskTemplates[key];
+        return t.season === 'year-round' || t.season === selectedSeason;
+      })
+      .map(key => ({
+        name: key,
+        displayName: key.charAt(0).toUpperCase() + key.slice(1),
+        season: cropTaskTemplates[key].season
+      }));
+    
+    res.json({
+      success: true,
+      isCompatible,
+      selectedSeason,
+      cropSeason,
+      recommendedCrops,
+      message: isCompatible 
+        ? `${crop} is suitable for ${selectedSeason} season`
+        : `${crop} is typically grown in ${cropSeason} season, but you selected ${selectedSeason} season`
+    });
+  } catch (error) {
+    console.error('Error validating season:', error);
+    res.status(500).json({ error: 'Failed to validate season' });
+  }
+});
+
+// Get recommended crops for a date
+router.get('/recommended-crops', auth, async (req, res) => {
+  try {
+    const { date } = req.query;
+    
+    if (!date) {
+      return res.status(400).json({ error: 'Date is required' });
+    }
+    
+    const selectedDate = new Date(date);
+    const season = getSeasonFromDate(selectedDate);
+    
+    const recommendedCrops = Object.keys(cropTaskTemplates)
+      .filter(key => {
+        const template = cropTaskTemplates[key];
+        return template.season === 'year-round' || template.season === season;
+      })
+      .map(key => ({
+        name: key,
+        displayName: key.charAt(0).toUpperCase() + key.slice(1),
+        season: cropTaskTemplates[key].season,
+        durationDays: cropTaskTemplates[key].durationDays
+      }));
+    
+    res.json({
+      success: true,
+      season,
+      recommendedCrops
+    });
+  } catch (error) {
+    console.error('Error getting recommended crops:', error);
+    res.status(500).json({ error: 'Failed to get recommended crops' });
+  }
+});
+
 // Create a new crop calendar
 router.post('/create', auth, async (req, res) => {
   try {
@@ -128,7 +318,28 @@ router.post('/create', auth, async (req, res) => {
       return res.status(400).json({ error: 'Crop and sowing date are required' });
     }
     
-    const { tasks, season, expectedHarvestDate } = generateTasksFromTemplate(crop, new Date(sowingDate), location);
+    // Validate season compatibility
+    const date = new Date(sowingDate);
+    const selectedSeason = getSeasonFromDate(date);
+    const template = cropTaskTemplates[crop.toLowerCase()];
+    
+    if (!template) {
+      return res.status(400).json({ error: 'Crop not found' });
+    }
+    
+    const cropSeason = template.season;
+    const isCompatible = cropSeason === 'year-round' || cropSeason === selectedSeason;
+    
+    if (!isCompatible) {
+      return res.status(400).json({ 
+        error: `Season mismatch: ${crop} is typically grown in ${cropSeason} season, but you selected ${selectedSeason} season`,
+        selectedSeason,
+        cropSeason,
+        isCompatible: false
+      });
+    }
+    
+    const { tasks, season, expectedHarvestDate } = generateTasksFromTemplate(crop, date, location);
     
     const cropCalendar = new CropCalendar({
       userId: req.user._id,
@@ -185,7 +396,7 @@ router.get('/upcoming-tasks', auth, async (req, res) => {
   try {
     const { days = 7 } = req.query;
     const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + parseInt(days));
+    futureDate.setDate(futureDate.getDate() + parseInt(days, 10));
     
     const calendars = await CropCalendar.find({
       userId: req.user._id,
@@ -241,6 +452,25 @@ router.put('/task/:calendarId/:taskId/complete', auth, async (req, res) => {
     const task = calendar.tasks.id(taskId);
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    // Validate if task can be completed based on date
+    // Allow completion from 1 day before scheduled date onwards
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const scheduledDate = new Date(task.scheduledDate);
+    scheduledDate.setHours(0, 0, 0, 0);
+    
+    const daysDifference = Math.ceil((scheduledDate - today) / (1000 * 60 * 60 * 24));
+    
+    // Can't complete tasks that are scheduled more than 1 day in the future
+    if (daysDifference > 1) {
+      return res.status(400).json({ 
+        error: 'Task cannot be completed yet',
+        message: `This task is scheduled for ${task.scheduledDate.toLocaleDateString('en-IN')}. You can complete it starting ${daysDifference - 1} day(s) before the scheduled date.`,
+        daysUntilAvailable: daysDifference - 1
+      });
     }
     
     task.completed = true;
@@ -313,5 +543,8 @@ router.delete('/:calendarId', auth, async (req, res) => {
   }
 });
 
+// Export crop templates and utility functions for use in other modules
 module.exports = router;
+module.exports.cropTaskTemplates = cropTaskTemplates;
+module.exports.getSeasonFromDate = getSeasonFromDate;
 

@@ -59,3 +59,9 @@ venv/
 .env/
 .venv/
 env/
+
+# 
+.cursorignore
+.DS_Store
+.codacy/
+.cursor/

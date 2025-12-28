@@ -1,3 +1,4 @@
+/* eslint-env node */
 // backend/models/User.js
 const mongoose = require("mongoose");
 
@@ -20,6 +21,25 @@ const userSchema = new mongoose.Schema({
 
   // NEW: favorite crops for quick access (stored as uppercase strings)
   favoriteCrops: { type: [String], default: [] },
+
+  // Forum moderation fields
+  forumWarnings: { 
+    type: Number, 
+    default: 0 
+  },
+  isBlockedFromForum: { 
+    type: Boolean, 
+    default: false 
+  },
+  forumBlockedUntil: { 
+    type: Date, 
+    default: null 
+  },
+  forumWarningHistory: [{
+    date: { type: Date, default: Date.now },
+    reason: String,
+    content: String
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);

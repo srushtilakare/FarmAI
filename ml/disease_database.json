@@ -66,6 +66,32 @@
           "खालची पाने छाटून हवा परिसंचरण सुधारा"
         ]
       },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Extension Expert",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Ministry of Agriculture, Government of India",
+          "Agricultural Best Practices",
+          "Horticultural Expert Recommendation"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "भारतीय कृषि अनुसंधान परिषद (ICAR)",
+          "भारतीय कृषि अनुसंधान परिषद (ICAR)",
+          "कृषि मंत्रालय, भारत सरकार",
+          "कृषि सर्वोत्तम प्रथाएं",
+          "बागवानी विशेषज्ञ सिफारिश"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "भारतीय कृषी संशोधन परिषद (ICAR)",
+          "भारतीय कृषी संशोधन परिषद (ICAR)",
+          "कृषी मंत्रालय, भारत सरकार",
+          "कृषी सर्वोत्तम पद्धती",
+          "बागायती तज्ञ शिफारस"
+        ]
+      },
       "prevention": {
         "en": [
           "Use disease-resistant varieties like Pusa Ruby, Arka Vikas",
@@ -232,6 +258,38 @@
           "पानांच्या खालच्या बाजूसह संपूर्ण रोप झाका",
           "सकाळी दव सुकल्यावर फवारणी करा",
           "निरोगी रोपे संक्रमित भागातून वेगळे करा"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Emergency Response Protocol",
+          "Plant Pathology Expert",
+          "Ministry of Agriculture, Government of India",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Integrated Pest Management Guidelines",
+          "Agricultural Best Practices",
+          "Krishi Vigyan Kendra (KVK) Guidelines",
+          "Plant Protection Guidelines"
+        ],
+        "hi": [
+          "आपातकालीन प्रतिक्रिया प्रोटोकॉल",
+          "पादप रोगविज्ञान विशेषज्ञ",
+          "कृषि मंत्रालय, भारत सरकार",
+          "भारतीय कृषि अनुसंधान परिषद (ICAR)",
+          "एकीकृत कीट प्रबंधन दिशानिर्देश",
+          "कृषि सर्वोत्तम प्रथाएं",
+          "कृषि विज्ञान केंद्र (KVK) दिशानिर्देश",
+          "पौध संरक्षण दिशानिर्देश"
+        ],
+        "mr": [
+          "आणीबाणी प्रतिसाद प्रोटोकॉल",
+          "वनस्पती रोगविज्ञान तज्ञ",
+          "कृषी मंत्रालय, भारत सरकार",
+          "भारतीय कृषी संशोधन परिषद (ICAR)",
+          "एकात्मिक कीटक व्यवस्थापन मार्गदर्शक तत्त्वे",
+          "कृषी सर्वोत्तम पद्धती",
+          "कृषी विज्ञान केंद्र (KVK) मार्गदर्शक तत्त्वे",
+          "वनस्पती संरक्षण मार्गदर्शक तत्त्वे"
         ]
       },
       "prevention": {
@@ -415,6 +473,26 @@
           "नैसर्गिक पोषक घटकांसाठी गांडूळ खत वापरा",
           "आर्द्रता टिकवण्यासाठी कोरड्या पानांचा पालापाचोळा घाला"
         ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Extension Expert",
+          "Agricultural Best Practices",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
+        ]
       }
     }
   },
@@ -480,6 +558,29 @@
           "कापणीनंतर पिकाचे अवशेष काढा",
           "नायट्रोजनसह जास्त खतीकरण टाळा",
           "कंद उघडकीस येऊ नये म्हणून योग्यरित्या माती चढवा"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Indian Council of Agricultural Research (ICAR)",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert",
+          "Agricultural Best Practices"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
         ]
       }
     },
@@ -564,6 +665,38 @@
           "फक्त कोरड्या हवामानात कापणी करा",
           "पहिल्या लक्षणांवर तात्काळ स्थानिक कृषी अधिकाऱ्याशी संपर्क साधा"
         ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Emergency Response Protocol",
+          "Emergency Response Protocol",
+          "Plant Protection Guidelines",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "आपातकालीन प्रतिक्रिया प्रोटोकॉल",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "आणीबाणी प्रतिसाद प्रोटोकॉल",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
+        ]
       }
     },
     "healthy": {
@@ -638,6 +771,26 @@
           "ऍझोटोबॅक्टर आणि PSB जैव खते वापरा",
           "ओलावा टिकवण्यासाठी तांदूळ पेंढ्याचा पालापाचोळा घाला"
         ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
+        ]
       }
     }
   },
@@ -701,6 +854,23 @@
         "mr": [
           "मासिक कडुलिंबाचे तेल फवारणी",
           "कंपोस्ट वापरा"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
         ]
       }
     },
@@ -766,6 +936,23 @@
         "mr": [
           "सल्फर डस्ट @ 3g/L साप्ताहिक",
           "कडुलिंबाचे तेल @ 5ml/L"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Best Practices",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
         ]
       }
     },
@@ -833,6 +1020,23 @@
           "बोर्डो मिश्रण 1%",
           "कॉपर हायड्रॉक्साईड @ 3g/L"
         ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Best Practices",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Best Practices"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
+        ]
       }
     },
     "Cedar_apple_rust": {
@@ -898,6 +1102,23 @@
           "सल्फर फवारणी @ 3g/L",
           "कडुलिंबाचे तेल @ 5ml/L"
         ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Best Practices",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
+        ]
       }
     }
   },
@@ -961,6 +1182,23 @@
         "mr": [
           "मासिक कडुलिंबाचे तेल फवारणी",
           "कंपोस्ट वापरा"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
         ]
       }
     },
@@ -1034,6 +1272,23 @@
           "बेकिंग सोडा: 2 चमचे + 1L पाणी",
           "कडुलिंबाचे तेल @ 5ml/L"
         ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert",
+          "Agricultural Best Practices"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
+        ]
       }
     }
   },
@@ -1097,6 +1352,23 @@
         "mr": [
           "मासिक कडुलिंबाचे तेल फवारणी",
           "कंपोस्ट वापरा"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
         ]
       }
     },
@@ -1162,6 +1434,23 @@
           "सल्फर फवारणी @ 3g/L",
           "कडुलिंबाचे तेल @ 5ml/L"
         ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
+        ]
       }
     },
     "Northern_Leaf_Blight": {
@@ -1225,6 +1514,23 @@
         "mr": [
           "कडुलिंबाचे तेल @ 5ml/L",
           "कॉपर बुरशीनाशक @ 2.5g/L"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Indian Council of Agricultural Research (ICAR)",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Best Practices"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
         ]
       }
     },
@@ -1290,6 +1596,23 @@
           "कॉपर बुरशीनाशक @ 2.5g/L",
           "कडुलिंबाचे तेल @ 5ml/L"
         ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Extension Expert",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
+        ]
       }
     }
   },
@@ -1353,6 +1676,23 @@
         "mr": [
           "मासिक कडुलिंबाचे तेल फवारणी",
           "कंपोस्ट वापरा"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
         ]
       }
     },
@@ -1419,6 +1759,23 @@
         "mr": [
           "कॉपर बुरशीनाशक @ 2.5g/L",
           "सल्फर @ 3g/L"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Best Practices",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
         ]
       }
     },
@@ -1497,6 +1854,26 @@
         "en": "Contact grape specialist immediately - no cure available",
         "hi": "तुरंत अंगूर विशेषज्ञ से संपर्क करें - कोई इलाज उपलब्ध नहीं",
         "mr": "तात्काळ द्राक्ष तज्ञाशी संपर्क साधा - कोणताही उपचार नाही"
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Best Practices",
+          "Agricultural Extension Expert",
+          "Agricultural Best Practices",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
+        ]
       }
     },
     "Leaf_blight_(Isariopsis_Leaf_Spot)": {
@@ -1561,6 +1938,23 @@
           "बोर्डो मिश्रण 1%",
           "कडुलिंबाचे तेल @ 5ml/L"
         ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert",
+          "Agricultural Best Practices"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
+        ]
       }
     }
   },
@@ -1624,6 +2018,23 @@
         "mr": [
           "मासिक कडुलिंबाचे तेल फवारणी",
           "कंपोस्ट वापरा"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
         ]
       }
     },
@@ -1694,6 +2105,23 @@
           "कॉपर हायड्रॉक्साईड @ 2.5g/L",
           "बोर्डो मिश्रण प्रतिबंधात्मक"
         ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
+        ]
       }
     }
   },
@@ -1757,6 +2185,23 @@
         "mr": [
           "मासिक कडुलिंबाचे तेल फवारणी",
           "कंपोस्ट वापरा"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
         ]
       }
     },
@@ -1827,6 +2272,23 @@
           "कॉपर हायड्रॉक्साईड @ 2.5g/L",
           "कडुलिंबाचे तेल @ 5ml/L"
         ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Best Practices",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
+        ]
       }
     }
   },
@@ -1890,6 +2352,23 @@
         "mr": [
           "मासिक कडुलिंबाचे तेल फवारणी",
           "कंपोस्ट वापरा"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
         ]
       }
     },
@@ -1957,6 +2436,23 @@
         "mr": [
           "कॉपर बुरशीनाशक @ 2.5g/L",
           "सल्फर फवारणी @ 3g/L"
+        ]
+      },
+      "treatmentSources": {
+        "en": [
+          "Agricultural Best Practices",
+          "Indian Council of Agricultural Research (ICAR)",
+          "Agricultural Extension Expert"
+        ],
+        "hi": [
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ",
+          "कृषि विस्तार विशेषज्ञ"
+        ],
+        "mr": [
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ",
+          "कृषी विस्तार तज्ञ"
         ]
       }
     }
