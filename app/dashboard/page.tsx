@@ -133,7 +133,7 @@ export default function DashboardPage() {
           setActivitiesLoading(false);
           return;
         }
-        const response = await fetch("/api/activities?limit=6", {
+        const response = await fetch("http://localhost:5000/api/activities?limit=6", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

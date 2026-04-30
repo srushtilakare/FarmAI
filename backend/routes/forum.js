@@ -10,27 +10,60 @@ const { logActivity } = require('./activities');
 const { moderateContent } = require('../utils/contentModeration');
 
 // Configure multer for image uploads
+const fs = require('fs');
+
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/forum/');
+    // ✅ FIXED: absolute path
+    const dir = path.join(__dirname, '../uploads/forum');
+
+    // ✅ ensure folder exists
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    cb(null, dir);
   },
+
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + Math.random().toString(36).substring(7) + path.extname(file.originalname));
+    cb(
+      null,
+      Date.now() +
+        '-' +
+        Math.random().toString(36).substring(7) +
+        path.extname(file.originalname)
+    );
   }
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
+
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (mimetype && extname) {
-      return cb(null, true);
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/heic' // for iPhone
+    ];
+
+    const allowedExtensions = [
+      '.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic'
+    ];
+
+    const ext = path.extname(file.originalname).toLowerCase();
+
+    if (
+      allowedMimeTypes.includes(file.mimetype) ||
+      allowedExtensions.includes(ext)
+    ) {
+      cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      cb(new Error('Only image files are allowed (jpg, png, gif, webp, heic)'));
     }
   }
 });
@@ -135,6 +168,9 @@ async function handleContentModeration(user, content, title = '') {
 // Create a new forum post
 router.post('/posts', auth, checkForumAccess, upload.array('images', 3), async (req, res) => {
   try {
+    console.log("🔥 USER DATA:", req.user);
+    console.log("🔥 WARNINGS:", req.user.forumWarnings);
+    console.log("🔥 BLOCKED UNTIL:", req.user.forumBlockedUntil);
     const { title, content, category, crop, tags } = req.body;
     
     if (!title || !content || !category) {

@@ -6,8 +6,6 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing import image # type: ignore
 import numpy as np
 
- 
-
 # Parse command line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("--image", type=str, help="Path to image file")

@@ -25,6 +25,65 @@ async function logActivity(userId, activityData) {
     });
     
     const saved = await activity.save();
+    // 🔥 UPDATE GAMIFICATION DATA
+const User = require('../models/User');
+
+const user = await User.findById(userId);
+
+if (user) {
+  if (!user.gamification) {
+    user.gamification = {
+      achievements: {},
+      recentActivities: []
+    };
+  }
+
+  // 🔹 Map activity types to achievements
+  const typeMap = {
+    'community-forum': 'communityHelper',
+    'disease-detection': 'diseaseDetector',
+    'soil-report': 'soilMaster'
+  };
+
+  const achievementKey = typeMap[activityData.activityType];
+
+  if (achievementKey) {
+    if (!user.gamification.achievements[achievementKey]) {
+      user.gamification.achievements[achievementKey] = {
+        current: 0,
+        target:
+          achievementKey === 'communityHelper' ? 25 :
+          achievementKey === 'diseaseDetector' ? 20 :
+          achievementKey === 'soilMaster' ? 5 : 10,
+        completed: false
+      };
+    }
+
+    user.gamification.achievements[achievementKey].current += 1;
+
+    // mark completed
+    if (
+      user.gamification.achievements[achievementKey].current >=
+      user.gamification.achievements[achievementKey].target
+    ) {
+      user.gamification.achievements[achievementKey].completed = true;
+    }
+  }
+
+  // 🔹 Add recent activity
+  user.gamification.recentActivities.unshift({
+    activityType: activityData.activityType,
+    description: activityData.description,
+    points: 10,
+    date: new Date()
+  });
+
+  // keep last 10
+  user.gamification.recentActivities =
+    user.gamification.recentActivities.slice(0, 10);
+
+  await user.save();
+}
     console.log('✅ Activity logged:', {
       id: saved._id,
       type: saved.activityType,

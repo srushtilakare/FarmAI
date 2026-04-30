@@ -5,12 +5,12 @@ const router = express.Router();
 require("dotenv").config();
 const { logActivity, getUserIdFromRequest } = require("./activities");
 
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 router.post("/", async (req, res) => {
   try {
@@ -30,9 +30,7 @@ router.post("/", async (req, res) => {
       }
     }
 
-    // --- Gemini Model ---
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
+    // --- Prompt ---
     const prompt = `
       You are a friendly AI chatbot for farmers named FarmAI.
       User message: "${message}".
@@ -41,14 +39,18 @@ router.post("/", async (req, res) => {
       Respond simply and helpfully.
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = result.response.text(); // ✅ latest SDK handles this correctly
+    // --- NEW Gemini API ---
+    const result = await ai.models.generateContent({
+      model: "gemini-2.0-flash",   // ✅ WORKING MODEL
+      contents: prompt,
+    });
 
-    // Log activity (optional - only if user is authenticated)
+    const response = result.text;
+
+    // --- Logging ---
     const userId = await getUserIdFromRequest(req);
-    console.log('💬 Chat - userId extracted:', userId);
     if (userId) {
-      const loggedActivity = await logActivity(userId, {
+      await logActivity(userId, {
         activityType: 'chat',
         title: 'Chat with Farmii',
         description: `Chat interaction: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`,
@@ -56,12 +58,10 @@ router.post("/", async (req, res) => {
         result: 'Response provided',
         metadata: { messageLength: message.length, hasLocation: !!(lat && lon) }
       });
-      console.log('💬 Chat activity logged:', loggedActivity ? 'Success' : 'Failed');
-    } else {
-      console.log('⚠️ Chat - No userId found, skipping activity log');
     }
 
     res.json({ reply: response });
+
   } catch (error) {
     console.error("Chatbot Gemini error:", error);
     res.status(500).json({

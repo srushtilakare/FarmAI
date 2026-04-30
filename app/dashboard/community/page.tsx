@@ -117,97 +117,95 @@ export default function CommunityForumPage() {
   };
 
   const createPost = async () => {
-    if (!newPost.title || !newPost.content) {
+    // ✅ Validation
+    if (!newPost.title || !newPost.content || !newPost.category) {
       toast({
         title: 'Missing Information',
-        description: 'Please provide title and content',
+        description: 'Please fill title, content, and category',
         variant: 'destructive'
       });
       return;
     }
-
+  
     try {
       const token = localStorage.getItem('token');
+  
       const formData = new FormData();
+  
+      // ✅ Basic fields
       formData.append('title', newPost.title);
       formData.append('content', newPost.content);
       formData.append('category', newPost.category);
-      if (newPost.crop) formData.append('crop', newPost.crop);
-      if (newPost.tags) formData.append('tags', JSON.stringify(newPost.tags.split(',').map(t => t.trim())));
-      
-      // Add images
-      postImages.forEach((image) => {
-        formData.append('images', image);
-      });
-
+  
+      if (newPost.crop) {
+        formData.append('crop', newPost.crop);
+      }
+  
+      // ✅ IMPORTANT: Send tags as JSON string (backend uses JSON.parse)
+      if (newPost.tags) {
+        const tagsArray = newPost.tags
+          .split(',')
+          .map(tag => tag.trim())
+          .filter(tag => tag !== '');
+  
+        formData.append('tags', JSON.stringify(tagsArray));
+      }
+  
+      // ✅ IMPORTANT: Backend expects "images"
+      if (postImages && postImages.length > 0) {
+        postImages.forEach((image) => {
+          formData.append('images', image);
+        });
+      }
+  
+      // 🚀 API Call
       const response = await fetch('http://localhost:5000/api/forum/posts', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}` // ✅ Only auth header
         },
-        body: formData
+        body: formData // ✅ DO NOT set Content-Type manually
       });
-
-      let data;
-      try {
-        data = await response.json();
-      } catch (parseError) {
-        // If JSON parsing fails, create a default error object
-        data = { error: 'Failed to process server response' };
-      }
-
+  
+      const data = await response.json();
+      console.log("FULL ERROR RESPONSE:", data);
+  
       if (response.ok) {
-        // Log gamification activity
-        await fetch('http://localhost:5000/api/gamification/log-activity', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            activityType: 'forum_post',
-            description: 'Created a forum post'
-          })
-        });
-
         toast({
           title: 'Success',
           description: 'Post created successfully!'
         });
+  
+        // ✅ Reset form
         setIsCreateDialogOpen(false);
-        setNewPost({ title: '', content: '', category: 'general', crop: '', tags: '' });
+        setNewPost({
+          title: '',
+          content: '',
+          category: 'general',
+          crop: '',
+          tags: ''
+        });
         setPostImages([]);
+  
+        // ✅ Refresh posts
         fetchPosts();
+  
       } else {
-        // Handle moderation responses
         console.log('Post creation failed:', { status: response.status, data });
-        if (data.blocked) {
-          toast({
-            title: 'Access Denied',
-            description: data.error || 'You have been blocked from the forum.',
-            variant: 'destructive',
-            duration: 5000
-          });
-        } else if (data.warned) {
-          toast({
-            title: 'Content Warning',
-            description: data.error || 'Your content contains inappropriate language. Please revise your post.',
-            variant: 'destructive',
-            duration: 5000
-          });
-        } else {
-          toast({
-            title: 'Error',
-            description: data.error || 'Failed to create post',
-            variant: 'destructive'
-          });
-        }
+  
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to create post',
+          variant: 'destructive'
+        });
       }
+  
     } catch (error) {
       console.error('Error creating post:', error);
+  
       toast({
         title: 'Error',
-        description: 'Failed to create post. Please try again.',
+        description: 'Something went wrong while creating post',
         variant: 'destructive'
       });
     }
@@ -239,6 +237,7 @@ export default function CommunityForumPage() {
       const response = await fetch(`http://localhost:5000/api/forum/posts/${postId}`);
       if (response.ok) {
         const data = await response.json();
+        console.log("FULL ERROR RESPONSE:", data);
         setSelectedPost(data.post);
       }
     } catch (error) {
@@ -435,7 +434,7 @@ export default function CommunityForumPage() {
               {t("askQuestion")}
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto p-6 rounded-2xl">
             <DialogHeader>
               <DialogTitle>{t("askAQuestion")}</DialogTitle>
               <DialogDescription>
@@ -847,4 +846,3 @@ export default function CommunityForumPage() {
     </DashboardLayout>
   );
 }
-
