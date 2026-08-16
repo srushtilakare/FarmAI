@@ -1,45 +1,67 @@
 /* eslint-env node */
+
 // backend/models/User.js
+
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
+
   fullName: { type: String, required: true },
+
   email: { type: String },
+
+  // Password will be stored as a secure hash, never as plain text
   password: { type: String },
+
   phone: { type: String, required: true, unique: true },
+
   preferredLanguage: { type: String, default: "en-US" },
+
   farmLocation: { type: String, required: true },
+
   state: { type: String, required: true },
+
   district: { type: String, required: true },
+
   pincode: { type: String },
+
   village: { type: String }, // More specific location
+
   latitude: { type: Number }, // For accurate weather data
+
   longitude: { type: Number }, // For accurate weather data
+
   crops: { type: [String], required: true },
+
   farmingType: { type: String, required: true },
+
   profilePhoto: { type: String },
 
   // NEW: favorite crops for quick access (stored as uppercase strings)
   favoriteCrops: { type: [String], default: [] },
 
   // Forum moderation fields
-  forumWarnings: { 
-    type: Number, 
-    default: 0 
+  forumWarnings: {
+    type: Number,
+    default: 0
   },
-  isBlockedFromForum: { 
-    type: Boolean, 
-    default: false 
+
+  isBlockedFromForum: {
+    type: Boolean,
+    default: false
   },
-  forumBlockedUntil: { 
-    type: Date, 
-    default: null 
+
+  forumBlockedUntil: {
+    type: Date,
+    default: null
   },
+
   forumWarningHistory: [{
     date: { type: Date, default: Date.now },
     reason: String,
     content: String
   }]
+
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);

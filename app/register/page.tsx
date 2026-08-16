@@ -4,23 +4,23 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { 
-  Sprout, 
-  MapPin, 
-  User, 
-  CheckCircle2, 
-  ChevronRight, 
-  ChevronLeft, 
-  Loader2, 
+import {
+  Sprout,
+  MapPin,
+  User,
+  CheckCircle2,
+  ChevronRight,
+  ChevronLeft,
+  Loader2,
   Languages,
   Leaf,
   Tractor,
-  Wheat
+  Wheat,
+  Lock,
 } from "lucide-react";
 
 /* ==========================
    INDIAN_STATES_DISTRICTS
-   (Tamaro data jem hato tem j rakhyo che)
    ========================== */
 const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
   "Andhra Pradesh": ["Anantapur", "Chittoor", "East Godavari", "Guntur", "Krishna", "Kurnool", "Prakasam", "Srikakulam", "Visakhapatnam", "Vizianagaram", "West Godavari", "YSR Kadapa"],
@@ -61,7 +61,7 @@ const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
   "Puducherry": ["Karaikal", "Mahe", "Puducherry", "Yanam"]
 };
 
-/* --- LIST OF CROPS (Directly included for reliability) --- */
+/* --- LIST OF CROPS --- */
 const AVAILABLE_CROPS = [
   { id: "wheat", label: "Wheat (गहू)", icon: "🌾" },
   { id: "rice", label: "Rice (तांदूळ)", icon: "🍚" },
@@ -83,6 +83,9 @@ const TRANSLATIONS: any = {
     name: "Full Name",
     phone: "Mobile Number",
     language: "Language",
+    password: "Password",
+    confirmPassword: "Confirm Password",
+    passwordHint: "Password must be at least 6 characters",
     detectLocation: "Use Current Location",
     locationDetected: "Location Detected",
     chooseCrops: "Select Crops You Grow",
@@ -114,6 +117,9 @@ const TRANSLATIONS: any = {
     name: "पूरा नाम",
     phone: "मोबाइल नंबर",
     language: "भाषा",
+    password: "पासवर्ड",
+    confirmPassword: "पासवर्ड की पुष्टि करें",
+    passwordHint: "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
     detectLocation: "मेरे वर्तमान स्थान का उपयोग करें",
     locationDetected: "स्थान प्राप्त हुआ",
     chooseCrops: "आप कौन सी फसल उगाते हैं?",
@@ -145,12 +151,15 @@ const TRANSLATIONS: any = {
     name: "पूर्ण नाव",
     phone: "मोबाईल नंबर",
     language: "भाषा",
+    password: "पासवर्ड",
+    confirmPassword: "पासवर्डची पुष्टी करा",
+    passwordHint: "पासवर्ड किमान 6 अक्षरांचा असावा",
     detectLocation: "माझे सध्याचे लोकेशन वापरा",
     locationDetected: "लोकेशन मिळाले",
     chooseCrops: "तुम्ही कोणती पिके घेता?",
     farmingType: "शेतीची पद्धत",
     organic: "सेंद्रिय (Organic)",
-    traditional: "पारंपरिक (Traditional)",
+    traditional: "पारंपारिक (Traditional)",
     modern: "आधुनिक (Modern)",
     submit: "नोंदणी पूर्ण करा",
     success: "नोंदणी यशस्वी!",
@@ -182,6 +191,9 @@ export default function RegisterPage() {
   const [step, setStep] = useState<number>(1);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [location, setLocation] = useState<any>({});
   const [locLoading, setLocLoading] = useState(false);
   const [locError, setLocError] = useState<string | null>(null);
@@ -191,23 +203,44 @@ export default function RegisterPage() {
   const [manualPincode, setManualPincode] = useState("");
   const [manualVillage, setManualVillage] = useState("");
   const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
-  const [farmingType, setFarmingType] = useState<"organic" | "traditional" | "modern">("traditional");
+  const [farmingType, setFarmingType] = useState<
+    "organic" | "traditional" | "modern"
+  >("traditional");
   const [loading, setLoading] = useState(false);
 
   // --- location detection helpers
-  async function reverseGeocodeWithRetry(lat: number, lon: number): Promise<any | null> {
+  async function reverseGeocodeWithRetry(
+    lat: number,
+    lon: number
+  ): Promise<any | null> {
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
         { headers: { "Accept-Language": "en" } }
       );
+
       if (!res.ok) throw new Error("Geocoding failed");
+
       const data = await res.json();
       const address = data.address || {};
+
       let state = address.state || address.region || "";
-      let district = address.state_district || address.county || address.city_district || address.city || "";
+      let district =
+        address.state_district ||
+        address.county ||
+        address.city_district ||
+        address.city ||
+        "";
+
       district = district.replace(/\s+District$/i, "").trim();
-      let village = address.village || address.town || address.suburb || address.neighbourhood || "";
+
+      let village =
+        address.village ||
+        address.town ||
+        address.suburb ||
+        address.neighbourhood ||
+        "";
+
       const loc = {
         lat,
         lon,
@@ -217,6 +250,7 @@ export default function RegisterPage() {
         village,
         display_name: data.display_name || "",
       };
+
       return loc;
     } catch (err) {
       console.error("Geocoding error:", err);
@@ -226,18 +260,23 @@ export default function RegisterPage() {
 
   function detectLocation() {
     setLocError(null);
+
     if (!navigator.geolocation) {
       setLocError(t("errorLocation"));
       setShowManualLocation(true);
       return;
     }
+
     setLocLoading(true);
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
+
         try {
           const loc = await reverseGeocodeWithRetry(lat, lon);
+
           if (loc) {
             setLocation(loc);
             setManualState(loc.state || "");
@@ -245,7 +284,12 @@ export default function RegisterPage() {
             setManualPincode(loc.pincode || "");
             setManualVillage(loc.village || "");
             setShowManualLocation(true);
-            toast({ title: t("locationDetected"), description: loc.display_name || "", variant: "default" });
+
+            toast({
+              title: t("locationDetected"),
+              description: loc.display_name || "",
+              variant: "default",
+            });
           } else {
             setLocError(t("errorLocation"));
             setShowManualLocation(true);
@@ -262,30 +306,55 @@ export default function RegisterPage() {
         setLocError(t("errorLocation"));
         setShowManualLocation(true);
       },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0,
+      }
     );
   }
 
   function toggleCrop(cropId: string) {
-    setSelectedCrops((prev) => 
-      prev.includes(cropId) ? prev.filter((c) => c !== cropId) : [...prev, cropId]
+    setSelectedCrops((prev) =>
+      prev.includes(cropId)
+        ? prev.filter((c) => c !== cropId)
+        : [...prev, cropId]
     );
   }
 
   function goNext() {
     if (step === 1) {
       if (!name.trim() || !phone.trim()) {
-        toast({ title: "Incomplete", description: t("fillAll"), variant: "destructive" });
+        toast({
+          title: "Incomplete",
+          description: t("fillAll"),
+          variant: "destructive",
+        });
         return;
       }
+
+      if (!/^\d{10}$/.test(phone.trim())) {
+        toast({
+          title: "Invalid Mobile Number",
+          description: "Please enter a valid 10-digit mobile number.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setStep(2);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (step === 2) {
       // This ensures the user has selected from the dropdowns
       if (!manualState || !manualDistrict) {
-        toast({ title: "Location Missing", description: "Please select your State and District", variant: "destructive" });
+        toast({
+          title: "Location Missing",
+          description: "Please select your State and District",
+          variant: "destructive",
+        });
         return;
       }
+
       setStep(3);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -298,22 +367,68 @@ export default function RegisterPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
-    // Ensure we use manual values if they exist, otherwise fallback to auto-detected ones
+
+    // Ensure we use manual values if they exist,
+    // otherwise fallback to auto-detected ones
     const finalState = manualState || location.state || "";
     const finalDistrict = manualDistrict || location.district || "";
     const finalPincode = manualPincode || location.pincode || "";
     const finalVillage = manualVillage || location.village || "";
 
     // Validation
-    if (!name.trim() || !phone.trim() || !finalState || !finalDistrict || selectedCrops.length === 0) {
-      toast({ title: "Error", description: t("fillAll"), variant: "destructive" });
+    if (
+      !name.trim() ||
+      !phone.trim() ||
+      !finalState ||
+      !finalDistrict ||
+      selectedCrops.length === 0
+    ) {
+      toast({
+        title: "Error",
+        description: t("fillAll"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Password validation
+    if (!password) {
+      toast({
+        title: "Password Required",
+        description: "Please create a password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Weak Password",
+        description: t("passwordHint"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Passwords Do Not Match",
+        description: "Please make sure both passwords are the same.",
+        variant: "destructive",
+      });
       return;
     }
 
     setLoading(true);
+
     try {
-      const locationParts = [finalVillage, finalDistrict, finalState, finalPincode].filter(Boolean);
+      const locationParts = [
+        finalVillage,
+        finalDistrict,
+        finalState,
+        finalPincode,
+      ].filter(Boolean);
+
       const farmLocation = locationParts.join(", ");
 
       const payload = {
@@ -329,28 +444,34 @@ export default function RegisterPage() {
         longitude: location.lon || 0,
         crops: selectedCrops,
         farmingType,
+        password,
       };
 
-      const res = await fetch("http://localhost:5000/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      
+      const res = await fetch(
+        "http://localhost:5000/api/auth/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
       const data = await res.json();
 
       if (!res.ok) {
-        toast({ 
-          title: "Error", 
-          description: data.message || "Registration failed", 
-          variant: "destructive" 
+        toast({
+          title: "Error",
+          description: data.message || "Registration failed",
+          variant: "destructive",
         });
       } else {
         // 1. Show the success toast
-        toast({ 
-          title: t("success"), 
-          description: "Redirecting to login...", 
-          variant: "default" 
+        toast({
+          title: t("success"),
+          description: "Redirecting to login...",
+          variant: "default",
         });
 
         // 2. WAIT 2 seconds so the user can actually see the message
@@ -359,10 +480,10 @@ export default function RegisterPage() {
         }, 2000);
       }
     } catch (err) {
-      toast({ 
-        title: "Error", 
-        description: "Connection to server failed", 
-        variant: "destructive" 
+      toast({
+        title: "Error",
+        description: "Connection to server failed",
+        variant: "destructive",
       });
     } finally {
       // Only set loading to false if we didn't redirect
@@ -370,31 +491,32 @@ export default function RegisterPage() {
     }
   }
 
-  const districtsForState = manualState ? INDIAN_STATES_DISTRICTS[manualState] || [] : [];
+  const districtsForState = manualState
+    ? INDIAN_STATES_DISTRICTS[manualState] || []
+    : [];
 
   return (
     <div className="min-h-screen bg-[#F0FDF4] flex items-center justify-center p-4 md:p-8 font-sans">
-      
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px] border border-green-100">
-        
         {/* SIDEBAR: Visual & Progress */}
         <div className="md:w-1/3 bg-gradient-to-br from-green-800 to-green-700 text-white p-8 flex flex-col justify-between relative overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-             <Sprout className="absolute -bottom-10 -right-10 w-64 h-64" />
+            <Sprout className="absolute -bottom-10 -right-10 w-64 h-64" />
           </div>
 
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-8">
               <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
-                 <Sprout className="w-8 h-8 text-white" />
+                <Sprout className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-2xl font-bold tracking-tight">FarmAI</h1>
             </div>
-            
+
             <h2 className="text-3xl font-bold leading-tight mb-4">
               {t("title")}
             </h2>
+
             <p className="text-green-100 text-lg opacity-90">
               {t("subtitle")}
             </p>
@@ -402,239 +524,441 @@ export default function RegisterPage() {
 
           {/* Stepper */}
           <div className="relative z-10 mt-8 md:mt-0 space-y-6">
-             <div className="space-y-4">
-                {[1, 2, 3].map((s) => (
-                  <div key={s} className="flex items-center gap-4">
-                     <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 
-                        ${step >= s ? "bg-white text-green-800 border-white font-bold" : "border-green-400 text-green-200"}`}>
-                        {step > s ? <CheckCircle2 className="w-5 h-5" /> : s}
-                     </div>
-                     <span className={`text-sm font-medium ${step >= s ? "text-white" : "text-green-300"}`}>
-                       {s === 1 && t("step1")}
-                       {s === 2 && t("step2")}
-                       {s === 3 && t("step3")}
-                     </span>
+            <div className="space-y-4">
+              {[1, 2, 3].map((s) => (
+                <div key={s} className="flex items-center gap-4">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                      step >= s
+                        ? "bg-white text-green-800 border-white font-bold"
+                        : "border-green-400 text-green-200"
+                    }`}
+                  >
+                    {step > s ? (
+                      <CheckCircle2 className="w-5 h-5" />
+                    ) : (
+                      s
+                    )}
                   </div>
-                ))}
-             </div>
+
+                  <span
+                    className={`text-sm font-medium ${
+                      step >= s ? "text-white" : "text-green-300"
+                    }`}
+                  >
+                    {s === 1 && t("step1")}
+                    {s === 2 && t("step2")}
+                    {s === 3 && t("step3")}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* MAIN FORM AREA */}
         <div className="md:w-2/3 p-6 md:p-10 bg-white relative">
-           
-           {/* Top Bar: Language */}
-           <div className="absolute top-6 right-6 flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200">
-              <Languages className="w-4 h-4 text-gray-500 ml-1" />
-              {["en-US", "hi-IN", "mr-IN"].map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLang(l as any)}
-                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${lang === l ? "bg-green-600 text-white shadow-sm" : "text-gray-600 hover:bg-gray-200"}`}
-                >
-                  {l === "en-US" ? "EN" : l === "hi-IN" ? "हिंदी" : "मराठी"}
-                </button>
-              ))}
-           </div>
+          {/* Top Bar: Language */}
+          <div className="absolute top-6 right-6 flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200">
+            <Languages className="w-4 h-4 text-gray-500 ml-1" />
 
-           <form onSubmit={handleSubmit} className="mt-12 h-full flex flex-col">
-              
-              {/* STEP 1: PERSONAL DETAILS */}
-              {step === 1 && (
-                <div className="flex-1 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                   <div>
-                      <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <User className="w-5 h-5 text-green-600" /> {t("step1")}
-                      </h3>
-                      <p className="text-gray-500 text-sm mt-1">Please enter your basic contact details.</p>
-                   </div>
-                   
-                   <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">{t("name")} <span className="text-red-500">*</span></label>
-                        <input
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none"
-                          placeholder="e.g. Rajesh Kumar"
-                        />
-                      </div>
+            {["en-US", "hi-IN", "mr-IN"].map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLang(l as any)}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                  lang === l
+                    ? "bg-green-600 text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {l === "en-US" ? "EN" : l === "hi-IN" ? "हिंदी" : "मराठी"}
+              </button>
+            ))}
+          </div>
 
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">{t("phone")} <span className="text-red-500">*</span></label>
-                        <div className="relative">
-                          <span className="absolute left-4 top-3.5 text-gray-400 font-medium">+91</span>
-                          <input
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none"
-                            placeholder="98765 43210"
-                            type="tel"
-                            maxLength={10}
-                          />
-                        </div>
-                      </div>
-                   </div>
+          <form onSubmit={handleSubmit} className="mt-12 h-full flex flex-col">
+            {/* STEP 1: PERSONAL DETAILS */}
+            {step === 1 && (
+              <div className="flex-1 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <User className="w-5 h-5 text-green-600" />
+                    {t("step1")}
+                  </h3>
+
+                  <p className="text-gray-500 text-sm mt-1">
+                    Please enter your basic contact details.
+                  </p>
                 </div>
-              )}
 
-              {/* STEP 2: LOCATION */}
-              {step === 2 && (
-                <div className="flex-1 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <MapPin className="w-5 h-5 text-green-600" /> {t("step2")}
-                      </h3>
-                      <p className="text-gray-500 text-sm mt-1">We need your farm location for soil & weather data.</p>
-                   </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      {t("name")} <span className="text-red-500">*</span>
+                    </label>
 
-                   {/* Auto Detect Button */}
-                   <button
-                      type="button"
-                      onClick={detectLocation}
-                      disabled={locLoading}
-                      className="w-full py-4 border-2 border-dashed border-green-300 rounded-xl bg-green-50 text-green-700 font-semibold hover:bg-green-100 transition-colors flex items-center justify-center gap-2"
-                   >
-                      {locLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
-                      {locLoading ? t("highAccuracy") : t("detectLocation")}
-                   </button>
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none"
+                      placeholder="e.g. Rajesh Kumar"
+                    />
+                  </div>
 
-                   {location.display_name && !showManualLocation && (
-                      <div className="bg-green-50 border border-green-200 p-4 rounded-xl flex items-start gap-3">
-                         <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                         <div>
-                            <p className="text-green-800 font-medium">{t("locationDetected")}</p>
-                            <p className="text-sm text-green-700 mt-1">{location.display_name}</p>
-                            <button type="button" onClick={() => setShowManualLocation(true)} className="text-xs font-bold text-green-800 underline mt-2">
-                               {t("editLocation")}
-                            </button>
-                         </div>
-                      </div>
-                   )}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      {t("phone")} <span className="text-red-500">*</span>
+                    </label>
 
-                   {/* Manual Fields */}
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-600 uppercase">{t("state")}</label>
-                        <select
-                          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-green-100 outline-none"
-                          value={manualState}
-                          onChange={(e) => { setManualState(e.target.value); setManualDistrict(""); }}
-                        >
-                          <option value="">{t("selectState")}</option>
-                          {Object.keys(INDIAN_STATES_DISTRICTS).map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </div>
+                    <div className="relative">
+                      <span className="absolute left-4 top-3.5 text-gray-400 font-medium">
+                        +91
+                      </span>
 
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-600 uppercase">{t("district")}</label>
-                        <select
-                          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-green-100 outline-none"
-                          value={manualDistrict}
-                          onChange={(e) => setManualDistrict(e.target.value)}
-                          disabled={!manualState}
-                        >
-                          <option value="">{t("selectDistrict")}</option>
-                          {districtsForState.map((d) => <option key={d} value={d}>{d}</option>)}
-                        </select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-600 uppercase">{t("village")}</label>
-                        <input
-                          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-100 outline-none"
-                          value={manualVillage}
-                          onChange={(e) => setManualVillage(e.target.value)}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-600 uppercase">{t("pincode")}</label>
-                        <input
-                          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-100 outline-none"
-                          value={manualPincode}
-                          onChange={(e) => setManualPincode(e.target.value)}
-                          maxLength={6}
-                        />
-                      </div>
-                   </div>
+                      <input
+                        value={phone}
+                        onChange={(e) =>
+                          setPhone(
+                            e.target.value.replace(/\D/g, "").slice(0, 10)
+                          )
+                        }
+                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none"
+                        placeholder="98765 43210"
+                        type="tel"
+                        maxLength={10}
+                      />
+                    </div>
+                  </div>
                 </div>
-              )}
-
-              {/* STEP 3: FARMING INFO */}
-              {step === 3 && (
-                <div className="flex-1 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <Leaf className="w-5 h-5 text-green-600" /> {t("step3")}
-                      </h3>
-                      <p className="text-gray-500 text-sm mt-1">{t("chooseCrops")}</p>
-                   </div>
-
-                   {/* Crop Grid */}
-                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {AVAILABLE_CROPS.map((crop) => (
-                        <div
-                          key={crop.id}
-                          onClick={() => toggleCrop(crop.id)}
-                          className={`cursor-pointer border rounded-xl p-3 flex flex-col items-center justify-center text-center transition-all duration-200
-                             ${selectedCrops.includes(crop.id) 
-                                ? "bg-green-600 border-green-600 text-white shadow-md transform scale-105" 
-                                : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-green-300"}`}
-                        >
-                           <span className="text-2xl mb-1">{crop.icon}</span>
-                           <span className="text-xs font-medium">{crop.label}</span>
-                        </div>
-                      ))}
-                   </div>
-
-                   <div className="pt-4 border-t border-gray-100">
-                      <label className="block text-sm font-medium text-gray-700 mb-3">{t("farmingType")}</label>
-                      <div className="flex flex-wrap gap-3">
-                        {[
-                          { id: "traditional", label: t("traditional"), icon: <Wheat className="w-4 h-4"/> },
-                          { id: "modern", label: t("modern"), icon: <Tractor className="w-4 h-4"/> },
-                          { id: "organic", label: t("organic"), icon: <Leaf className="w-4 h-4"/> },
-                        ].map((type) => (
-                           <button
-                             key={type.id}
-                             type="button"
-                             onClick={() => setFarmingType(type.id as any)}
-                             className={`px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-all border
-                                ${farmingType === type.id 
-                                  ? "bg-green-700 text-white border-green-700" 
-                                  : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
-                           >
-                              {type.icon}
-                              {type.label}
-                           </button>
-                        ))}
-                      </div>
-                   </div>
-                </div>
-              )}
-
-              {/* NAVIGATION BUTTONS */}
-              <div className="mt-8 flex items-center justify-between pt-6 border-t border-gray-100">
-                 {step > 1 ? (
-                    <button type="button" onClick={goBack} className="flex items-center gap-1 text-gray-500 hover:text-gray-800 font-medium px-4 py-2">
-                       <ChevronLeft className="w-4 h-4" /> Back
-                    </button>
-                 ) : <div></div>}
-
-                 {step < 3 ? (
-                    <Button type="button" onClick={goNext} className="bg-green-600 hover:bg-green-700 text-white px-8 rounded-xl h-12 text-base shadow-lg shadow-green-200">
-                       Next Step <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
-                 ) : (
-                    <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700 text-white px-8 rounded-xl h-12 text-base shadow-lg shadow-green-200 w-full sm:w-auto">
-                       {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : null}
-                       {t("submit")}
-                    </Button>
-                 )}
               </div>
+            )}
 
-           </form>
+            {/* STEP 2: LOCATION */}
+            {step === 2 && (
+              <div className="flex-1 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-green-600" />
+                    {t("step2")}
+                  </h3>
+
+                  <p className="text-gray-500 text-sm mt-1">
+                    We need your farm location for soil & weather data.
+                  </p>
+                </div>
+
+                {/* Auto Detect Button */}
+                <button
+                  type="button"
+                  onClick={detectLocation}
+                  disabled={locLoading}
+                  className="w-full py-4 border-2 border-dashed border-green-300 rounded-xl bg-green-50 text-green-700 font-semibold hover:bg-green-100 transition-colors flex items-center justify-center gap-2"
+                >
+                  {locLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <MapPin className="w-5 h-5" />
+                  )}
+
+                  {locLoading
+                    ? t("highAccuracy")
+                    : t("detectLocation")}
+                </button>
+
+                {location.display_name && !showManualLocation && (
+                  <div className="bg-green-50 border border-green-200 p-4 rounded-xl flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+
+                    <div>
+                      <p className="text-green-800 font-medium">
+                        {t("locationDetected")}
+                      </p>
+
+                      <p className="text-sm text-green-700 mt-1">
+                        {location.display_name}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowManualLocation(true)}
+                        className="text-xs font-bold text-green-800 underline mt-2"
+                      >
+                        {t("editLocation")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-600 uppercase">
+                      {t("state")}
+                    </label>
+
+                    <select
+                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-green-100 outline-none"
+                      value={manualState}
+                      onChange={(e) => {
+                        setManualState(e.target.value);
+                        setManualDistrict("");
+                      }}
+                    >
+                      <option value="">{t("selectState")}</option>
+
+                      {Object.keys(INDIAN_STATES_DISTRICTS).map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-600 uppercase">
+                      {t("district")}
+                    </label>
+
+                    <select
+                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-green-100 outline-none"
+                      value={manualDistrict}
+                      onChange={(e) =>
+                        setManualDistrict(e.target.value)
+                      }
+                      disabled={!manualState}
+                    >
+                      <option value="">
+                        {t("selectDistrict")}
+                      </option>
+
+                      {districtsForState.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-600 uppercase">
+                      {t("village")}
+                    </label>
+
+                    <input
+                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-100 outline-none"
+                      value={manualVillage}
+                      onChange={(e) =>
+                        setManualVillage(e.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-600 uppercase">
+                      {t("pincode")}
+                    </label>
+
+                    <input
+                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-100 outline-none"
+                      value={manualPincode}
+                      onChange={(e) =>
+                        setManualPincode(
+                          e.target.value.replace(/\D/g, "").slice(0, 6)
+                        )
+                      }
+                      maxLength={6}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: FARMING INFO */}
+            {step === 3 && (
+              <div className="flex-1 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <Leaf className="w-5 h-5 text-green-600" />
+                    {t("step3")}
+                  </h3>
+
+                  <p className="text-gray-500 text-sm mt-1">
+                    {t("chooseCrops")}
+                  </p>
+                </div>
+
+                {/* Crop Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {AVAILABLE_CROPS.map((crop) => (
+                    <div
+                      key={crop.id}
+                      onClick={() => toggleCrop(crop.id)}
+                      className={`cursor-pointer border rounded-xl p-3 flex flex-col items-center justify-center text-center transition-all duration-200 ${
+                        selectedCrops.includes(crop.id)
+                          ? "bg-green-600 border-green-600 text-white shadow-md transform scale-105"
+                          : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-green-300"
+                      }`}
+                    >
+                      <span className="text-2xl mb-1">
+                        {crop.icon}
+                      </span>
+
+                      <span className="text-xs font-medium">
+                        {crop.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Password Section */}
+                <div className="pt-4 border-t border-gray-100 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t("password")}{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" />
+
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) =>
+                          setPassword(e.target.value)
+                        }
+                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none"
+                        placeholder="Create your password"
+                        autoComplete="new-password"
+                      />
+                    </div>
+
+                    <p className="text-xs text-gray-500 mt-1">
+                      {t("passwordHint")}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t("confirmPassword")}{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" />
+
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) =>
+                          setConfirmPassword(e.target.value)
+                        }
+                        className={`w-full pl-11 pr-4 py-3 rounded-xl border transition-all outline-none ${
+                          confirmPassword &&
+                          confirmPassword !== password
+                            ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                            : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                        }`}
+                        placeholder="Confirm your password"
+                        autoComplete="new-password"
+                      />
+                    </div>
+
+                    {confirmPassword &&
+                      confirmPassword !== password && (
+                        <p className="text-xs text-red-500 mt-1">
+                          Passwords do not match.
+                        </p>
+                      )}
+                  </div>
+                </div>
+
+                {/* Farming Type */}
+                <div className="pt-4 border-t border-gray-100">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    {t("farmingType")}
+                  </label>
+
+                  <div className="flex flex-wrap gap-3">
+                    {[
+                      {
+                        id: "traditional",
+                        label: t("traditional"),
+                        icon: <Wheat className="w-4 h-4" />,
+                      },
+                      {
+                        id: "modern",
+                        label: t("modern"),
+                        icon: <Tractor className="w-4 h-4" />,
+                      },
+                      {
+                        id: "organic",
+                        label: t("organic"),
+                        icon: <Leaf className="w-4 h-4" />,
+                      },
+                    ].map((type) => (
+                      <button
+                        key={type.id}
+                        type="button"
+                        onClick={() =>
+                          setFarmingType(type.id as any)
+                        }
+                        className={`px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-all border ${
+                          farmingType === type.id
+                            ? "bg-green-700 text-white border-green-700"
+                            : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                        }`}
+                      >
+                        {type.icon}
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* NAVIGATION BUTTONS */}
+            <div className="mt-8 flex items-center justify-between pt-6 border-t border-gray-100">
+              {step > 1 ? (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="flex items-center gap-1 text-gray-500 hover:text-gray-800 font-medium px-4 py-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Back
+                </button>
+              ) : (
+                <div></div>
+              )}
+
+              {step < 3 ? (
+                <Button
+                  type="button"
+                  onClick={goNext}
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 rounded-xl h-12 text-base shadow-lg shadow-green-200"
+                >
+                  Next Step
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 rounded-xl h-12 text-base shadow-lg shadow-green-200 w-full sm:w-auto"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : null}
+
+                  {t("submit")}
+                </Button>
+              )}
+            </div>
+          </form>
         </div>
       </div>
     </div>
