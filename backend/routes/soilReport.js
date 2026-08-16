@@ -4,7 +4,8 @@ const SoilReport = require('../models/SoilReport');
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
-const { GoogleGenAI } = require('@google/genai'); // ✅ FIXED SDK
+const { extractTextFromPDF } = require('../utils/pdfExtractor');
+ 
 const { logActivity } = require('./activities');
 
 // Configure multer for file uploads
@@ -33,75 +34,127 @@ const upload = multer({
   }
 });
 
-// ✅ NEW Gemini Setup
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+ 
 
-// Helper function to analyze soil report using Gemini AI
-async function analyzeSoilReportWithAI(reportText, soilParameters) {
-  try {
+// Helper function to analyze soil report 
+async function analyzeSoilReport(soil) {
 
-    const prompt = `You are an agricultural soil scientist. Analyze the following soil test report and provide detailed recommendations.
+  const analysis = {
+    soilHealthSummary: "",
+    soilType: "Loamy",
+    overallRating: "moderate",
+    suitableCrops: [],
+    fertilizerRecommendation: {
+      plan: "",
+      npkRatio: "",
+      organicOptions: [],
+      applicationSchedule: ""
+    },
+    correctionMeasures: [],
+    seasonalAdvice: ""
+  };
 
-Soil Parameters:
-${JSON.stringify(soilParameters, null, 2)}
+  let issues = 0;
 
-Based on the soil parameters provided (even if some values are null or unknown), provide reasonable estimates and comprehensive recommendations.
+  // --- pH ---
+  if (soil.pH?.value !== null) {
+    const ph = soil.pH.value;
 
-IMPORTANT: You MUST respond with ONLY valid JSON. Follow these strict rules:
-- "overallRating" MUST be EXACTLY one of: "excellent", "good", "moderate", or "poor"
-- "priority" MUST be EXACTLY one of: "high", "medium", or "low"
-
-Provide your analysis in JSON format.
-
-Return ONLY JSON, no extra text.`;
-
-    // ✅ NEW Gemini API call
-    const result = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
-
-    const text = result.text;
-
-    // Extract JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsedData = JSON.parse(jsonMatch[0]);
-
-      const analysis = parsedData.analysis || parsedData;
-      const extractedParameters = parsedData.extractedParameters || null;
-
-      const validRatings = ['excellent', 'good', 'moderate', 'poor'];
-      const validPriorities = ['high', 'medium', 'low'];
-
-      if (!validRatings.includes(analysis.overallRating)) {
-        analysis.overallRating = 'moderate';
-      }
-
-      if (analysis.correctionMeasures && Array.isArray(analysis.correctionMeasures)) {
-        analysis.correctionMeasures = analysis.correctionMeasures.map(measure => {
-          if (!validPriorities.includes(measure.priority)) {
-            const p = measure.priority?.toLowerCase();
-            if (p?.includes('high')) measure.priority = 'high';
-            else if (p?.includes('low')) measure.priority = 'low';
-            else measure.priority = 'medium';
-          }
-          return measure;
-        });
-      }
-
-      return {
-        analysis,
-        extractedParameters
-      };
+    if (ph < 6) {
+      issues++;
+      analysis.correctionMeasures.push({
+        issue: "Soil is acidic",
+        solution: "Apply lime to increase pH",
+        priority: "high"
+      });
+    } else if (ph > 7.5) {
+      issues++;
+      analysis.correctionMeasures.push({
+        issue: "Soil is alkaline",
+        solution: "Apply gypsum or organic matter",
+        priority: "high"
+      });
     }
-
-    throw new Error('Failed to parse AI response');
-
-  } catch (error) {
-    console.error('Error analyzing with AI:', error);
-    throw error;
   }
+
+  // --- Nitrogen ---
+  if (soil.nitrogen?.value !== null && soil.nitrogen.value < 50) {
+    issues++;
+    analysis.correctionMeasures.push({
+      issue: "Low Nitrogen",
+      solution: "Apply Urea fertilizer",
+      priority: "high"
+    });
+  }
+
+  // --- Phosphorus ---
+  if (soil.phosphorus?.value !== null && soil.phosphorus.value < 30) {
+    issues++;
+    analysis.correctionMeasures.push({
+      issue: "Low Phosphorus",
+      solution: "Use DAP fertilizer",
+      priority: "medium"
+    });
+  }
+
+  // --- Potassium ---
+  if (soil.potassium?.value !== null && soil.potassium.value < 120) {
+    issues++;
+    analysis.correctionMeasures.push({
+      issue: "Low Potassium",
+      solution: "Apply MOP (Potash)",
+      priority: "medium"
+    });
+  }
+
+  // --- Organic Carbon ---
+  if (soil.organicCarbon?.value !== null && soil.organicCarbon.value < 0.5) {
+    issues++;
+    analysis.correctionMeasures.push({
+      issue: "Low Organic Carbon",
+      solution: "Add compost or manure",
+      priority: "medium"
+    });
+  }
+
+  // --- Rating ---
+  if (issues === 0) {
+    analysis.overallRating = "excellent";
+    analysis.soilHealthSummary = "Soil is in excellent condition with balanced nutrients.";
+  } else if (issues <= 2) {
+    analysis.overallRating = "good";
+    analysis.soilHealthSummary = "Soil is good but needs minor improvements.";
+  } else if (issues <= 4) {
+    analysis.overallRating = "moderate";
+    analysis.soilHealthSummary = "Soil requires improvement in multiple areas.";
+  } else {
+    analysis.overallRating = "poor";
+    analysis.soilHealthSummary = "Soil health is poor and needs immediate attention.";
+  }
+
+  // --- Fertilizer Plan ---
+  analysis.fertilizerRecommendation = {
+    plan: "Apply balanced fertilizers based on deficiencies",
+    npkRatio: "10:26:26 or as per soil test",
+    organicOptions: ["Compost", "Vermicompost", "Farmyard manure"],
+    applicationSchedule: "Apply before sowing and during growth stages"
+  };
+
+  // --- Suitable Crops ---
+  analysis.suitableCrops = [
+    { cropName: "Wheat", suitabilityScore: 85, reason: "Moderate nutrient suitability" },
+    { cropName: "Rice", suitabilityScore: 80, reason: "Can grow with improvements" },
+    { cropName: "Maize", suitabilityScore: 78, reason: "Requires nitrogen improvement" }
+  ];
+
+  // --- Seasonal Advice ---
+  analysis.seasonalAdvice =
+    "Ensure proper irrigation and nutrient management based on seasonal crop requirements.";
+
+  return {
+    analysis,
+    extractedParameters: soil
+  };
 }
 
 // Helper function to extract soil parameters
@@ -143,23 +196,36 @@ router.post('/upload', auth, upload.single('report'), async (req, res) => {
       labName: labName || 'Unknown Lab'
     });
 
+    // 🟢 DEFAULT parameters
     soilReport.soilParameters = manualParameters
       ? JSON.parse(manualParameters)
       : extractSoilParameters();
 
+    // 🟢 NEW: Extract text if PDF
+    let extractedText = "";
+    const filePath = `uploads/soil-reports/${req.file.filename}`;
+
+    if (req.file.mimetype === 'application/pdf') {
+      extractedText = await extractTextFromPDF(filePath);
+      console.log("📄 Extracted PDF Text (first 300 chars):", extractedText.slice(0, 300));
+    }
+
+    // 🟢 Save report FIRST
     await soilReport.save();
 
+    // 🟢 Log upload
     await logActivity(req.user._id, {
       activityType: 'soil-report',
       title: 'Soil Report Uploaded',
       description: `Uploaded soil test report`,
       status: 'completed',
-      result: 'Report uploaded, AI analysis in progress',
+      result: 'Report uploaded, analysis in progress',
       relatedId: soilReport._id,
       relatedModel: 'SoilReport'
     });
 
-    analyzeReportAsync(soilReport._id);
+    // 🟢 Pass extractedText to async analysis
+    analyzeReportAsync(soilReport._id, extractedText);
 
     res.json({
       success: true,
@@ -173,20 +239,45 @@ router.post('/upload', auth, upload.single('report'), async (req, res) => {
   }
 });
 
+function extractValuesFromText(text) {
+  const soil = extractSoilParameters();
+
+  const getValue = (pattern) => {
+    const match = text.match(pattern);
+    return match ? parseFloat(match[1]) : null;
+  };
+
+  soil.pH.value = getValue(/pH\s*[:\-]?\s*(\d+\.?\d*)/i);
+  soil.nitrogen.value = getValue(/nitrogen.*?(\d+\.?\d*)/i);
+  soil.phosphorus.value = getValue(/phosphorus.*?(\d+\.?\d*)/i);
+  soil.potassium.value = getValue(/potassium.*?(\d+\.?\d*)/i);
+  soil.organicCarbon.value = getValue(/organic carbon.*?(\d+\.?\d*)/i);
+
+  return soil;
+}
+
 // Async analysis
-async function analyzeReportAsync(reportId) {
+async function analyzeReportAsync(reportId, extractedText) {
   try {
     const report = await SoilReport.findById(reportId);
     if (!report) return;
 
-    const aiResult = await analyzeSoilReportWithAI('', report.soilParameters);
+    let soil = report.soilParameters;
 
+    // 🟢 STEP 1: Extract values from text
+    if (extractedText) {
+      soil = extractValuesFromText(extractedText);
+    }
+
+    // 🟢 STEP 2: Run analysis logic
+    const aiResult = await analyzeSoilReport(soil);
+
+    report.soilParameters = soil;
     report.aiAnalysis = aiResult.analysis;
     report.processed = true;
 
     await report.save();
 
-    // ✅ FIXED BUG (aiResponse → report.aiAnalysis)
     await logActivity(report.userId, {
       activityType: 'soil-report',
       title: 'Soil Report Analysis Completed',
@@ -199,5 +290,22 @@ async function analyzeReportAsync(reportId) {
     console.error('Error in async analysis:', error);
   }
 }
+
+// Get all soil reports for logged-in user
+router.get('/my-reports', auth, async (req, res) => {
+  try {
+    const reports = await SoilReport.find({ userId: req.user._id })
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      reports
+    });
+
+  } catch (error) {
+    console.error('Error fetching soil reports:', error);
+    res.status(500).json({ error: 'Failed to fetch reports' });
+  }
+});
 
 module.exports = router;

@@ -3,14 +3,11 @@ const express = require("express");
 const axios = require("axios");
 const router = express.Router();
 require("dotenv").config();
+
 const { logActivity, getUserIdFromRequest } = require("./activities");
 
-const { GoogleGenAI } = require("@google/genai");
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const HF_API_KEY = process.env.HF_API_KEY;
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
-
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 router.post("/", async (req, res) => {
   try {
@@ -32,38 +29,87 @@ router.post("/", async (req, res) => {
 
     // --- Prompt ---
     const prompt = `
-      You are a friendly AI chatbot for farmers named FarmAI.
-      User message: "${message}".
-      Preferred language: ${language || "English"}.
-      Weather: ${weatherText}.
-      Respond simply and helpfully.
-    `;
+You are FarmAI, a helpful AI assistant for farmers.
 
-    // --- NEW Gemini API ---
-    const result = await ai.models.generateContent({
-      model: "gemini-2.0-flash",   // ✅ WORKING MODEL
-      contents: prompt,
-    });
+User question: ${message}
+Language: ${language || "English"}
+Weather info: ${weatherText}
 
-    const response = result.text;
+Give a short, clear, and practical answer for farmers.
+`;
+
+   // --- Hugging Face API Call ---
+let aiReply = "";
+
+try {
+  const hfResponse = await axios.post(
+    "https://api-inference.huggingface.co/models/google/flan-t5-large",
+    {
+      inputs: `<s>[INST] You are a helpful agriculture assistant. Answer clearly.\n\n${prompt} [/INST]`,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${HF_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  console.log("HF RAW RESPONSE:", hfResponse.data); // debug
+
+  if (Array.isArray(hfResponse.data)) {
+    aiReply = hfResponse.data[0]?.generated_text || "";
+  }
+
+  // Clean output (remove prompt repetition)
+  if (aiReply.includes("[/INST]")) {
+    aiReply = aiReply.split("[/INST]")[1].trim();
+  }
+
+  if (!aiReply || aiReply.length < 3) {
+    throw new Error("Empty response");
+  }
+
+} catch (hfError) {
+  console.error("HF API error:", hfError.message);
+
+  // --- SMART FALLBACK (Better than before 🔥) ---
+  const msg = message.toLowerCase();
+
+  if (msg.includes("hi") || msg.includes("hello")) {
+    aiReply = "Hello! 😊 How can I help you with farming today?";
+  } else if (msg.includes("fertilizer")) {
+    aiReply = "You can use Urea, DAP, or organic compost depending on your soil condition.";
+  } else if (msg.includes("weather")) {
+    aiReply = weatherText || "Weather data is not available right now.";
+  } else {
+    aiReply =
+      "I’m having trouble connecting to AI right now, but I can still help with basic farming questions.";
+  }
+} 
 
     // --- Logging ---
     const userId = await getUserIdFromRequest(req);
     if (userId) {
       await logActivity(userId, {
-        activityType: 'chat',
-        title: 'Chat with Farmii',
-        description: `Chat interaction: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`,
-        status: 'completed',
-        result: 'Response provided',
-        metadata: { messageLength: message.length, hasLocation: !!(lat && lon) }
+        activityType: "chat",
+        title: "Chat with Farmii",
+        description: `Chat interaction: ${message.substring(0, 100)}${
+          message.length > 100 ? "..." : ""
+        }`,
+        status: "completed",
+        result: "Response provided",
+        metadata: {
+          messageLength: message.length,
+          hasLocation: !!(lat && lon),
+        },
       });
     }
 
-    res.json({ reply: response });
+    res.json({ reply: aiReply });
 
   } catch (error) {
-    console.error("Chatbot Gemini error:", error);
+    console.error("Chatbot error:", error);
     res.status(500).json({
       error: error.message || "Chatbot failed to respond",
     });
