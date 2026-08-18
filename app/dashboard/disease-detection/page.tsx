@@ -16,6 +16,8 @@ import {
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
+
+
 // Supported crops
 const SUPPORTED_CROPS = [
   { value: "apple", label: "🍎 Apple", labelHi: "🍎 सेब", labelMr: "🍎 सफरचंद" },

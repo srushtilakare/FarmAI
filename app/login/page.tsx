@@ -1,11 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import {
+  Smartphone,
+  ShieldCheck,
+  LockKeyhole,
+  ArrowLeft,
+  CheckCircle2,
+  Loader2,
+  Sprout,
+} from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,13 +24,15 @@ export default function LoginPage() {
 
   const [number, setNumber] = useState("");
   const [otp, setOtp] = useState("");
-  const [password, setPassword] = useState("");
+
+  // 4 digit MPIN
+  const [mpin, setMpin] = useState(["", "", "", ""]);
 
   /*
     STEP 1 = Enter mobile number
     STEP 2 = Choose login method
     STEP 3 = OTP login
-    STEP 4 = Password login
+    STEP 4 = MPIN login
   */
   const [step, setStep] = useState(1);
 
@@ -30,6 +40,9 @@ export default function LoginPage() {
 
   // OTP timer
   const [timer, setTimer] = useState(120);
+
+  // MPIN input references
+  const mpinRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // -----------------------------------------
   // ENTER KEY SUPPORT
@@ -43,7 +56,7 @@ export default function LoginPage() {
       } else if (step === 3) {
         verifyOtp();
       } else if (step === 4) {
-        loginWithPassword();
+        loginWithMpin();
       }
     };
 
@@ -52,7 +65,7 @@ export default function LoginPage() {
     return () => {
       window.removeEventListener("keydown", handler);
     };
-  }, [step, number, otp, password, timer]);
+  }, [step, number, otp, mpin, timer]);
 
   // -----------------------------------------
   // OTP TIMER
@@ -66,7 +79,9 @@ export default function LoginPage() {
       }, 1000);
     }
 
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [step, timer]);
 
   // -----------------------------------------
@@ -82,15 +97,26 @@ export default function LoginPage() {
   };
 
   // -----------------------------------------
-  // STEP 1 → CHOOSE LOGIN METHOD
+  // RESET MPIN
+  // -----------------------------------------
+  const resetMpin = () => {
+    setMpin(["", "", "", ""]);
+
+    setTimeout(() => {
+      mpinRefs.current[0]?.focus();
+    }, 50);
+  };
+
+  // -----------------------------------------
+  // STEP 1 → LOGIN METHOD
   // -----------------------------------------
   const continueToLoginMethod = () => {
     const cleanedNumber = number.replace(/\D/g, "");
 
     if (!cleanedNumber) {
       toast({
-        title: "⚠️ सूचना",
-        description: "कृपया मोबाईल क्रमांक प्रविष्ट करा.",
+        title: "⚠️ मोबाईल क्रमांक आवश्यक",
+        description: "कृपया तुमचा मोबाईल क्रमांक प्रविष्ट करा.",
         variant: "destructive",
       });
       return;
@@ -110,11 +136,15 @@ export default function LoginPage() {
   };
 
   // -----------------------------------------
-  // PASSWORD OPTION
+  // MPIN OPTION
   // -----------------------------------------
-  const selectPasswordLogin = () => {
-    setPassword("");
+  const selectMpinLogin = () => {
+    resetMpin();
     setStep(4);
+
+    setTimeout(() => {
+      mpinRefs.current[0]?.focus();
+    }, 100);
   };
 
   // -----------------------------------------
@@ -132,7 +162,7 @@ export default function LoginPage() {
 
     if (!cleanedNumber) {
       toast({
-        title: "⚠️ सूचना",
+        title: "⚠️ मोबाईल क्रमांक आवश्यक",
         description: "कृपया मोबाईल क्रमांक प्रविष्ट करा.",
         variant: "destructive",
       });
@@ -156,17 +186,20 @@ export default function LoginPage() {
 
       if (!res.ok || !data.success) {
         toast({
-          title: "त्रुटी",
-          description: data.message || "OTP पाठवता आला नाही.",
+          title: "OTP पाठवता आला नाही",
+          description:
+            data.message || "कृपया पुन्हा प्रयत्न करा.",
           variant: "destructive",
         });
         return;
       }
 
       toast({
-        title: "OTP पाठवला",
-        description: "OTP तयार झाला आहे. Backend terminal तपासा.",
-        className: "bg-green-600 text-white border-none",
+        title: "✓ OTP तयार आहे",
+        description:
+          "OTP backend terminal मध्ये दिसेल.",
+        className:
+          "bg-green-600 text-white border-none",
       });
 
       setOtp("");
@@ -174,8 +207,9 @@ export default function LoginPage() {
       setStep(3);
     } catch (err) {
       toast({
-        title: "त्रुटी",
-        description: "OTP पाठवताना समस्या आली.",
+        title: "कनेक्शन समस्या",
+        description:
+          "सर्व्हरशी कनेक्ट होता आले नाही.",
         variant: "destructive",
       });
     } finally {
@@ -189,7 +223,7 @@ export default function LoginPage() {
   const verifyOtp = async () => {
     if (timer === 0) {
       toast({
-        title: "OTP कालबाह्य",
+        title: "OTP कालबाह्य झाला",
         description: "कृपया नवीन OTP मिळवा.",
         variant: "destructive",
       });
@@ -198,8 +232,8 @@ export default function LoginPage() {
 
     if (!otp.trim()) {
       toast({
-        title: "⚠️ सूचना",
-        description: "कृपया OTP टाका.",
+        title: "OTP आवश्यक",
+        description: "कृपया 6 अंकी OTP टाका.",
         variant: "destructive",
       });
       return;
@@ -217,16 +251,19 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/otp/verify`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          number,
-          otp: otp.trim(),
-        }),
-      });
+      const res = await fetch(
+        `${API_URL}/api/auth/otp/verify`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            number,
+            otp: otp.trim(),
+          }),
+        }
+      );
 
       const data = await res.json();
 
@@ -234,28 +271,35 @@ export default function LoginPage() {
         toast({
           title: "OTP चुकीचा",
           description:
-            data.message || "कृपया बरोबर OTP प्रविष्ट करा.",
+            data.message ||
+            "कृपया योग्य OTP प्रविष्ट करा.",
           variant: "destructive",
         });
         return;
       }
 
-      toast({
-        title: "लॉगिन सफल 🎉",
-        description: "आपले लॉगिन यशस्वी झाले.",
-        className: "bg-green-600 text-white border-none",
-      });
-
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user)
+      );
+
+      toast({
+        title: "✓ लॉगिन यशस्वी!",
+        description:
+          `स्वागत आहे, ${data.user?.fullName || "शेतकरी"}!`,
+        className:
+          "bg-green-600 text-white border-none",
+      });
 
       setTimeout(() => {
         router.push("/dashboard");
-      }, 700);
+      }, 900);
     } catch (err) {
       toast({
-        title: "त्रुटी",
-        description: "OTP पडताळताना समस्या आली.",
+        title: "काहीतरी चूक झाली",
+        description:
+          "OTP पडताळताना समस्या आली.",
         variant: "destructive",
       });
     } finally {
@@ -264,31 +308,114 @@ export default function LoginPage() {
   };
 
   // -----------------------------------------
-  // PASSWORD LOGIN
+  // MPIN INPUT HANDLER
   // -----------------------------------------
-  const loginWithPassword = async () => {
-    if (!password.trim()) {
+  const handleMpinChange = (
+    index: number,
+    value: string
+  ) => {
+    const digit = value.replace(/\D/g, "").slice(-1);
+
+    const updatedMpin = [...mpin];
+    updatedMpin[index] = digit;
+
+    setMpin(updatedMpin);
+
+    // Automatically move forward
+    if (digit && index < 3) {
+      mpinRefs.current[index + 1]?.focus();
+    }
+  };
+
+  // -----------------------------------------
+  // MPIN BACKSPACE
+  // -----------------------------------------
+  const handleMpinKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (
+      e.key === "Backspace" &&
+      !mpin[index] &&
+      index > 0
+    ) {
+      mpinRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // -----------------------------------------
+  // MPIN PASTE
+  // -----------------------------------------
+  const handleMpinPaste = (
+    e: React.ClipboardEvent<HTMLInputElement>
+  ) => {
+    e.preventDefault();
+
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 4);
+
+    if (!pasted) return;
+
+    const digits = pasted.split("");
+
+    const updatedMpin = ["", "", "", ""];
+
+    digits.forEach((digit, index) => {
+      updatedMpin[index] = digit;
+    });
+
+    setMpin(updatedMpin);
+
+    const nextIndex = Math.min(
+      pasted.length,
+      3
+    );
+
+    setTimeout(() => {
+      mpinRefs.current[nextIndex]?.focus();
+    }, 50);
+  };
+
+  // -----------------------------------------
+  // MPIN LOGIN
+  // -----------------------------------------
+  const loginWithMpin = async () => {
+    const enteredMpin = mpin.join("");
+
+    if (enteredMpin.length !== 4) {
       toast({
-        title: "⚠️ सूचना",
-        description: "कृपया पासवर्ड प्रविष्ट करा.",
+        title: "MPIN अपूर्ण आहे",
+        description:
+          "कृपया तुमचा 4 अंकी MPIN टाका.",
         variant: "destructive",
       });
+
       return;
     }
 
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/password/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone: number,
-          password: password,
-        }),
-      });
+      /*
+       * IMPORTANT:
+       * Backend will be changed to:
+       * POST /api/auth/mpin/login
+       */
+      const res = await fetch(
+        `${API_URL}/api/auth/mpin/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            phone: number,
+            mpin: enteredMpin,
+          }),
+        }
+      );
 
       const data = await res.json();
 
@@ -297,28 +424,36 @@ export default function LoginPage() {
           title: "लॉगिन अयशस्वी",
           description:
             data.message ||
-            "मोबाईल क्रमांक किंवा पासवर्ड चुकीचा आहे.",
+            "मोबाईल क्रमांक किंवा MPIN चुकीचा आहे.",
           variant: "destructive",
         });
+
+        resetMpin();
         return;
       }
 
-      toast({
-        title: "लॉगिन सफल 🎉",
-        description: "आपले लॉगिन यशस्वी झाले.",
-        className: "bg-green-600 text-white border-none",
-      });
-
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user)
+      );
+
+      toast({
+        title: "✓ लॉगिन यशस्वी!",
+        description:
+          `स्वागत आहे, ${data.user?.fullName || "शेतकरी"}!`,
+        className:
+          "bg-green-600 text-white border-none",
+      });
 
       setTimeout(() => {
         router.push("/dashboard");
-      }, 700);
+      }, 900);
     } catch (err) {
       toast({
-        title: "त्रुटी",
-        description: "लॉगिन करताना समस्या आली.",
+        title: "कनेक्शन समस्या",
+        description:
+          "सर्व्हरशी कनेक्ट होता आले नाही.",
         variant: "destructive",
       });
     } finally {
@@ -332,7 +467,7 @@ export default function LoginPage() {
   const goBackToPhone = () => {
     setStep(1);
     setOtp("");
-    setPassword("");
+    resetMpin();
     setTimer(120);
   };
 
@@ -342,286 +477,445 @@ export default function LoginPage() {
   const goBackToMethod = () => {
     setStep(2);
     setOtp("");
-    setPassword("");
+    resetMpin();
     setTimer(120);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-green-100 to-green-200">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100 flex items-center justify-center px-4 py-8">
 
-      <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8 border border-green-300">
+      {/* MAIN CARD */}
+      <div className="w-full max-w-md">
 
-        {/* LOGO & TITLE */}
-        <div className="flex flex-col items-center mb-6">
+        <div className="bg-white rounded-3xl shadow-xl border border-green-100 overflow-hidden">
 
-          <h2 className="text-3xl font-bold text-green-700 mt-2">
-            Farm AI Login
-          </h2>
+          {/* TOP GREEN HEADER */}
+          <div className="bg-gradient-to-br from-green-700 to-green-600 px-6 py-7 text-white text-center">
 
-          <p className="text-sm text-gray-600 mt-1">
-            Smart Farming for Maharashtra
-          </p>
-
-        </div>
-
-        {/* INFORMATION BOX */}
-        <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-3 mb-6 text-center text-sm text-gray-800">
-          📌 <b>नोंदणीवेळी वापरलेलाच मोबाईल क्रमांक येथे टाका.</b>
-        </div>
-
-        {/* ========================================= */}
-        {/* STEP 1 — MOBILE NUMBER */}
-        {/* ========================================= */}
-
-        {step === 1 && (
-          <div className="space-y-4">
-
-            <label className="text-sm font-medium text-gray-700">
-              मोबाईल क्रमांक
-            </label>
-
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="उदा. 9876543210"
-              value={number}
-              onChange={(e) => {
-                const value = e.target.value
-                  .replace(/\D/g, "")
-                  .slice(0, 10);
-
-                setNumber(value);
-              }}
-              maxLength={10}
-              className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
-            />
-
-            <Button
-              onClick={continueToLoginMethod}
-              disabled={loading}
-              className="w-full bg-green-600 text-white py-6 rounded-lg text-lg hover:bg-green-700 transition-colors"
-            >
-              पुढे जा
-            </Button>
-
-          </div>
-        )}
-
-        {/* ========================================= */}
-        {/* STEP 2 — CHOOSE LOGIN METHOD */}
-        {/* ========================================= */}
-
-        {step === 2 && (
-          <div className="space-y-4">
-
-            <div className="text-center mb-5">
-
-              <p className="text-sm text-gray-500">
-                मोबाईल क्रमांक
-              </p>
-
-              <p className="text-lg font-semibold text-gray-800">
-                +91 {number}
-              </p>
-
-              <button
-                type="button"
-                onClick={goBackToPhone}
-                className="text-green-700 text-sm mt-1 hover:underline"
-              >
-                चुकीचा क्रमांक? परत बदला
-              </button>
-
+            <div className="flex justify-center mb-3">
+              <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
+                <Sprout className="w-8 h-8" />
+              </div>
             </div>
 
-            <p className="text-center text-sm font-semibold text-gray-700 mb-3">
-              तुम्हाला कसे लॉगिन करायचे आहे?
+            <h1 className="text-2xl font-bold">
+              FarmAI
+            </h1>
+
+            <p className="text-green-100 text-sm mt-1">
+              Smart Farming for Farmers
             </p>
 
-            {/* PASSWORD LOGIN */}
-            <Button
-              type="button"
-              onClick={selectPasswordLogin}
-              disabled={loading}
-              className="w-full bg-green-600 text-white py-6 rounded-lg text-lg hover:bg-green-700 transition-colors"
-            >
-              🔐 पासवर्डने लॉगिन करा
-            </Button>
-
-            {/* OTP LOGIN */}
-            <Button
-              type="button"
-              onClick={selectOtpLogin}
-              disabled={loading}
-              className="w-full bg-white text-green-700 border-2 border-green-600 py-6 rounded-lg text-lg hover:bg-green-50 transition-colors"
-            >
-              📱 OTP ने लॉगिन करा
-            </Button>
-
           </div>
-        )}
 
-        {/* ========================================= */}
-        {/* STEP 3 — OTP */}
-        {/* ========================================= */}
+          {/* CONTENT */}
+          <div className="p-6 sm:p-8">
 
-        {step === 3 && (
-          <div className="space-y-4">
+            {/* INFORMATION BOX */}
+            <div className="bg-green-50 border border-green-200 rounded-xl p-3.5 mb-6 flex gap-3 items-start">
 
-            <div className="text-center mb-4">
+              <ShieldCheck className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
 
-              <p className="text-sm text-gray-500">
-                OTP पाठवला आहे
-              </p>
-
-              <p className="text-lg font-semibold text-gray-800">
-                +91 {number}
+              <p className="text-sm text-green-800 leading-5">
+                नोंदणीवेळी वापरलेलाच मोबाईल
+                क्रमांक येथे टाका.
               </p>
 
             </div>
 
-            <label className="text-sm font-medium text-gray-700">
-              OTP टाका
-            </label>
+            {/* ========================================= */}
+            {/* STEP 1 — MOBILE NUMBER */}
+            {/* ========================================= */}
 
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="६ अंकी OTP"
-              value={otp}
-              onChange={(e) => {
-                const value = e.target.value
-                  .replace(/\D/g, "")
-                  .slice(0, 6);
+            {step === 1 && (
+              <div className="space-y-5">
 
-                setOtp(value);
-              }}
-              maxLength={6}
-              disabled={timer === 0}
-              className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none disabled:bg-gray-100"
-            />
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    लॉगिन करा
+                  </h2>
 
-            <Button
-              onClick={verifyOtp}
-              disabled={loading || timer === 0}
-              className="w-full bg-green-600 text-white py-6 rounded-lg text-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors"
-            >
-              {loading ? "तपासत आहे..." : "OTP पडताळा"}
-            </Button>
+                  <p className="text-sm text-gray-500 mt-1">
+                    तुमचा मोबाईल क्रमांक प्रविष्ट करा.
+                  </p>
+                </div>
 
-            {/* TIMER */}
-            <div className="text-center mt-4">
+                <div className="space-y-2">
 
-              {timer > 0 ? (
-                <p className="text-sm text-gray-600">
-                  OTP वैध आहे:{" "}
-                  <span className="font-bold text-red-600 text-base">
-                    {formatTime(timer)}
-                  </span>
-                </p>
-              ) : (
-                <div className="flex flex-col items-center">
+                  <label className="text-sm font-semibold text-gray-700">
+                    मोबाईल क्रमांक
+                  </label>
 
-                  <p className="text-sm text-red-500 font-medium mb-1">
-                    OTP कालबाह्य झाला आहे.
+                  <div className="flex">
+
+                    <div className="flex items-center justify-center px-3 border border-r-0 border-gray-300 rounded-l-xl bg-gray-50 text-gray-600 font-medium">
+                      +91
+                    </div>
+
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="98765 43210"
+                      value={number}
+                      onChange={(e) => {
+                        const value =
+                          e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 10);
+
+                        setNumber(value);
+                      }}
+                      maxLength={10}
+                      className="w-full border border-gray-300 px-4 py-3.5 rounded-r-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all text-base"
+                    />
+
+                  </div>
+
+                  <p className="text-xs text-gray-500">
+                    10 अंकी मोबाईल क्रमांक प्रविष्ट करा.
                   </p>
 
-                  <Button
-                    variant="link"
-                    onClick={requestOtp}
-                    className="text-green-700 font-bold p-0 h-auto"
+                </div>
+
+                <Button
+                  onClick={continueToLoginMethod}
+                  disabled={loading}
+                  className="w-full h-12 bg-green-600 text-white rounded-xl text-base font-semibold hover:bg-green-700 transition-all shadow-md"
+                >
+                  पुढे जा
+                </Button>
+
+              </div>
+            )}
+
+            {/* ========================================= */}
+            {/* STEP 2 — LOGIN METHOD */}
+            {/* ========================================= */}
+
+            {step === 2 && (
+              <div className="space-y-5">
+
+                <div className="text-center">
+
+                  <div className="w-12 h-12 mx-auto rounded-full bg-green-50 flex items-center justify-center mb-3">
+                    <Smartphone className="w-6 h-6 text-green-600" />
+                  </div>
+
+                  <h2 className="text-xl font-bold text-gray-800">
+                    लॉगिन पद्धत निवडा
+                  </h2>
+
+                  <p className="text-sm text-gray-500 mt-1">
+                    +91 {number}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={goBackToPhone}
+                    className="text-green-700 text-xs font-medium mt-2 hover:underline"
                   >
-                    Resend OTP (पुन्हा पाठवा)
-                  </Button>
+                    चुकीचा क्रमांक? बदला
+                  </button>
 
                 </div>
-              )}
 
-            </div>
+                <div className="space-y-3">
 
-            <button
-              type="button"
-              onClick={goBackToMethod}
-              className="w-full text-green-700 text-sm mt-1 hover:underline"
-            >
-              दुसरी लॉगिन पद्धत निवडा
-            </button>
+                  {/* MPIN */}
+                  <button
+                    type="button"
+                    onClick={selectMpinLogin}
+                    disabled={loading}
+                    className="w-full p-4 rounded-xl border-2 border-green-600 bg-green-600 text-white text-left hover:bg-green-700 transition-all shadow-sm disabled:opacity-60"
+                  >
 
-          </div>
-        )}
+                    <div className="flex items-center gap-3">
 
-        {/* ========================================= */}
-        {/* STEP 4 — PASSWORD */}
-        {/* ========================================= */}
+                      <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center">
+                        <LockKeyhole className="w-5 h-5" />
+                      </div>
 
-        {step === 4 && (
-          <div className="space-y-4">
+                      <div>
+                        <p className="font-bold">
+                          4 अंकी MPIN ने लॉगिन करा
+                        </p>
 
-            <div className="text-center mb-4">
+                        <p className="text-xs text-green-100 mt-0.5">
+                          तुमचा सोपा 4 अंकी MPIN वापरा
+                        </p>
+                      </div>
+
+                    </div>
+
+                  </button>
+
+                  {/* OTP */}
+                  <button
+                    type="button"
+                    onClick={selectOtpLogin}
+                    disabled={loading}
+                    className="w-full p-4 rounded-xl border-2 border-gray-200 bg-white text-left hover:border-green-400 hover:bg-green-50 transition-all disabled:opacity-60"
+                  >
+
+                    <div className="flex items-center gap-3">
+
+                      <div className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center">
+                        <Smartphone className="w-5 h-5 text-green-600" />
+                      </div>
+
+                      <div>
+                        <p className="font-bold text-gray-800">
+                          OTP ने लॉगिन करा
+                        </p>
+
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          मोबाईलवर मिळालेल्या OTP ने
+                        </p>
+                      </div>
+
+                    </div>
+
+                  </button>
+
+                </div>
+
+              </div>
+            )}
+
+            {/* ========================================= */}
+            {/* STEP 3 — OTP */}
+            {/* ========================================= */}
+
+            {step === 3 && (
+              <div className="space-y-5">
+
+                <div className="text-center">
+
+                  <div className="w-12 h-12 mx-auto rounded-full bg-green-50 flex items-center justify-center mb-3">
+                    <ShieldCheck className="w-6 h-6 text-green-600" />
+                  </div>
+
+                  <h2 className="text-xl font-bold text-gray-800">
+                    OTP पडताळणी
+                  </h2>
+
+                  <p className="text-sm text-gray-500 mt-1">
+                    OTP पाठवला आहे
+                  </p>
+
+                  <p className="font-semibold text-gray-800 mt-1">
+                    +91 {number}
+                  </p>
+
+                </div>
+
+                <div className="space-y-2">
+
+                  <label className="text-sm font-semibold text-gray-700">
+                    6 अंकी OTP टाका
+                  </label>
+
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoFocus
+                    placeholder="123456"
+                    value={otp}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 6);
+
+                      setOtp(value);
+                    }}
+                    maxLength={6}
+                    disabled={timer === 0}
+                    className="w-full border border-gray-300 px-4 py-3.5 rounded-xl text-center text-xl tracking-[0.5em] font-semibold focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none disabled:bg-gray-100"
+                  />
+
+                </div>
+
+                <Button
+                  onClick={verifyOtp}
+                  disabled={
+                    loading || timer === 0
+                  }
+                  className="w-full h-12 bg-green-600 text-white rounded-xl text-base font-semibold hover:bg-green-700 disabled:bg-gray-400 transition-all"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      तपासत आहे...
+                    </>
+                  ) : (
+                    <>
+                      OTP पडताळा
+                      <CheckCircle2 className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+
+                <div className="text-center">
+
+                  {timer > 0 ? (
+                    <p className="text-sm text-gray-500">
+                      OTP वैध आहे{" "}
+                      <span className="font-bold text-green-700">
+                        {formatTime(timer)}
+                      </span>
+                    </p>
+                  ) : (
+                    <div>
+                      <p className="text-sm text-red-500 font-medium">
+                        OTP कालबाह्य झाला आहे.
+                      </p>
+
+                      <Button
+                        variant="link"
+                        onClick={requestOtp}
+                        className="text-green-700 font-bold p-0 h-auto mt-1"
+                      >
+                        पुन्हा OTP पाठवा
+                      </Button>
+                    </div>
+                  )}
+
+                </div>
+
+                <button
+                  type="button"
+                  onClick={goBackToMethod}
+                  className="w-full flex items-center justify-center gap-1 text-green-700 text-sm font-medium hover:underline"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  दुसरी लॉगिन पद्धत निवडा
+                </button>
+
+              </div>
+            )}
+
+            {/* ========================================= */}
+            {/* STEP 4 — MPIN */}
+            {/* ========================================= */}
+
+            {step === 4 && (
+              <div className="space-y-5">
+
+                <div className="text-center">
+
+                  <div className="w-12 h-12 mx-auto rounded-full bg-green-50 flex items-center justify-center mb-3">
+                    <LockKeyhole className="w-6 h-6 text-green-600" />
+                  </div>
+
+                  <h2 className="text-xl font-bold text-gray-800">
+                    MPIN ने लॉगिन करा
+                  </h2>
+
+                  <p className="text-sm text-gray-500 mt-1">
+                    तुमचा 4 अंकी MPIN टाका
+                  </p>
+
+                  <p className="font-semibold text-gray-800 mt-1">
+                    +91 {number}
+                  </p>
+
+                </div>
+
+                {/* MPIN BOXES */}
+                <div className="flex justify-center gap-3 py-3">
+
+                  {mpin.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => {
+                        mpinRefs.current[index] = el;
+                      }}
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) =>
+                        handleMpinChange(
+                          index,
+                          e.target.value
+                        )
+                      }
+                      onKeyDown={(e) =>
+                        handleMpinKeyDown(index, e)
+                      }
+                      onPaste={handleMpinPaste}
+                      className={`w-14 h-14 sm:w-16 sm:h-16 text-center text-2xl font-bold rounded-xl border-2 outline-none transition-all ${
+                        digit
+                          ? "border-green-600 bg-green-50 text-green-700"
+                          : "border-gray-300 bg-white focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                      }`}
+                      aria-label={`MPIN digit ${index + 1}`}
+                    />
+                  ))}
+
+                </div>
+
+                <p className="text-center text-xs text-gray-500">
+                  तुमचा MPIN 4 अंकी आहे.
+                </p>
+
+                <Button
+                  type="button"
+                  onClick={loginWithMpin}
+                  disabled={loading}
+                  className="w-full h-12 bg-green-600 text-white rounded-xl text-base font-semibold hover:bg-green-700 transition-all shadow-md"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      लॉगिन करत आहे...
+                    </>
+                  ) : (
+                    "MPIN ने लॉगिन करा"
+                  )}
+                </Button>
+
+                <button
+                  type="button"
+                  onClick={goBackToMethod}
+                  className="w-full flex items-center justify-center gap-1 text-green-700 text-sm font-medium hover:underline"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  दुसरी लॉगिन पद्धत निवडा
+                </button>
+
+              </div>
+            )}
+
+            {/* REGISTER LINK */}
+            <div className="text-center mt-7 pt-5 border-t border-gray-100">
 
               <p className="text-sm text-gray-500">
-                मोबाईल क्रमांक
-              </p>
 
-              <p className="text-lg font-semibold text-gray-800">
-                +91 {number}
+                FarmAI वर नवीन आहात?{" "}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push("/register")
+                  }
+                  className="text-green-700 font-bold hover:underline"
+                >
+                  नोंदणी करा
+                </button>
+
               </p>
 
             </div>
 
-            <label className="text-sm font-medium text-gray-700">
-              पासवर्ड टाका
-            </label>
-
-            <input
-              type="password"
-              placeholder="आपला पासवर्ड प्रविष्ट करा"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-            />
-
-            <Button
-              type="button"
-              onClick={loginWithPassword}
-              disabled={loading}
-              className="w-full bg-green-600 text-white py-6 rounded-lg text-lg hover:bg-green-700 transition-colors"
-            >
-              {loading
-                ? "लॉगिन करत आहे..."
-                : "पासवर्डने लॉगिन करा"}
-            </Button>
-
-            <button
-              type="button"
-              onClick={goBackToMethod}
-              className="w-full text-green-700 text-sm mt-1 hover:underline"
-            >
-              दुसरी लॉगिन पद्धत निवडा
-            </button>
-
           </div>
-        )}
-
-        {/* REGISTER LINK */}
-        <div className="text-center mt-6 pt-5 border-t border-gray-200">
-
-          <p className="text-sm text-gray-600">
-
-            FarmAI वर नवीन आहात?{" "}
-
-            <button
-              type="button"
-              onClick={() => router.push("/register")}
-              className="text-green-700 font-semibold hover:underline"
-            >
-              नोंदणी करा
-            </button>
-
-          </p>
-
         </div>
+
+        {/* SMALL FOOTER */}
+        <p className="text-center text-xs text-gray-400 mt-4">
+          सुरक्षित आणि सोपे डिजिटल शेती सहाय्य
+        </p>
 
       </div>
     </div>

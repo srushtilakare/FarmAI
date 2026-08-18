@@ -4,64 +4,155 @@
 
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema(
+  {
+    // -----------------------------------------
+    // BASIC USER INFORMATION
+    // -----------------------------------------
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-  fullName: { type: String, required: true },
+    email: {
+      type: String,
+      trim: true,
+      default: "",
+    },
 
-  email: { type: String },
+    phone: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
 
-  // Password will be stored as a secure hash, never as plain text
-  password: { type: String },
+    // -----------------------------------------
+    // AUTHENTICATION
+    // -----------------------------------------
+    // MPIN is stored as a bcrypt hash.
+    // Never store the actual 4-digit MPIN.
+    mpin: {
+      type: String,
+      required: true,
+    },
 
-  phone: { type: String, required: true, unique: true },
+    // -----------------------------------------
+    // LANGUAGE
+    // -----------------------------------------
+    preferredLanguage: {
+      type: String,
+      default: "en-US",
+    },
 
-  preferredLanguage: { type: String, default: "en-US" },
+    // -----------------------------------------
+    // FARM LOCATION
+    // -----------------------------------------
+    farmLocation: {
+      type: String,
+      required: true,
+    },
 
-  farmLocation: { type: String, required: true },
+    state: {
+      type: String,
+      required: true,
+    },
 
-  state: { type: String, required: true },
+    district: {
+      type: String,
+      required: true,
+    },
 
-  district: { type: String, required: true },
+    pincode: {
+      type: String,
+      default: "",
+    },
 
-  pincode: { type: String },
+    village: {
+      type: String,
+      default: "",
+    },
 
-  village: { type: String }, // More specific location
+    latitude: {
+      type: Number,
+      default: 0,
+    },
 
-  latitude: { type: Number }, // For accurate weather data
+    longitude: {
+      type: Number,
+      default: 0,
+    },
 
-  longitude: { type: Number }, // For accurate weather data
+    // -----------------------------------------
+    // FARMING INFORMATION
+    // -----------------------------------------
+    crops: {
+      type: [String],
+      required: true,
+    },
 
-  crops: { type: [String], required: true },
+    farmingType: {
+      type: String,
+      required: true,
+    },
 
-  farmingType: { type: String, required: true },
+    // -----------------------------------------
+    // PROFILE
+    // -----------------------------------------
+    profilePhoto: {
+      type: String,
+      default: "",
+    },
 
-  profilePhoto: { type: String },
+    // -----------------------------------------
+    // FAVORITE CROPS
+    // -----------------------------------------
+    favoriteCrops: {
+      type: [String],
+      default: [],
+    },
 
-  // NEW: favorite crops for quick access (stored as uppercase strings)
-  favoriteCrops: { type: [String], default: [] },
+    // -----------------------------------------
+    // FORUM MODERATION
+    // -----------------------------------------
+    forumWarnings: {
+      type: Number,
+      default: 0,
+    },
 
-  // Forum moderation fields
-  forumWarnings: {
-    type: Number,
-    default: 0
+    isBlockedFromForum: {
+      type: Boolean,
+      default: false,
+    },
+
+    forumBlockedUntil: {
+      type: Date,
+      default: null,
+    },
+
+    forumWarningHistory: [
+      {
+        date: {
+          type: Date,
+          default: Date.now,
+        },
+
+        reason: {
+          type: String,
+          default: "",
+        },
+
+        content: {
+          type: String,
+          default: "",
+        },
+      },
+    ],
   },
-
-  isBlockedFromForum: {
-    type: Boolean,
-    default: false
-  },
-
-  forumBlockedUntil: {
-    type: Date,
-    default: null
-  },
-
-  forumWarningHistory: [{
-    date: { type: Date, default: Date.now },
-    reason: String,
-    content: String
-  }]
-
-}, { timestamps: true });
+  {
+    timestamps: true,
+  }
+);
 
 module.exports = mongoose.model("User", userSchema);

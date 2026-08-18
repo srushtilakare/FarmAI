@@ -2,8 +2,6 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
 import {
   Sprout,
   MapPin,
@@ -17,11 +15,18 @@ import {
   Tractor,
   Wheat,
   Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 
-/* ==========================
+import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+
+/* =========================================================
    INDIAN STATES & DISTRICTS
-   ========================== */
+   ========================================================= */
 
 const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
   "Andhra Pradesh": [
@@ -29,148 +34,88 @@ const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
     "Chittoor",
     "East Godavari",
     "Guntur",
+    "Kadapa",
     "Krishna",
     "Kurnool",
+    "Nellore",
     "Prakasam",
     "Srikakulam",
     "Visakhapatnam",
     "Vizianagaram",
     "West Godavari",
-    "YSR Kadapa",
   ],
 
-  "Arunachal Pradesh": [
-    "Tawang",
-    "West Kameng",
-    "East Kameng",
-    "Papum Pare",
-    "Kurung Kumey",
-    "Kra Daadi",
-    "Lower Subansiri",
-    "Upper Subansiri",
-    "West Siang",
-    "East Siang",
-    "Siang",
-    "Upper Siang",
-    "Lower Siang",
-    "Lower Dibang Valley",
-    "Dibang Valley",
-    "Anjaw",
-    "Lohit",
-    "Namsai",
-    "Changlang",
-    "Tirap",
-    "Longding",
-  ],
-
-  Assam: [
-    "Baksa",
-    "Barpeta",
-    "Biswanath",
-    "Bongaigaon",
-    "Cachar",
-    "Charaideo",
-    "Chirang",
-    "Darrang",
-    "Dhemaji",
-    "Dhubri",
-    "Dibrugarh",
-    "Dima Hasao",
-    "Goalpara",
-    "Golaghat",
-    "Hailakandi",
-    "Hojai",
-    "Jorhat",
-    "Kamrup Metropolitan",
-    "Kamrup",
-    "Karbi Anglong",
-    "Karimganj",
-    "Kokrajhar",
-    "Lakhimpur",
-    "Majuli",
-    "Morigaon",
-    "Nagaon",
-    "Nalbari",
-    "Sivasagar",
-    "Sonitpur",
-    "South Salmara-Mankachar",
-    "Tinsukia",
-    "Udalguri",
-    "West Karbi Anglong",
-  ],
-
-  Bihar: [
-    "Araria",
-    "Arwal",
+  Maharashtra: [
+    "Ahilyanagar",
+    "Akola",
+    "Amravati",
     "Aurangabad",
-    "Banka",
-    "Begusarai",
-    "Bhagalpur",
-    "Bhojpur",
-    "Buxar",
-    "Darbhanga",
-    "East Champaran",
-    "Gaya",
-    "Gopalganj",
-    "Jamui",
-    "Jehanabad",
-    "Kaimur",
-    "Katihar",
-    "Khagaria",
-    "Kishanganj",
-    "Lakhisarai",
-    "Madhepura",
-    "Madhubani",
-    "Munger",
-    "Muzaffarpur",
-    "Nalanda",
-    "Nawada",
-    "Patna",
-    "Purnia",
-    "Rohtas",
-    "Saharsa",
-    "Samastipur",
-    "Saran",
-    "Sheikhpura",
-    "Sheohar",
-    "Sitamarhi",
-    "Siwan",
-    "Supaul",
-    "Vaishali",
-    "West Champaran",
+    "Beed",
+    "Bhandara",
+    "Buldhana",
+    "Chandrapur",
+    "Dhule",
+    "Gadchiroli",
+    "Gondia",
+    "Hingoli",
+    "Jalgaon",
+    "Jalna",
+    "Kolhapur",
+    "Latur",
+    "Mumbai City",
+    "Mumbai Suburban",
+    "Nagpur",
+    "Nanded",
+    "Nandurbar",
+    "Nashik",
+    "Osmanabad",
+    "Palghar",
+    "Parbhani",
+    "Pune",
+    "Raigad",
+    "Ratnagiri",
+    "Sangli",
+    "Satara",
+    "Sindhudurg",
+    "Solapur",
+    "Thane",
+    "Wardha",
+    "Washim",
+    "Yavatmal",
   ],
 
-  Chhattisgarh: [
-    "Balod",
-    "Baloda Bazar",
-    "Balrampur",
-    "Bastar",
-    "Bemetara",
-    "Bijapur",
-    "Bilaspur",
-    "Dantewada",
-    "Dhamtari",
-    "Durg",
-    "Gariaband",
-    "Janjgir-Champa",
-    "Jashpur",
-    "Kabirdham",
-    "Kanker",
-    "Kondagaon",
-    "Korba",
-    "Koriya",
-    "Mahasamund",
-    "Mungeli",
-    "Narayanpur",
-    "Raigarh",
-    "Raipur",
-    "Rajnandgaon",
-    "Sukma",
-    "Surajpur",
-    "Surguja",
+  Karnataka: [
+    "Bagalkot",
+    "Ballari",
+    "Belagavi",
+    "Bengaluru Rural",
+    "Bengaluru Urban",
+    "Bidar",
+    "Chamarajanagar",
+    "Chikkaballapur",
+    "Chikkamagaluru",
+    "Chitradurga",
+    "Dakshina Kannada",
+    "Davanagere",
+    "Dharwad",
+    "Gadag",
+    "Hassan",
+    "Haveri",
+    "Kalaburagi",
+    "Kodagu",
+    "Kolar",
+    "Koppal",
+    "Mandya",
+    "Mysuru",
+    "Raichur",
+    "Ramanagara",
+    "Shivamogga",
+    "Tumakuru",
+    "Udupi",
+    "Uttara Kannada",
+    "Vijayapura",
+    "Yadgir",
   ],
-
-  Goa: ["North Goa", "South Goa"],
 
   Gujarat: [
     "Ahmedabad",
@@ -206,123 +151,6 @@ const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
     "Tapi",
     "Vadodara",
     "Valsad",
-  ],
-
-  Haryana: [
-    "Ambala",
-    "Bhiwani",
-    "Charkhi Dadri",
-    "Faridabad",
-    "Fatehabad",
-    "Gurugram",
-    "Hisar",
-    "Jhajjar",
-    "Jind",
-    "Kaithal",
-    "Karnal",
-    "Kurukshetra",
-    "Mahendragarh",
-    "Nuh",
-    "Palwal",
-    "Panchkula",
-    "Panipat",
-    "Rewari",
-    "Rohtak",
-    "Sirsa",
-    "Sonipat",
-    "Yamunanagar",
-  ],
-
-  "Himachal Pradesh": [
-    "Bilaspur",
-    "Chamba",
-    "Hamirpur",
-    "Kangra",
-    "Kinnaur",
-    "Kullu",
-    "Lahaul and Spiti",
-    "Mandi",
-    "Shimla",
-    "Sirmaur",
-    "Solan",
-    "Una",
-  ],
-
-  Jharkhand: [
-    "Bokaro",
-    "Chatra",
-    "Deoghar",
-    "Dhanbad",
-    "Dumka",
-    "East Singhbhum",
-    "Garhwa",
-    "Giridih",
-    "Godda",
-    "Gumla",
-    "Hazaribagh",
-    "Jamtara",
-    "Khunti",
-    "Koderma",
-    "Latehar",
-    "Lohardaga",
-    "Pakur",
-    "Palamu",
-    "Ramgarh",
-    "Ranchi",
-    "Sahebganj",
-    "Seraikela Kharsawan",
-    "Simdega",
-    "West Singhbhum",
-  ],
-
-  Karnataka: [
-    "Bagalkot",
-    "Ballari",
-    "Belagavi",
-    "Bengaluru Rural",
-    "Bengaluru Urban",
-    "Bidar",
-    "Chamarajanagar",
-    "Chikballapur",
-    "Chikkamagaluru",
-    "Chitradurga",
-    "Dakshina Kannada",
-    "Davanagere",
-    "Dharwad",
-    "Gadag",
-    "Hassan",
-    "Haveri",
-    "Kalaburagi",
-    "Kodagu",
-    "Kolar",
-    "Koppal",
-    "Mandya",
-    "Mysuru",
-    "Raichur",
-    "Ramanagara",
-    "Shivamogga",
-    "Tumakuru",
-    "Udupi",
-    "Uttara Kannada",
-    "Vijayapura",
-    "Yadgir",
-  ],
-
-  Kerala: [
-    "Alappuzha",
-    "Ernakulam",
-    "Idukki",
-    "Kannur",
-    "Kasaragod",
-    "Kollam",
-    "Kottayam",
-    "Kozhikode",
-    "Malappuram",
-    "Palakkad",
-    "Pathanamthitta",
-    "Thiruvananthapuram",
-    "Thrissur",
-    "Wayanad",
   ],
 
   "Madhya Pradesh": [
@@ -379,161 +207,6 @@ const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
     "Vidisha",
   ],
 
-  Maharashtra: [
-    "Ahmednagar",
-    "Akola",
-    "Amravati",
-    "Aurangabad",
-    "Beed",
-    "Bhandara",
-    "Buldhana",
-    "Chandrapur",
-    "Dhule",
-    "Gadchiroli",
-    "Gondia",
-    "Hingoli",
-    "Jalgaon",
-    "Jalna",
-    "Kolhapur",
-    "Latur",
-    "Mumbai City",
-    "Mumbai Suburban",
-    "Nagpur",
-    "Nanded",
-    "Nandurbar",
-    "Nashik",
-    "Osmanabad",
-    "Palghar",
-    "Parbhani",
-    "Pune",
-    "Raigad",
-    "Ratnagiri",
-    "Sangli",
-    "Satara",
-    "Sindhudurg",
-    "Solapur",
-    "Thane",
-    "Wardha",
-    "Washim",
-    "Yavatmal",
-  ],
-
-  Manipur: [
-    "Bishnupur",
-    "Chandel",
-    "Churachandpur",
-    "Imphal East",
-    "Imphal West",
-    "Jiribam",
-    "Kakching",
-    "Kamjong",
-    "Kangpokpi",
-    "Noney",
-    "Pherzawl",
-    "Senapati",
-    "Tamenglong",
-    "Tengnoupal",
-    "Thoubal",
-    "Ukhrul",
-  ],
-
-  Meghalaya: [
-    "East Garo Hills",
-    "East Jaintia Hills",
-    "East Khasi Hills",
-    "North Garo Hills",
-    "Ri Bhoi",
-    "South Garo Hills",
-    "South West Garo Hills",
-    "South West Khasi Hills",
-    "West Garo Hills",
-    "West Jaintia Hills",
-    "West Khasi Hills",
-  ],
-
-  Mizoram: [
-    "Aizawl",
-    "Champhai",
-    "Kolasib",
-    "Lawngtlai",
-    "Lunglei",
-    "Mamit",
-    "Saiha",
-    "Serchhip",
-  ],
-
-  Nagaland: [
-    "Dimapur",
-    "Kiphire",
-    "Kohima",
-    "Longleng",
-    "Mokokchung",
-    "Mon",
-    "Peren",
-    "Phek",
-    "Tuensang",
-    "Wokha",
-    "Zunheboto",
-  ],
-
-  Odisha: [
-    "Angul",
-    "Balangir",
-    "Balasore",
-    "Bargarh",
-    "Bhadrak",
-    "Boudh",
-    "Cuttack",
-    "Deogarh",
-    "Dhenkanal",
-    "Gajapati",
-    "Ganjam",
-    "Jagatsinghpur",
-    "Jajpur",
-    "Jharsuguda",
-    "Kalahandi",
-    "Kandhamal",
-    "Kendrapara",
-    "Kendujhar",
-    "Khordha",
-    "Koraput",
-    "Malkangiri",
-    "Mayurbhanj",
-    "Nabarangpur",
-    "Nayagarh",
-    "Nuapada",
-    "Puri",
-    "Rayagada",
-    "Sambalpur",
-    "Subarnapur",
-    "Sundargarh",
-  ],
-
-  Punjab: [
-    "Amritsar",
-    "Barnala",
-    "Bathinda",
-    "Faridkot",
-    "Fatehgarh Sahib",
-    "Fazilka",
-    "Ferozepur",
-    "Gurdaspur",
-    "Hoshiarpur",
-    "Jalandhar",
-    "Kapurthala",
-    "Ludhiana",
-    "Mansa",
-    "Moga",
-    "Mohali",
-    "Muktsar",
-    "Pathankot",
-    "Patiala",
-    "Rupnagar",
-    "Sangrur",
-    "Shaheed Bhagat Singh Nagar",
-    "Tarn Taran",
-  ],
-
   Rajasthan: [
     "Ajmer",
     "Alwar",
@@ -570,13 +243,6 @@ const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
     "Udaipur",
   ],
 
-  Sikkim: [
-    "East Sikkim",
-    "North Sikkim",
-    "South Sikkim",
-    "West Sikkim",
-  ],
-
   "Tamil Nadu": [
     "Ariyalur",
     "Chengalpattu",
@@ -588,7 +254,6 @@ const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
     "Erode",
     "Kallakurichi",
     "Kanchipuram",
-    "Kanyakumari",
     "Karur",
     "Krishnagiri",
     "Madurai",
@@ -625,7 +290,7 @@ const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
     "Jagtial",
     "Jangaon",
     "Jayashankar",
-    "Jogulamba",
+    "Jogulamba Gadwal",
     "Kamareddy",
     "Karimnagar",
     "Khammam",
@@ -635,8 +300,10 @@ const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
     "Mancherial",
     "Medak",
     "Medchal",
+    "Mulugu",
     "Nagarkurnool",
     "Nalgonda",
+    "Narayanpet",
     "Nirmal",
     "Nizamabad",
     "Peddapalli",
@@ -652,25 +319,14 @@ const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
     "Yadadri Bhuvanagiri",
   ],
 
-  Tripura: [
-    "Dhalai",
-    "Gomati",
-    "Khowai",
-    "North Tripura",
-    "Sepahijala",
-    "South Tripura",
-    "Unakoti",
-    "West Tripura",
-  ],
-
   "Uttar Pradesh": [
     "Agra",
     "Aligarh",
+    "Allahabad",
     "Ambedkar Nagar",
     "Amethi",
     "Amroha",
     "Auraiya",
-    "Ayodhya",
     "Azamgarh",
     "Baghpat",
     "Bahraich",
@@ -724,8 +380,7 @@ const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
     "Muzaffarnagar",
     "Pilibhit",
     "Pratapgarh",
-    "Prayagraj",
-    "Raebareli",
+    "Rae Bareli",
     "Rampur",
     "Saharanpur",
     "Sambhal",
@@ -740,110 +395,11 @@ const INDIAN_STATES_DISTRICTS: Record<string, string[]> = {
     "Unnao",
     "Varanasi",
   ],
-
-  Uttarakhand: [
-    "Almora",
-    "Bageshwar",
-    "Chamoli",
-    "Champawat",
-    "Dehradun",
-    "Haridwar",
-    "Nainital",
-    "Pauri Garhwal",
-    "Pithoragarh",
-    "Rudraprayag",
-    "Tehri Garhwal",
-    "Udham Singh Nagar",
-    "Uttarkashi",
-  ],
-
-  "West Bengal": [
-    "Alipurduar",
-    "Bankura",
-    "Birbhum",
-    "Cooch Behar",
-    "Dakshin Dinajpur",
-    "Darjeeling",
-    "Hooghly",
-    "Howrah",
-    "Jalpaiguri",
-    "Jhargram",
-    "Kalimpong",
-    "Kolkata",
-    "Malda",
-    "Murshidabad",
-    "Nadia",
-    "North 24 Parganas",
-    "Paschim Bardhaman",
-    "Paschim Medinipur",
-    "Purba Bardhaman",
-    "Purba Medinipur",
-    "Purulia",
-    "South 24 Parganas",
-    "Uttar Dinajpur",
-  ],
-
-  "Andaman and Nicobar Islands": [
-    "Nicobar",
-    "North and Middle Andaman",
-    "South Andaman",
-  ],
-
-  Chandigarh: ["Chandigarh"],
-
-  "Dadra and Nagar Haveli and Daman and Diu": [
-    "Dadra and Nagar Haveli",
-    "Daman",
-    "Diu",
-  ],
-
-  Delhi: [
-    "Central Delhi",
-    "East Delhi",
-    "New Delhi",
-    "North Delhi",
-    "North East Delhi",
-    "North West Delhi",
-    "Shahdara",
-    "South Delhi",
-    "South East Delhi",
-    "South West Delhi",
-    "West Delhi",
-  ],
-
-  "Jammu and Kashmir": [
-    "Anantnag",
-    "Bandipora",
-    "Baramulla",
-    "Budgam",
-    "Doda",
-    "Ganderbal",
-    "Jammu",
-    "Kathua",
-    "Kishtwar",
-    "Kulgam",
-    "Kupwara",
-    "Poonch",
-    "Pulwama",
-    "Rajouri",
-    "Ramban",
-    "Reasi",
-    "Samba",
-    "Shopian",
-    "Srinagar",
-    "Udhampur",
-  ],
-
-  Ladakh: ["Kargil", "Leh"],
-
-  Lakshadweep: ["Lakshadweep"],
-
-  Puducherry: ["Karaikal", "Mahe", "Puducherry", "Yanam"],
 };
 
-/* ==========================
-   AVAILABLE CROPS
-   ========================== */
+/* =========================================================
+   CROPS
+   ========================================================= */
 
 const AVAILABLE_CROPS = [
   { id: "wheat", label: "Wheat (गहू)", icon: "🌾" },
@@ -858,58 +414,35 @@ const AVAILABLE_CROPS = [
   { id: "fruits", label: "Fruits (फळे)", icon: "🍎" },
 ];
 
-/* ==========================
+/* =========================================================
    TRANSLATIONS
-   ========================== */
+   ========================================================= */
 
-const TRANSLATIONS: any = {
+const TRANSLATIONS: Record<string, any> = {
   "en-US": {
     title: "Join FarmAI",
-    subtitle: "Complete your profile to get AI advisory",
+    subtitle:
+      "Complete your profile to get personalized AI farming advice",
+
+    personal: "Personal Details",
+    personalDesc: "Tell us a little about yourself.",
 
     name: "Full Name",
+    namePlaceholder: "e.g. Rajesh Kumar",
+
     phone: "Mobile Number",
+    phonePlaceholder: "9876543210",
+
+    location: "Farm Location",
+    locationDesc:
+      "Your location helps us provide accurate weather and farming information.",
+
     language: "Language",
 
-    password: "Password",
-    confirmPassword: "Confirm Password",
-    passwordHint: "Password must be at least 6 characters",
-
-    detectLocation: "Use Current Location",
-    locationDetected: "Location Detected",
-
-    chooseCrops: "Select Crops You Grow",
-    farmingType: "Farming Method",
-
-    organic: "Organic",
-    traditional: "Traditional",
-    modern: "Modern / Hi-Tech",
-
-    farmingDescriptionTitle: "What does this include?",
-
-    traditionalDescription:
-      "Common local farming practices using regular tools, seeds, fertilizers and pesticides.",
-
-    modernDescription:
-      "Uses machinery, drip irrigation, sensors, precision farming or other modern technology.",
-
-    organicDescription:
-      "Uses natural manure, compost and bio-inputs while avoiding synthetic chemical fertilizers and pesticides.",
-
-    traditionalShort:
-      "Regular farming methods and commonly used tools and inputs.",
-
-    modernShort:
-      "Technology-based farming with machines, irrigation, sensors and precision tools.",
-
-    organicShort:
-      "Natural inputs and methods with no synthetic chemical fertilizers or pesticides.",
-
-    submit: "Complete Registration",
-    success: "Registration successful!",
-
-    errorLocation: "Location not found. Please enter manually.",
-    fillAll: "Please fill all fields marked with *",
+    detectLocation: "Use My Current Location",
+    detecting: "Finding your location...",
+    highAccuracy: "Getting accurate location...",
+    locationDetected: "Location detected",
 
     state: "State",
     district: "District",
@@ -919,71 +452,128 @@ const TRANSLATIONS: any = {
     selectState: "Select State",
     selectDistrict: "Select District",
 
-    manualLocation: "Enter Address Manually",
-    editLocation: "Change Location",
+    farming: "Farming Information",
+    chooseCrops: "Select the crops you currently grow.",
 
-    detecting: "Locating...",
-    highAccuracy: "Refining location...",
+    farmingType: "What type of farming do you practice?",
+
+    traditional: "Traditional",
+    modern: "Modern / Hi-Tech",
+    organic: "Organic",
+
+    traditionalInfo:
+      "Uses common farming practices such as ploughing, sowing, irrigation and regular use of fertilizers or pesticides.",
+
+    modernInfo:
+      "Uses technology such as machinery, drip irrigation, sensors, protected cultivation or other advanced farming methods.",
+
+    organicInfo:
+      "Avoids synthetic chemical fertilizers and pesticides and mainly uses natural inputs such as compost, manure and bio-products.",
+
+    chooseMethod:
+      "Choose the method that best matches how you currently farm.",
+
+    mpinTitle: "Create your 4-digit MPIN",
+
+    mpinDescription:
+      "Create a 4-digit number that you can remember. It will be used to log in to FarmAI.",
+
+    mpin: "4-digit MPIN",
+    confirmMpin: "Confirm MPIN",
+
+    mpinPlaceholder: "Enter 4-digit MPIN",
+    confirmMpinPlaceholder: "Enter MPIN again",
+
+    showMpin: "Show MPIN",
+    hideMpin: "Hide MPIN",
+
+    mpinHint:
+      "Do not use very easy numbers such as 1234 or 0000.",
+
+    submit: "Complete Registration",
+
+    next: "Next Step",
+    back: "Back",
 
     step1: "Personal",
     step2: "Location",
     step3: "Farming",
 
-    nextStep: "Next Step",
-    back: "Back",
+    successTitle: "Registration Successful!",
+    successDescription:
+      "Your FarmAI account has been created successfully. Redirecting to login...",
 
-    personalDescription: "Please enter your basic contact details.",
-    locationDescription:
-      "We need your farm location for soil & weather data.",
+    incompleteTitle: "Some information is missing",
+
+    invalidPhoneTitle: "Invalid Mobile Number",
+    invalidPhone:
+      "Please enter a valid 10-digit Indian mobile number.",
+
+    phoneExistsTitle: "Account Already Exists",
+    phoneExists:
+      "This mobile number is already registered. Please login instead.",
+
+    checkingPhone: "Checking mobile number...",
+
+    nameRequired: "Please enter your full name.",
+    phoneRequired: "Please enter your mobile number.",
+
+    stateRequired: "Please select your state.",
+    districtRequired: "Please select your district.",
+
+    cropsRequired: "Please select at least one crop.",
+
+    farmingTypeRequired:
+      "Please select the farming method that best matches your farm.",
+
+    mpinRequired: "Please create a 4-digit MPIN.",
+
+    mpinInvalid:
+      "MPIN must contain exactly 4 digits.",
+
+    weakMpin:
+      "This MPIN is too easy to guess. Please choose a different 4-digit MPIN.",
+
+    mpinMismatch:
+      "The two MPINs do not match.",
+
+    registrationError:
+      "Registration failed. Please try again.",
+
+    serverError:
+      "Unable to connect to the server. Please try again.",
+
+    errorLocation:
+      "Location could not be detected. Please enter it manually.",
+
+    security:
+      "Your MPIN is securely encrypted.",
   },
 
   "hi-IN": {
     title: "FarmAI में शामिल हों",
-    subtitle: "AI सलाह पाने के लिए अपनी प्रोफ़ाइल पूरी करें",
+    subtitle:
+      "AI आधारित खेती की सलाह पाने के लिए अपनी प्रोफ़ाइल पूरी करें",
+
+    personal: "व्यक्तिगत जानकारी",
+    personalDesc: "अपने बारे में थोड़ी जानकारी दें।",
 
     name: "पूरा नाम",
+    namePlaceholder: "जैसे: राजेश कुमार",
+
     phone: "मोबाइल नंबर",
+    phonePlaceholder: "9876543210",
+
+    location: "खेत का स्थान",
+    locationDesc:
+      "आपका स्थान हमें सही मौसम और खेती की जानकारी देने में मदद करता है।",
+
     language: "भाषा",
 
-    password: "पासवर्ड",
-    confirmPassword: "पासवर्ड की पुष्टि करें",
-    passwordHint: "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
-
     detectLocation: "मेरे वर्तमान स्थान का उपयोग करें",
+    detecting: "स्थान खोज रहे हैं...",
+    highAccuracy: "सटीक स्थान प्राप्त कर रहे हैं...",
     locationDetected: "स्थान प्राप्त हुआ",
-
-    chooseCrops: "आप कौन सी फसल उगाते हैं?",
-    farmingType: "खेती का तरीका",
-
-    organic: "जैविक",
-    traditional: "पारंपरिक",
-    modern: "आधुनिक / हाई-टेक",
-
-    farmingDescriptionTitle: "इसमें क्या शामिल है?",
-
-    traditionalDescription:
-      "स्थानीय और सामान्य खेती के तरीके, सामान्य औजार, बीज, खाद और कीटनाशकों का उपयोग।",
-
-    modernDescription:
-      "मशीनों, ड्रिप सिंचाई, सेंसर, सटीक खेती और अन्य आधुनिक तकनीकों का उपयोग।",
-
-    organicDescription:
-      "प्राकृतिक खाद, कम्पोस्ट और जैविक साधनों का उपयोग; रासायनिक खाद और कीटनाशकों से परहेज।",
-
-    traditionalShort:
-      "सामान्य खेती के तरीके और रोज़मर्रा के औजार व कृषि साधन।",
-
-    modernShort:
-      "मशीन, सिंचाई, सेंसर और तकनीक आधारित आधुनिक खेती।",
-
-    organicShort:
-      "प्राकृतिक साधनों से खेती, बिना कृत्रिम रासायनिक खाद और कीटनाशकों के।",
-
-    submit: "पंजीकरण पूरा करें",
-    success: "पंजीकरण सफल!",
-
-    errorLocation: "स्थान नहीं मिला। कृपया मैन्युअल रूप से भरें।",
-    fillAll: "कृपया सभी आवश्यक जानकारी भरें",
 
     state: "राज्य",
     district: "जिला",
@@ -993,73 +583,128 @@ const TRANSLATIONS: any = {
     selectState: "राज्य चुनें",
     selectDistrict: "जिला चुनें",
 
-    manualLocation: "पता मैन्युअली दर्ज करें",
-    editLocation: "स्थान बदलें",
+    farming: "खेती की जानकारी",
+    chooseCrops: "आप वर्तमान में कौन सी फसलें उगाते हैं?",
 
-    detecting: "स्थान खोज रहे हैं...",
-    highAccuracy: "सटीक स्थान ले रहे हैं...",
+    farmingType: "आप किस प्रकार की खेती करते हैं?",
+
+    traditional: "पारंपरिक",
+    modern: "आधुनिक / हाई-टेक",
+    organic: "जैविक",
+
+    traditionalInfo:
+      "हल चलाना, बुवाई, सिंचाई और सामान्य खाद या कीटनाशकों के उपयोग जैसी पारंपरिक खेती की पद्धतियाँ।",
+
+    modernInfo:
+      "मशीनरी, ड्रिप सिंचाई, सेंसर, संरक्षित खेती या अन्य आधुनिक तकनीकों का उपयोग।",
+
+    organicInfo:
+      "रासायनिक खाद और कीटनाशकों से बचकर मुख्य रूप से कम्पोस्ट, गोबर की खाद और जैविक उत्पादों का उपयोग।",
+
+    chooseMethod:
+      "अपनी वास्तविक खेती के तरीके से सबसे अच्छी तरह मेल खाने वाला विकल्प चुनें।",
+
+    mpinTitle: "4 अंकों का MPIN बनाएं",
+
+    mpinDescription:
+      "ऐसा 4 अंकों का नंबर चुनें जिसे आप आसानी से याद रख सकें। इसका उपयोग FarmAI में लॉगिन करने के लिए होगा।",
+
+    mpin: "4 अंकों का MPIN",
+    confirmMpin: "MPIN की पुष्टि करें",
+
+    mpinPlaceholder: "4 अंकों का MPIN डालें",
+    confirmMpinPlaceholder: "MPIN दोबारा डालें",
+
+    showMpin: "MPIN दिखाएं",
+    hideMpin: "MPIN छिपाएं",
+
+    mpinHint:
+      "1234 या 0000 जैसे बहुत आसान नंबर का उपयोग न करें।",
+
+    submit: "पंजीकरण पूरा करें",
+
+    next: "आगे बढ़ें",
+    back: "पीछे",
 
     step1: "व्यक्तिगत",
     step2: "स्थान",
     step3: "खेती",
 
-    nextStep: "अगला चरण",
-    back: "वापस",
+    successTitle: "पंजीकरण सफल!",
+    successDescription:
+      "आपका FarmAI खाता सफलतापूर्वक बन गया है। लॉगिन पेज पर जा रहे हैं...",
 
-    personalDescription: "कृपया अपनी मूल संपर्क जानकारी दर्ज करें।",
-    locationDescription:
-      "मिट्टी और मौसम की जानकारी के लिए हमें आपके खेत का स्थान चाहिए।",
+    incompleteTitle: "कुछ जानकारी बाकी है",
+
+    invalidPhoneTitle: "मोबाइल नंबर सही नहीं है",
+    invalidPhone:
+      "कृपया 10 अंकों का सही भारतीय मोबाइल नंबर डालें।",
+
+    phoneExistsTitle: "खाता पहले से मौजूद है",
+    phoneExists:
+      "यह मोबाइल नंबर पहले से पंजीकृत है। कृपया लॉगिन करें।",
+
+    checkingPhone: "मोबाइल नंबर जांच रहे हैं...",
+
+    nameRequired: "कृपया अपना पूरा नाम डालें।",
+    phoneRequired: "कृपया अपना मोबाइल नंबर डालें।",
+
+    stateRequired: "कृपया अपना राज्य चुनें.",
+    districtRequired: "कृपया अपना जिला चुनें।",
+
+    cropsRequired: "कृपया कम से कम एक फसल चुनें।",
+
+    farmingTypeRequired:
+      "कृपया अपनी खेती के अनुसार सही खेती पद्धति चुनें।",
+
+    mpinRequired: "कृपया 4 अंकों का MPIN बनाएं.",
+
+    mpinInvalid:
+      "MPIN में ठीक 4 अंक होने चाहिए।",
+
+    weakMpin:
+      "यह MPIN बहुत आसानी से अनुमान लगाया जा सकता है। कृपया दूसरा MPIN चुनें।",
+
+    mpinMismatch:
+      "दोनों MPIN एक जैसे नहीं हैं।",
+
+    registrationError:
+      "पंजीकरण असफल हुआ। कृपया दोबारा प्रयास करें।",
+
+    serverError:
+      "सर्वर से कनेक्शन नहीं हो सका। कृपया दोबारा प्रयास करें।",
+
+    errorLocation:
+      "स्थान नहीं मिल सका। कृपया जानकारी स्वयं भरें।",
+
+    security:
+      "आपका MPIN सुरक्षित रूप से एन्क्रिप्ट किया जाता है।",
   },
 
   "mr-IN": {
     title: "FarmAI मध्ये सामील व्हा",
-    subtitle: "AI सल्ला मिळवण्यासाठी आपली माहिती भरा",
+    subtitle:
+      "AI आधारित शेतीचा सल्ला मिळवण्यासाठी आपली माहिती भरा",
+
+    personal: "वैयक्तिक माहिती",
+    personalDesc: "तुमच्याबद्दल थोडी माहिती द्या.",
 
     name: "पूर्ण नाव",
+    namePlaceholder: "उदा. राजेश कुमार",
+
     phone: "मोबाईल नंबर",
+    phonePlaceholder: "9876543210",
+
+    location: "शेताचे ठिकाण",
+    locationDesc:
+      "तुमचे लोकेशन आम्हाला अचूक हवामान आणि शेतीची माहिती देण्यास मदत करते.",
+
     language: "भाषा",
 
-    password: "पासवर्ड",
-    confirmPassword: "पासवर्डची पुष्टी करा",
-    passwordHint: "पासवर्ड किमान 6 अक्षरांचा असावा",
-
     detectLocation: "माझे सध्याचे लोकेशन वापरा",
+    detecting: "लोकेशन शोधत आहे...",
+    highAccuracy: "अचूक लोकेशन मिळवत आहे...",
     locationDetected: "लोकेशन मिळाले",
-
-    chooseCrops: "तुम्ही कोणती पिके घेता?",
-    farmingType: "शेतीची पद्धत",
-
-    organic: "सेंद्रिय",
-    traditional: "पारंपारिक",
-    modern: "आधुनिक / हाय-टेक",
-
-    farmingDescriptionTitle: "यामध्ये काय समाविष्ट आहे?",
-
-    traditionalDescription:
-      "स्थानिक व नेहमीच्या शेती पद्धती, सामान्य अवजारे, बियाणे, खते व कीटकनाशकांचा वापर.",
-
-    modernDescription:
-      "यंत्रसामग्री, ठिबक सिंचन, सेन्सर, अचूक शेती व इतर आधुनिक तंत्रज्ञानाचा वापर.",
-
-    organicDescription:
-      "नैसर्गिक खत, कंपोस्ट व जैविक साधनांचा वापर; कृत्रिम रासायनिक खते व कीटकनाशके टाळली जातात.",
-
-    traditionalShort:
-      "नेहमीच्या शेती पद्धती, सामान्य अवजारे आणि वापरातील कृषी साधने.",
-
-    modernShort:
-      "यंत्रे, सिंचन, सेन्सर आणि तंत्रज्ञानावर आधारित आधुनिक शेती.",
-
-    organicShort:
-      "नैसर्गिक साधनांनी शेती; कृत्रिम रासायनिक खते व कीटकनाशके वापरली जात नाहीत.",
-
-    submit: "नोंदणी पूर्ण करा",
-    success: "नोंदणी यशस्वी!",
-
-    errorLocation:
-      "लोकेशन सापडले नाही. कृपया स्वतः माहिती भरा.",
-
-    fillAll: "कृपया सर्व आवश्यक माहिती भरा",
 
     state: "राज्य",
     district: "जिल्हा",
@@ -1069,92 +714,342 @@ const TRANSLATIONS: any = {
     selectState: "राज्य निवडा",
     selectDistrict: "जिल्हा निवडा",
 
-    manualLocation: "पत्ता स्वतः टाका",
-    editLocation: "लोकेशन बदला",
+    farming: "शेतीची माहिती",
+    chooseCrops: "तुम्ही सध्या कोणती पिके घेता?",
 
-    detecting: "शोधत आहे...",
-    highAccuracy: "अचूक लोकेशन मिळवत आहे...",
+    farmingType: "तुम्ही कोणत्या प्रकारची शेती करता?",
+
+    traditional: "पारंपारिक",
+    modern: "आधुनिक / हाय-टेक",
+    organic: "सेंद्रिय",
+
+    traditionalInfo:
+      "नांगरणी, पेरणी, सिंचन तसेच सामान्य खते आणि कीटकनाशकांचा वापर करणारी पारंपारिक शेती.",
+
+    modernInfo:
+      "यंत्रसामग्री, ठिबक सिंचन, सेन्सर, संरक्षित शेती किंवा इतर आधुनिक तंत्रज्ञानाचा वापर.",
+
+    organicInfo:
+      "रासायनिक खते व कीटकनाशके टाळून कंपोस्ट, शेणखत आणि जैविक उत्पादनांचा मुख्यतः वापर.",
+
+    chooseMethod:
+      "तुम्ही प्रत्यक्षात ज्या पद्धतीने शेती करता त्याच्याशी सर्वात जुळणारा पर्याय निवडा.",
+
+    mpinTitle: "4 अंकी MPIN तयार करा",
+
+    mpinDescription:
+      "तुम्हाला सहज लक्षात राहील असा 4 अंकी नंबर निवडा. याच MPIN ने FarmAI मध्ये लॉगिन करता येईल.",
+
+    mpin: "4 अंकी MPIN",
+    confirmMpin: "MPIN ची पुष्टी करा",
+
+    mpinPlaceholder: "4 अंकी MPIN टाका",
+    confirmMpinPlaceholder: "MPIN पुन्हा टाका",
+
+    showMpin: "MPIN दाखवा",
+    hideMpin: "MPIN लपवा",
+
+    mpinHint:
+      "1234 किंवा 0000 सारखा खूप सोपा नंबर वापरू नका.",
+
+    submit: "नोंदणी पूर्ण करा",
+
+    next: "पुढे जा",
+    back: "मागे",
 
     step1: "वैयक्तिक",
     step2: "लोकेशन",
     step3: "शेती",
 
-    nextStep: "पुढील टप्पा",
-    back: "मागे",
+    successTitle: "नोंदणी यशस्वी!",
+    successDescription:
+      "तुमचे FarmAI खाते यशस्वीरित्या तयार झाले आहे. लॉगिन पेजवर जात आहे...",
 
-    personalDescription:
-      "कृपया आपली मूलभूत संपर्क माहिती भरा.",
+    incompleteTitle: "काही माहिती बाकी आहे",
 
-    locationDescription:
-      "माती आणि हवामानाची माहिती देण्यासाठी आम्हाला आपल्या शेताचे लोकेशन आवश्यक आहे.",
+    invalidPhoneTitle: "मोबाईल नंबर चुकीचा आहे",
+    invalidPhone:
+      "कृपया 10 अंकी योग्य भारतीय मोबाईल नंबर टाका.",
+
+    phoneExistsTitle: "खाते आधीपासून आहे",
+    phoneExists:
+      "हा मोबाईल नंबर आधीच नोंदणीकृत आहे. कृपया लॉगिन करा.",
+
+    checkingPhone: "मोबाईल नंबर तपासत आहे...",
+
+    nameRequired: "कृपया तुमचे पूर्ण नाव टाका.",
+    phoneRequired: "कृपया तुमचा मोबाईल नंबर टाका.",
+
+    stateRequired: "कृपया तुमचे राज्य निवडा.",
+    districtRequired: "कृपया तुमचा जिल्हा निवडा.",
+
+    cropsRequired:
+      "कृपया कमीत कमी एक पीक निवडा.",
+
+    farmingTypeRequired:
+      "तुमच्या प्रत्यक्ष शेतीशी जुळणारी योग्य पद्धत निवडा.",
+
+    mpinRequired:
+      "कृपया 4 अंकी MPIN तयार करा.",
+
+    mpinInvalid:
+      "MPIN मध्ये नेमके 4 अंक असणे आवश्यक आहे.",
+
+    weakMpin:
+      "हा MPIN खूप सोपा आहे. कृपया दुसरा 4 अंकी MPIN निवडा.",
+
+    mpinMismatch:
+      "दोन्ही MPIN सारखे नाहीत.",
+
+    registrationError:
+      "नोंदणी अयशस्वी झाली. कृपया पुन्हा प्रयत्न करा.",
+
+    serverError:
+      "सर्व्हरशी कनेक्शन झाले नाही. कृपया पुन्हा प्रयत्न करा.",
+
+    errorLocation:
+      "लोकेशन सापडले नाही. कृपया माहिती स्वतः भरा.",
+
+    security:
+      "तुमचा MPIN सुरक्षितपणे एन्क्रिप्ट केला जातो.",
   },
 };
+
+/* =========================================================
+   FARMING METHODS
+   ========================================================= */
+
+const FARMING_METHODS = [
+  {
+    id: "traditional",
+    icon: Wheat,
+  },
+  {
+    id: "modern",
+    icon: Tractor,
+  },
+  {
+    id: "organic",
+    icon: Leaf,
+  },
+];
+
+/* =========================================================
+   WEAK 4-DIGIT MPIN CHECK
+   ========================================================= */
+
+function isWeakMpin(mpin: string) {
+  const weakPins = [
+    "0000",
+    "1111",
+    "2222",
+    "3333",
+    "4444",
+    "5555",
+    "6666",
+    "7777",
+    "8888",
+    "9999",
+
+    "1234",
+    "4321",
+
+    "1122",
+    "2211",
+    "1212",
+    "2121",
+    "1221",
+    "2112",
+
+    "2580",
+    "0852",
+    "6969",
+    "1004",
+    "2000",
+    "2020",
+  ];
+
+  if (weakPins.includes(mpin)) {
+    return true;
+  }
+
+  // All same digits
+  if (/^(\d)\1{3}$/.test(mpin)) {
+    return true;
+  }
+
+  // Ascending sequence
+  let ascending = true;
+
+  for (let i = 1; i < mpin.length; i++) {
+    if (
+      Number(mpin[i]) !==
+      Number(mpin[i - 1]) + 1
+    ) {
+      ascending = false;
+      break;
+    }
+  }
+
+  if (ascending) {
+    return true;
+  }
+
+  // Descending sequence
+  let descending = true;
+
+  for (let i = 1; i < mpin.length; i++) {
+    if (
+      Number(mpin[i]) !==
+      Number(mpin[i - 1]) - 1
+    ) {
+      descending = false;
+      break;
+    }
+  }
+
+  return descending;
+}
+
+/* =========================================================
+   REGISTER PAGE
+   ========================================================= */
 
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [lang, setLang] = useState<"en-US" | "hi-IN" | "mr-IN">("mr-IN");
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:5000";
 
-  const t = (key: string) => TRANSLATIONS[lang][key] ?? key;
+  const [lang, setLang] =
+    useState<"en-US" | "hi-IN" | "mr-IN">(
+      "mr-IN"
+    );
 
-  /* ==========================
-     FORM STATE
-     ========================== */
+  const t = (key: string) =>
+    TRANSLATIONS[lang][key] || key;
 
-  const [step, setStep] = useState<number>(1);
+  /* =====================================================
+     STEP
+     ===================================================== */
+
+  const [step, setStep] = useState(1);
+
+  /* =====================================================
+     PERSONAL
+     ===================================================== */
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  /* =====================================================
+     LOCATION
+     ===================================================== */
 
-  const [location, setLocation] = useState<any>({});
-  const [locLoading, setLocLoading] = useState(false);
-  const [locError, setLocError] = useState<string | null>(null);
+  const [location, setLocation] =
+    useState<any>({});
 
-  const [showManualLocation, setShowManualLocation] = useState(false);
+  const [locLoading, setLocLoading] =
+    useState(false);
 
-  const [manualState, setManualState] = useState("");
-  const [manualDistrict, setManualDistrict] = useState("");
-  const [manualPincode, setManualPincode] = useState("");
-  const [manualVillage, setManualVillage] = useState("");
+  const [manualState, setManualState] =
+    useState("");
 
-  const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
+  const [manualDistrict, setManualDistrict] =
+    useState("");
 
-  const [farmingType, setFarmingType] = useState<
-    "organic" | "traditional" | "modern"
-  >("traditional");
+  const [manualPincode, setManualPincode] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
+  const [manualVillage, setManualVillage] =
+    useState("");
 
-  /* ==========================
-     LOCATION DETECTION
-     ========================== */
+  /* =====================================================
+     FARMING
+     ===================================================== */
 
-  async function reverseGeocodeWithRetry(
+  const [selectedCrops, setSelectedCrops] =
+    useState<string[]>([]);
+
+  const [farmingType, setFarmingType] =
+    useState<
+      "organic" | "traditional" | "modern"
+    >("traditional");
+
+  /* =====================================================
+     MPIN
+     ===================================================== */
+
+  const [mpin, setMpin] = useState("");
+  const [confirmMpin, setConfirmMpin] =
+    useState("");
+
+  const [showMpin, setShowMpin] =
+    useState(false);
+
+  const [showConfirmMpin, setShowConfirmMpin] =
+    useState(false);
+
+  /* =====================================================
+     LOADING
+     ===================================================== */
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [checkingPhone, setCheckingPhone] =
+    useState(false);
+
+  // True only when the backend confirms that this
+  // mobile number is already registered.
+  const [phoneAlreadyRegistered, setPhoneAlreadyRegistered] =
+    useState(false);
+
+  /* =====================================================
+     ERRORS
+     ===================================================== */
+
+  const [errors, setErrors] =
+    useState<Record<string, string>>({});
+
+  /* =====================================================
+     REVERSE GEOCODING
+     ===================================================== */
+
+  async function reverseGeocode(
     lat: number,
     lon: number
-  ): Promise<any | null> {
+  ) {
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
-        {
-          headers: {
-            "Accept-Language": "en",
-          },
-        }
-      );
+      const url =
+        `https://nominatim.openstreetmap.org/reverse` +
+        `?format=jsonv2` +
+        `&lat=${lat}` +
+        `&lon=${lon}` +
+        `&zoom=18` +
+        `&addressdetails=1`;
+
+      const res = await fetch(url, {
+        headers: {
+          "Accept-Language": "en",
+        },
+      });
 
       if (!res.ok) {
-        throw new Error("Geocoding failed");
+        throw new Error(
+          "Geocoding failed"
+        );
       }
 
       const data = await res.json();
       const address = data.address || {};
 
-      let state = address.state || address.region || "";
+      const state =
+        address.state ||
+        address.region ||
+        "";
 
       let district =
         address.state_district ||
@@ -1163,7 +1058,12 @@ export default function RegisterPage() {
         address.city ||
         "";
 
-      district = district.replace(/\s+District$/i, "").trim();
+      district = district
+        .replace(
+          /\s+District$/i,
+          ""
+        )
+        .trim();
 
       const village =
         address.village ||
@@ -1177,68 +1077,108 @@ export default function RegisterPage() {
         lon,
         state,
         district,
-        pincode: address.postcode || "",
+        pincode:
+          address.postcode || "",
         village,
-        display_name: data.display_name || "",
+        display_name:
+          data.display_name || "",
       };
-    } catch (err) {
-      console.error("Geocoding error:", err);
+    } catch (error) {
+      console.error(
+        "Geocoding error:",
+        error
+      );
+
       return null;
     }
   }
 
+  /* =====================================================
+     DETECT LOCATION
+     ===================================================== */
+
   function detectLocation() {
-    setLocError(null);
+    clearError("location");
 
     if (!navigator.geolocation) {
-      setLocError(t("errorLocation"));
-      setShowManualLocation(true);
+      // setShowManualLocation(true);
+
+      toast({
+        title: t("errorLocation"),
+        description: t("errorLocation"),
+        variant: "destructive",
+      });
+
       return;
     }
 
     setLocLoading(true);
 
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
+      async (position) => {
+        const lat =
+          position.coords.latitude;
 
-        try {
-          const loc = await reverseGeocodeWithRetry(lat, lon);
+        const lon =
+          position.coords.longitude;
 
-          if (loc) {
-            setLocation(loc);
+        const loc =
+          await reverseGeocode(
+            lat,
+            lon
+          );
 
-            setManualState(loc.state || "");
-            setManualDistrict(loc.district || "");
-            setManualPincode(loc.pincode || "");
-            setManualVillage(loc.village || "");
-
-            setShowManualLocation(true);
-
-            toast({
-              title: t("locationDetected"),
-              description: loc.display_name || "",
-              variant: "default",
-            });
-          } else {
-            setLocError(t("errorLocation"));
-            setShowManualLocation(true);
-          }
-        } catch (err) {
-          setLocError(t("errorLocation"));
-          setShowManualLocation(true);
-        } finally {
+        if (!loc) {
           setLocLoading(false);
-        }
-      },
 
+          toast({
+            title: t("errorLocation"),
+            description:
+              t("errorLocation"),
+            variant: "destructive",
+          });
+
+          return;
+        }
+
+        setLocation(loc);
+
+        setManualState(
+          loc.state || ""
+        );
+
+        setManualDistrict(
+          loc.district || ""
+        );
+
+        setManualPincode(
+          loc.pincode || ""
+        );
+
+        setManualVillage(
+          loc.village || ""
+        );
+
+        toast({
+          title: `✓ ${t(
+            "locationDetected"
+          )}`,
+          description:
+            loc.display_name || "",
+        });
+
+        setLocLoading(false);
+      },
       () => {
         setLocLoading(false);
-        setLocError(t("errorLocation"));
-        setShowManualLocation(true);
-      },
 
+        toast({
+          title: t("errorLocation"),
+          description:
+            t("errorLocation"),
+          variant: "destructive",
+        });
+      },
       {
         enableHighAccuracy: true,
         timeout: 20000,
@@ -1247,43 +1187,278 @@ export default function RegisterPage() {
     );
   }
 
-  /* ==========================
-     CROP SELECTION
-     ========================== */
+  /* =====================================================
+     ERROR HELPERS
+     ===================================================== */
 
-  function toggleCrop(cropId: string) {
+  function clearError(field: string) {
+    setErrors((prev) => {
+      const next = {
+        ...prev,
+      };
+
+      delete next[field];
+
+      return next;
+    });
+  }
+
+  function setError(
+    field: string,
+    message: string
+  ) {
+    setErrors((prev) => ({
+      ...prev,
+      [field]: message,
+    }));
+  }
+
+  /* =====================================================
+     CROP SELECTION
+     ===================================================== */
+
+  function toggleCrop(
+    cropId: string
+  ) {
+    clearError("crops");
+
     setSelectedCrops((prev) =>
       prev.includes(cropId)
-        ? prev.filter((c) => c !== cropId)
+        ? prev.filter(
+            (crop) => crop !== cropId
+          )
         : [...prev, cropId]
     );
   }
 
-  /* ==========================
-     NEXT STEP
-     ========================== */
+  /* =====================================================
+     CHECK PHONE
+     ===================================================== */
 
-  function goNext() {
+  async function checkPhoneAvailability(
+    mobileNumber: string
+  ) {
+    setCheckingPhone(true);
+    setPhoneAlreadyRegistered(false);
+
+    try {
+      const res = await fetch(
+        `${API_URL}/api/auth/check-phone`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            phone: mobileNumber,
+          }),
+        }
+      );
+
+      let data: any = {};
+
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
+
+      // =================================================
+      // PHONE ALREADY REGISTERED
+      // =================================================
+
+      if (
+        res.status === 409 ||
+        data.code === "PHONE_EXISTS"
+      ) {
+        setPhoneAlreadyRegistered(true);
+        setError("phone", t("phoneExists"));
+
+        toast({
+          title: `⚠️ ${t("phoneExistsTitle")}`,
+          description:
+            data.message || t("phoneExists"),
+          variant: "destructive",
+        });
+
+        return false;
+      }
+
+      // =================================================
+      // OTHER BACKEND ERROR
+      // =================================================
+
+      if (!res.ok) {
+        setPhoneAlreadyRegistered(false);
+
+        const message =
+          data.message || t("serverError");
+
+        setError("phone", message);
+
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+
+        return false;
+      }
+
+      // =================================================
+      // PHONE AVAILABLE
+      // =================================================
+
+      if (data.available === true) {
+        clearError("phone");
+        setPhoneAlreadyRegistered(false);
+        return true;
+      }
+
+      // Unexpected response
+      setPhoneAlreadyRegistered(false);
+      setError("phone", t("serverError"));
+
+      toast({
+        title: "Error",
+        description: t("serverError"),
+        variant: "destructive",
+      });
+
+      return false;
+    } catch (error) {
+      console.error(
+        "Phone availability error:",
+        error
+      );
+
+      setPhoneAlreadyRegistered(false);
+
+      toast({
+        title: "Error",
+        description: t("serverError"),
+        variant: "destructive",
+      });
+
+      return false;
+    } finally {
+      setCheckingPhone(false);
+    }
+  }
+
+  /* =====================================================
+     STEP 1 VALIDATION
+     ===================================================== */
+
+  async function validateStep1() {
+    const newErrors: Record<
+      string,
+      string
+    > = {};
+
+    const cleanName =
+      name.trim();
+
+    const cleanPhone =
+      phone
+        .replace(/\D/g, "")
+        .trim();
+
+    if (!cleanName) {
+      newErrors.name =
+        t("nameRequired");
+    }
+
+    if (!cleanPhone) {
+      newErrors.phone =
+        t("phoneRequired");
+    } else if (
+      !/^[6-9]\d{9}$/.test(
+        cleanPhone
+      )
+    ) {
+      newErrors.phone =
+        t("invalidPhone");
+    }
+
+    setErrors(newErrors);
+
+    if (
+      Object.keys(newErrors)
+        .length > 0
+    ) {
+      toast({
+        title: `⚠️ ${t(
+          "incompleteTitle"
+        )}`,
+        description:
+          Object.values(
+            newErrors
+          )[0],
+        variant: "destructive",
+      });
+
+      return false;
+    }
+
+    return checkPhoneAvailability(
+      cleanPhone
+    );
+  }
+
+  /* =====================================================
+     STEP 2 VALIDATION
+     ===================================================== */
+
+  function validateStep2() {
+    const newErrors: Record<
+      string,
+      string
+    > = {};
+
+    if (!manualState) {
+      newErrors.state =
+        t("stateRequired");
+    }
+
+    if (!manualDistrict) {
+      newErrors.district =
+        t("districtRequired");
+    }
+
+    setErrors(newErrors);
+
+    if (
+      Object.keys(newErrors)
+        .length > 0
+    ) {
+      toast({
+        title: `⚠️ ${t(
+          "incompleteTitle"
+        )}`,
+        description:
+          Object.values(
+            newErrors
+          )[0],
+        variant: "destructive",
+      });
+
+      return false;
+    }
+
+    return true;
+  }
+
+  /* =====================================================
+     NEXT
+     ===================================================== */
+
+  async function goNext() {
     if (step === 1) {
-      if (!name.trim() || !phone.trim()) {
-        toast({
-          title: "Incomplete",
-          description: t("fillAll"),
-          variant: "destructive",
-        });
+      const valid =
+        await validateStep1();
 
-        return;
-      }
-
-      if (!/^\d{10}$/.test(phone.trim())) {
-        toast({
-          title: "Invalid Mobile Number",
-          description: "Please enter a valid 10-digit mobile number.",
-          variant: "destructive",
-        });
-
-        return;
-      }
+      if (!valid) return;
 
       setStep(2);
 
@@ -1291,16 +1466,15 @@ export default function RegisterPage() {
         top: 0,
         behavior: "smooth",
       });
-    } else if (step === 2) {
-      if (!manualState || !manualDistrict) {
-        toast({
-          title: "Location Missing",
-          description: "Please select your State and District",
-          variant: "destructive",
-        });
 
-        return;
-      }
+      return;
+    }
+
+    if (step === 2) {
+      const valid =
+        validateStep2();
+
+      if (!valid) return;
 
       setStep(3);
 
@@ -1311,12 +1485,19 @@ export default function RegisterPage() {
     }
   }
 
-  /* ==========================
+  /* =====================================================
      BACK
-     ========================== */
+     ===================================================== */
 
   function goBack() {
-    setStep((s) => Math.max(1, s - 1));
+    setErrors({});
+
+    setStep((current) =>
+      Math.max(
+        1,
+        current - 1
+      )
+    );
 
     window.scrollTo({
       top: 0,
@@ -1324,67 +1505,114 @@ export default function RegisterPage() {
     });
   }
 
-  /* ==========================
-     SUBMIT
-     ========================== */
+  /* =====================================================
+     FINAL VALIDATION
+     ===================================================== */
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function validateFinalStep() {
+    const newErrors: Record<
+      string,
+      string
+    > = {};
 
-    const finalState = manualState || location.state || "";
-    const finalDistrict = manualDistrict || location.district || "";
-    const finalPincode = manualPincode || location.pincode || "";
-    const finalVillage = manualVillage || location.village || "";
+    /* CROPS */
 
     if (
-      !name.trim() ||
-      !phone.trim() ||
-      !finalState ||
-      !finalDistrict ||
-      selectedCrops.length === 0
+      selectedCrops.length ===
+      0
+    ) {
+      newErrors.crops =
+        t("cropsRequired");
+    }
+
+    /* MPIN */
+
+    if (!mpin) {
+      newErrors.mpin =
+        t("mpinRequired");
+    } else if (
+      !/^\d{4}$/.test(mpin)
+    ) {
+      newErrors.mpin =
+        t("mpinInvalid");
+    } else if (
+      isWeakMpin(mpin)
+    ) {
+      newErrors.mpin =
+        t("weakMpin");
+    }
+
+    /* CONFIRM MPIN */
+
+    if (!confirmMpin) {
+      newErrors.confirmMpin =
+        t("mpinRequired");
+    } else if (
+      mpin !== confirmMpin
+    ) {
+      newErrors.confirmMpin =
+        t("mpinMismatch");
+    }
+
+    setErrors(newErrors);
+
+    if (
+      Object.keys(newErrors)
+        .length > 0
     ) {
       toast({
-        title: "Error",
-        description: t("fillAll"),
+        title: `⚠️ ${t(
+          "incompleteTitle"
+        )}`,
+        description:
+          Object.values(
+            newErrors
+          )[0],
         variant: "destructive",
       });
 
-      return;
+      return false;
     }
 
-    if (!password) {
-      toast({
-        title: "Password Required",
-        description: "Please create a password.",
-        variant: "destructive",
-      });
+    return true;
+  }
 
-      return;
-    }
+  /* =====================================================
+     SUBMIT REGISTRATION
+     ===================================================== */
 
-    if (password.length < 6) {
-      toast({
-        title: "Weak Password",
-        description: t("passwordHint"),
-        variant: "destructive",
-      });
+  async function handleSubmit(
+    e: React.FormEvent
+  ) {
+    e.preventDefault();
 
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast({
-        title: "Passwords Do Not Match",
-        description: "Please make sure both passwords are the same.",
-        variant: "destructive",
-      });
-
+    if (!validateFinalStep()) {
       return;
     }
 
     setLoading(true);
 
     try {
+      const finalState =
+        manualState ||
+        location.state ||
+        "";
+
+      const finalDistrict =
+        manualDistrict ||
+        location.district ||
+        "";
+
+      const finalPincode =
+        manualPincode ||
+        location.pincode ||
+        "";
+
+      const finalVillage =
+        manualVillage ||
+        location.village ||
+        "";
+
       const locationParts = [
         finalVillage,
         finalDistrict,
@@ -1392,317 +1620,675 @@ export default function RegisterPage() {
         finalPincode,
       ].filter(Boolean);
 
-      const farmLocation = locationParts.join(", ");
+      const farmLocation =
+        locationParts.join(
+          ", "
+        );
 
       const payload = {
-        fullName: name,
-        phone,
-        preferredLanguage: lang,
+        fullName:
+          name.trim(),
+
+        phone: phone
+          .replace(
+            /\D/g,
+            ""
+          )
+          .trim(),
+
+        preferredLanguage:
+          lang,
+
         farmLocation,
+
         state: finalState,
-        district: finalDistrict,
-        pincode: finalPincode,
-        village: finalVillage,
-        latitude: location.lat || 0,
-        longitude: location.lon || 0,
-        crops: selectedCrops,
+
+        district:
+          finalDistrict,
+
+        pincode:
+          finalPincode,
+
+        village:
+          finalVillage,
+
+        latitude:
+          typeof location.lat ===
+          "number"
+            ? location.lat
+            : 0,
+
+        longitude:
+          typeof location.lon ===
+          "number"
+            ? location.lon
+            : 0,
+
+        crops:
+          selectedCrops,
+
         farmingType,
-        password,
+
+        /* IMPORTANT:
+           Backend expects 4-digit MPIN */
+        mpin,
       };
 
-      const res = await fetch(
-        "http://localhost:5000/api/auth/register",
+      console.log(
+        "Registration payload:",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
+          ...payload,
+          mpin: "****",
         }
       );
 
-      const data = await res.json();
+      const res =
+        await fetch(
+          `${API_URL}/api/auth/register`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body:
+              JSON.stringify(
+                payload
+              ),
+          }
+        );
+
+      const data =
+        await res.json();
+
+      /* =================================================
+         EXISTING USER
+         ================================================= */
+
+      if (
+        res.status === 409 ||
+        data.code ===
+          "PHONE_EXISTS"
+      ) {
+        setError(
+          "phone",
+          t("phoneExists")
+        );
+
+        setPhoneAlreadyRegistered(true);
+
+        toast({
+          title: `⚠️ ${t(
+            "phoneExistsTitle"
+          )}`,
+          description:
+            data.message ||
+            t("phoneExists"),
+          variant:
+            "destructive",
+        });
+
+        setStep(1);
+
+        return;
+      }
+
+      /* =================================================
+         VALIDATION ERROR
+         ================================================= */
 
       if (!res.ok) {
+        let message =
+          data.message ||
+          t("registrationError");
+
+        if (
+          data.code ===
+          "WEAK_MPIN"
+        ) {
+          setError(
+            "mpin",
+            t("weakMpin")
+          );
+
+          message =
+            t("weakMpin");
+        }
+
+        if (
+          data.code ===
+          "INVALID_MPIN"
+        ) {
+          setError(
+            "mpin",
+            t("mpinInvalid")
+          );
+
+          message =
+            t("mpinInvalid");
+        }
+
+        if (
+          data.code ===
+          "MPIN_REQUIRED"
+        ) {
+          setError(
+            "mpin",
+            t("mpinRequired")
+          );
+
+          message =
+            t("mpinRequired");
+        }
+
         toast({
-          title: "Error",
-          description: data.message || "Registration failed",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: t("success"),
-          description: "Redirecting to login...",
-          variant: "default",
+          title: `⚠️ ${t(
+            "registrationError"
+          )}`,
+          description:
+            message,
+          variant:
+            "destructive",
         });
 
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
+        return;
       }
-    } catch (err) {
+
+      /* =================================================
+         SUCCESS
+         ================================================= */
+
       toast({
-        title: "Error",
-        description: "Connection to server failed",
-        variant: "destructive",
+        title: `✓ ${t(
+          "successTitle"
+        )}`,
+        description:
+          t(
+            "successDescription"
+          ),
+        className:
+          "bg-green-600 text-white border-none",
+      });
+
+      setTimeout(() => {
+        router.push(
+          "/login"
+        );
+      }, 1800);
+    } catch (error) {
+      console.error(
+        "Registration error:",
+        error
+      );
+
+      toast({
+        title:
+          "Connection Error",
+        description:
+          t("serverError"),
+        variant:
+          "destructive",
       });
     } finally {
       setLoading(false);
     }
   }
 
-  /* ==========================
+  /* =====================================================
      DISTRICTS
-     ========================== */
+     ===================================================== */
 
-  const districtsForState = manualState
-    ? INDIAN_STATES_DISTRICTS[manualState] || []
-    : [];
+  const districtsForState =
+    manualState
+      ? INDIAN_STATES_DISTRICTS[
+          manualState
+        ] || []
+      : [];
 
-  /* ==========================
-     FARMING METHODS
-     ========================== */
-
-  const farmingMethods = [
-    {
-      id: "traditional",
-      label: t("traditional"),
-      description: t("traditionalShort"),
-      detailedDescription: t("traditionalDescription"),
-      icon: <Wheat className="w-5 h-5" />,
-    },
-
-    {
-      id: "modern",
-      label: t("modern"),
-      description: t("modernShort"),
-      detailedDescription: t("modernDescription"),
-      icon: <Tractor className="w-5 h-5" />,
-    },
-
-    {
-      id: "organic",
-      label: t("organic"),
-      description: t("organicShort"),
-      detailedDescription: t("organicDescription"),
-      icon: <Leaf className="w-5 h-5" />,
-    },
-  ];
-
-  /* ==========================
-     UI
-     ========================== */
+  /* =====================================================
+     RENDER
+     ===================================================== */
 
   return (
-    <div className="min-h-screen bg-[#F0FDF4] flex items-center justify-center p-4 md:p-8 font-sans">
-      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px] border border-green-100">
+    <div className="min-h-screen bg-[#F0FDF4] flex items-center justify-center p-3 sm:p-5 md:p-8 font-sans">
 
-        {/* ==========================
-            SIDEBAR
-            ========================== */}
+      <div className="w-full max-w-5xl bg-white rounded-2xl md:rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row border border-green-100">
 
-        <div className="md:w-1/3 bg-gradient-to-br from-green-800 to-green-700 text-white p-8 flex flex-col justify-between relative overflow-hidden">
+        {/* =================================================
+            LEFT SIDEBAR
+            ================================================= */}
 
-          <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+        <div className="md:w-[34%] bg-gradient-to-br from-green-800 to-green-700 text-white p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden">
+
+          <div className="absolute inset-0 opacity-[0.08] pointer-events-none">
             <Sprout className="absolute -bottom-10 -right-10 w-64 h-64" />
           </div>
 
           <div className="relative z-10">
 
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-7">
+
               <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
-                <Sprout className="w-8 h-8 text-white" />
+                <Sprout className="w-7 h-7 text-white" />
               </div>
 
               <h1 className="text-2xl font-bold tracking-tight">
                 FarmAI
               </h1>
+
             </div>
 
-            <h2 className="text-3xl font-bold leading-tight mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold leading-tight mb-3">
               {t("title")}
             </h2>
 
-            <p className="text-green-100 text-lg opacity-90">
+            <p className="text-green-100 text-sm sm:text-base leading-relaxed opacity-90">
               {t("subtitle")}
             </p>
 
           </div>
 
-          {/* Stepper */}
+          {/* STEPPER */}
 
-          <div className="relative z-10 mt-8 md:mt-0 space-y-6">
-            <div className="space-y-4">
+          <div className="relative z-10 mt-8 md:mt-12">
 
-              {[1, 2, 3].map((s) => (
-                <div
-                  key={s}
-                  className="flex items-center gap-4"
-                >
+            <div className="space-y-5">
+
+              {[1, 2, 3].map(
+                (currentStep) => (
+
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                      step >= s
-                        ? "bg-white text-green-800 border-white font-bold"
-                        : "border-green-400 text-green-200"
-                    }`}
+                    key={
+                      currentStep
+                    }
+                    className="flex items-center gap-3"
                   >
-                    {step > s ? (
-                      <CheckCircle2 className="w-5 h-5" />
-                    ) : (
-                      s
-                    )}
-                  </div>
 
-                  <span
-                    className={`text-sm font-medium ${
-                      step >= s
-                        ? "text-white"
-                        : "text-green-300"
-                    }`}
-                  >
-                    {s === 1 && t("step1")}
-                    {s === 2 && t("step2")}
-                    {s === 3 && t("step3")}
-                  </span>
-                </div>
-              ))}
+                    <div
+                      className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                        step >=
+                        currentStep
+                          ? "bg-white text-green-800 border-white font-bold"
+                          : "border-green-400 text-green-200"
+                      }`}
+                    >
+
+                      {step >
+                      currentStep ? (
+                        <CheckCircle2 className="w-5 h-5" />
+                      ) : (
+                        currentStep
+                      )}
+
+                    </div>
+
+                    <span
+                      className={`text-sm font-medium ${
+                        step >=
+                        currentStep
+                          ? "text-white"
+                          : "text-green-300"
+                      }`}
+                    >
+                      {currentStep ===
+                        1 &&
+                        t("step1")}
+
+                      {currentStep ===
+                        2 &&
+                        t("step2")}
+
+                      {currentStep ===
+                        3 &&
+                        t("step3")}
+                    </span>
+
+                  </div>
+                )
+              )}
 
             </div>
+
           </div>
+
         </div>
 
-        {/* ==========================
-            MAIN FORM AREA
-            ========================== */}
+        {/* =================================================
+            RIGHT FORM
+            ================================================= */}
 
-        <div className="md:w-2/3 p-6 md:p-10 bg-white relative">
+        <div className="md:w-[66%] p-5 sm:p-7 md:p-9 bg-white relative">
 
-          {/* Language selector */}
+          {/* LANGUAGE */}
 
-          <div className="absolute top-6 right-6 flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200">
+          <div className="flex justify-end mb-6">
 
-            <Languages className="w-4 h-4 text-gray-500 ml-1" />
+            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200">
 
-            {["en-US", "hi-IN", "mr-IN"].map((l) => (
-              <button
-                key={l}
-                type="button"
-                onClick={() => setLang(l as any)}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-                  lang === l
-                    ? "bg-green-600 text-white shadow-sm"
-                    : "text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {l === "en-US"
-                  ? "EN"
-                  : l === "hi-IN"
-                  ? "हिंदी"
-                  : "मराठी"}
-              </button>
-            ))}
+              <Languages className="w-4 h-4 text-gray-500 ml-1.5" />
+
+              {[
+                "en-US",
+                "hi-IN",
+                "mr-IN",
+              ].map(
+                (language) => (
+
+                  <button
+                    key={
+                      language
+                    }
+                    type="button"
+                    onClick={() =>
+                      setLang(
+                        language as
+                          | "en-US"
+                          | "hi-IN"
+                          | "mr-IN"
+                      )
+                    }
+                    className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                      lang ===
+                      language
+                        ? "bg-green-600 text-white shadow-sm"
+                        : "text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {language ===
+                    "en-US"
+                      ? "EN"
+                      : language ===
+                        "hi-IN"
+                      ? "हिंदी"
+                      : "मराठी"}
+                  </button>
+
+                )
+              )}
+
+            </div>
 
           </div>
 
           <form
-            onSubmit={handleSubmit}
-            className="mt-12 h-full flex flex-col"
+            onSubmit={
+              handleSubmit
+            }
+            className="flex flex-col"
           >
 
-            {/* ==========================
+            {/* =================================================
                 STEP 1
-                ========================== */}
+                ================================================= */}
 
             {step === 1 && (
-              <div className="flex-1 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
 
                 <div>
+
                   <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+
                     <User className="w-5 h-5 text-green-600" />
-                    {t("step1")}
+
+                    {t(
+                      "personal"
+                    )}
+
                   </h3>
 
                   <p className="text-gray-500 text-sm mt-1">
-                    {t("personalDescription")}
+                    {t(
+                      "personalDesc"
+                    )}
                   </p>
+
                 </div>
 
-                <div className="space-y-4">
+                {/* NAME */}
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      {t("name")}{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
+                <div className="space-y-2">
+
+                  <label className="text-sm font-medium text-gray-700">
+                    {t(
+                      "name"
+                    )}{" "}
+                    <span className="text-red-500">
+                      *
+                    </span>
+                  </label>
+
+                  <input
+                    value={
+                      name
+                    }
+                    onChange={(
+                      e
+                    ) => {
+                      setName(
+                        e.target.value
+                      );
+
+                      clearError(
+                        "name"
+                      );
+                    }}
+                    className={`w-full px-4 py-3 rounded-xl border outline-none transition-all ${
+                      errors.name
+                        ? "border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100"
+                        : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                    }`}
+                    placeholder={t(
+                      "namePlaceholder"
+                    )}
+                  />
+
+                  {errors.name && (
+
+                    <p className="flex items-center gap-1 text-xs text-red-600">
+
+                      <AlertCircle className="w-3.5 h-3.5" />
+
+                      {
+                        errors.name
+                      }
+
+                    </p>
+                  )}
+
+                </div>
+
+                {/* PHONE */}
+
+                <div className="space-y-2">
+
+                  <label className="text-sm font-medium text-gray-700">
+                    {t(
+                      "phone"
+                    )}{" "}
+                    <span className="text-red-500">
+                      *
+                    </span>
+                  </label>
+
+                  <div className="relative">
+
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                      +91
+                    </span>
 
                     <input
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none"
-                      placeholder="e.g. Rajesh Kumar"
+                      value={
+                        phone
+                      }
+                      onChange={(
+                        e
+                      ) => {
+                        const value =
+                          e.target.value
+                            .replace(
+                              /\D/g,
+                              ""
+                            )
+                            .slice(
+                              0,
+                              10
+                            );
+
+                        setPhone(
+                          value
+                        );
+
+                        setPhoneAlreadyRegistered(
+                          false
+                        );
+
+                        clearError(
+                          "phone"
+                        );
+                      }}
+                      className={`w-full pl-12 pr-4 py-3 rounded-xl border outline-none transition-all ${
+                        errors.phone
+                          ? "border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100"
+                          : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                      }`}
+                      placeholder={t(
+                        "phonePlaceholder"
+                      )}
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={
+                        10
+                      }
                     />
+
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      {t("phone")}{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
+                  <div className="flex justify-between">
 
-                    <div className="relative">
+                    <div>
 
-                      <span className="absolute left-4 top-3.5 text-gray-400 font-medium">
-                        +91
-                      </span>
+                      {errors.phone && (
 
-                      <input
-                        value={phone}
-                        onChange={(e) =>
-                          setPhone(
-                            e.target.value
-                              .replace(/\D/g, "")
-                              .slice(0, 10)
-                          )
-                        }
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none"
-                        placeholder="98765 43210"
-                        type="tel"
-                        maxLength={10}
-                      />
+                        <p className="flex items-center gap-1 text-xs text-red-600">
+
+                          <AlertCircle className="w-3.5 h-3.5" />
+
+                          {
+                            errors.phone
+                          }
+
+                        </p>
+
+                      )}
 
                     </div>
+
+                    <span className="text-xs text-gray-400">
+                      {
+                        phone.length
+                      }
+                      /10
+                    </span>
+
                   </div>
 
+                  {/* =================================================
+                      EXISTING ACCOUNT LOGIN OPTION
+                      ================================================= */}
+
+                  {phoneAlreadyRegistered && (
+
+                    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
+
+                      <div className="flex items-start gap-3">
+
+                        <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+
+                          <AlertCircle className="w-4 h-4 text-amber-700" />
+
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+
+                          <p className="text-sm font-semibold text-amber-900">
+                            {t("phoneExistsTitle")}
+                          </p>
+
+                          <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                            {t("phoneExists")}
+                          </p>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              router.push("/login")
+                            }
+                            className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700"
+                          >
+                            {lang === "mr-IN"
+                              ? "लॉगिन करा"
+                              : lang === "hi-IN"
+                              ? "लॉगिन करें"
+                              : "Login Now"}
+
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  )}
+
                 </div>
+
               </div>
             )}
 
-            {/* ==========================
+            {/* =================================================
                 STEP 2
-                ========================== */}
+                ================================================= */}
 
             {step === 2 && (
-              <div className="flex-1 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
 
                 <div>
+
                   <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+
                     <MapPin className="w-5 h-5 text-green-600" />
-                    {t("step2")}
+
+                    {t(
+                      "location"
+                    )}
+
                   </h3>
 
                   <p className="text-gray-500 text-sm mt-1">
-                    {t("locationDescription")}
+                    {t(
+                      "locationDesc"
+                    )}
                   </p>
+
                 </div>
 
-                {/* Auto Detect */}
+                {/* LOCATION DETECTION */}
 
                 <button
                   type="button"
-                  onClick={detectLocation}
-                  disabled={locLoading}
-                  className="w-full py-4 border-2 border-dashed border-green-300 rounded-xl bg-green-50 text-green-700 font-semibold hover:bg-green-100 transition-colors flex items-center justify-center gap-2"
+                  onClick={
+                    detectLocation
+                  }
+                  disabled={
+                    locLoading
+                  }
+                  className="w-full py-3.5 border-2 border-dashed border-green-300 rounded-xl bg-green-50 text-green-700 font-semibold hover:bg-green-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
                 >
+
                   {locLoading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
@@ -1710,378 +2296,674 @@ export default function RegisterPage() {
                   )}
 
                   {locLoading
-                    ? t("highAccuracy")
-                    : t("detectLocation")}
+                    ? t(
+                        "highAccuracy"
+                      )
+                    : t(
+                        "detectLocation"
+                      )}
+
                 </button>
 
-                {/* Location detected */}
+                {/* LOCATION FOUND */}
 
-                {location.display_name &&
-                  !showManualLocation && (
-                    <div className="bg-green-50 border border-green-200 p-4 rounded-xl flex items-start gap-3">
+                {location.display_name && (
 
-                      <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                  <div className="bg-green-50 border border-green-200 p-4 rounded-xl flex items-start gap-3">
 
-                      <div>
-                        <p className="text-green-800 font-medium">
-                          {t("locationDetected")}
-                        </p>
+                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
 
-                        <p className="text-sm text-green-700 mt-1">
-                          {location.display_name}
-                        </p>
+                    <div className="min-w-0">
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setShowManualLocation(true)
-                          }
-                          className="text-xs font-bold text-green-800 underline mt-2"
-                        >
-                          {t("editLocation")}
-                        </button>
-                      </div>
+                      <p className="text-green-800 font-semibold">
+                        {t(
+                          "locationDetected"
+                        )}
+                      </p>
+
+                      <p className="text-sm text-green-700 mt-1 break-words">
+                        {
+                          location.display_name
+                        }
+                      </p>
 
                     </div>
-                  )}
 
-                {/* Manual location fields */}
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                )}
+
+                {/* MANUAL LOCATION */}
+
+                <div className="space-y-4">
+
+                  {/* STATE */}
 
                   <div className="space-y-2">
+
                     <label className="text-xs font-bold text-gray-600 uppercase">
-                      {t("state")}
+                      {t(
+                        "state"
+                      )}{" "}
+                      <span className="text-red-500">
+                        *
+                      </span>
                     </label>
 
                     <select
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-green-100 outline-none"
-                      value={manualState}
-                      onChange={(e) => {
-                        setManualState(e.target.value);
-                        setManualDistrict("");
+                      className={`w-full px-3.5 py-3 rounded-xl border bg-white outline-none transition-all ${
+                        errors.state
+                          ? "border-red-400 bg-red-50"
+                          : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                      }`}
+                      value={
+                        manualState
+                      }
+                      onChange={(
+                        e
+                      ) => {
+                        setManualState(
+                          e.target
+                            .value
+                        );
+
+                        setManualDistrict(
+                          ""
+                        );
+
+                        clearError(
+                          "state"
+                        );
+
+                        clearError(
+                          "district"
+                        );
                       }}
                     >
+
                       <option value="">
-                        {t("selectState")}
+                        {t(
+                          "selectState"
+                        )}
                       </option>
 
                       {Object.keys(
                         INDIAN_STATES_DISTRICTS
-                      ).map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
+                      ).map(
+                        (
+                          stateName
+                        ) => (
+
+                          <option
+                            key={
+                              stateName
+                            }
+                            value={
+                              stateName
+                            }
+                          >
+                            {
+                              stateName
+                            }
+                          </option>
+
+                        )
+                      )}
+
                     </select>
+
+                    {errors.state && (
+
+                      <p className="flex items-center gap-1 text-xs text-red-600">
+
+                        <AlertCircle className="w-3.5 h-3.5" />
+
+                        {
+                          errors.state
+                        }
+
+                      </p>
+                    )}
+
                   </div>
 
+                  {/* DISTRICT */}
+
                   <div className="space-y-2">
+
                     <label className="text-xs font-bold text-gray-600 uppercase">
-                      {t("district")}
+                      {t(
+                        "district"
+                      )}{" "}
+                      <span className="text-red-500">
+                        *
+                      </span>
                     </label>
 
                     <select
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-green-100 outline-none"
-                      value={manualDistrict}
-                      onChange={(e) =>
-                        setManualDistrict(e.target.value)
+                      className={`w-full px-3.5 py-3 rounded-xl border bg-white outline-none transition-all ${
+                        errors.district
+                          ? "border-red-400 bg-red-50"
+                          : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                      }`}
+                      value={
+                        manualDistrict
                       }
-                      disabled={!manualState}
+                      onChange={(
+                        e
+                      ) => {
+                        setManualDistrict(
+                          e.target
+                            .value
+                        );
+
+                        clearError(
+                          "district"
+                        );
+                      }}
+                      disabled={
+                        !manualState
+                      }
                     >
+
                       <option value="">
-                        {t("selectDistrict")}
+                        {t(
+                          "selectDistrict"
+                        )}
                       </option>
 
-                      {districtsForState.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                      {districtsForState.map(
+                        (
+                          district
+                        ) => (
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-600 uppercase">
-                      {t("village")}
-                    </label>
+                          <option
+                            key={
+                              district
+                            }
+                            value={
+                              district
+                            }
+                          >
+                            {
+                              district
+                            }
+                          </option>
 
-                    <input
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-100 outline-none"
-                      value={manualVillage}
-                      onChange={(e) =>
-                        setManualVillage(e.target.value)
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-600 uppercase">
-                      {t("pincode")}
-                    </label>
-
-                    <input
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-green-100 outline-none"
-                      value={manualPincode}
-                      onChange={(e) =>
-                        setManualPincode(
-                          e.target.value
-                            .replace(/\D/g, "")
-                            .slice(0, 6)
                         )
-                      }
-                      maxLength={6}
-                    />
+                      )}
+
+                    </select>
+
+                    {errors.district && (
+
+                      <p className="flex items-center gap-1 text-xs text-red-600">
+
+                        <AlertCircle className="w-3.5 h-3.5" />
+
+                        {
+                          errors.district
+                        }
+
+                      </p>
+                    )}
+
+                  </div>
+
+                  {/* VILLAGE + PINCODE */}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    <div className="space-y-2">
+
+                      <label className="text-xs font-bold text-gray-600 uppercase">
+                        {t(
+                          "village"
+                        )}
+                      </label>
+
+                      <input
+                        value={
+                          manualVillage
+                        }
+                        onChange={(
+                          e
+                        ) =>
+                          setManualVillage(
+                            e.target
+                              .value
+                          )
+                        }
+                        className="w-full px-3.5 py-3 rounded-xl border border-gray-200 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                        placeholder={t(
+                          "village"
+                        )}
+                      />
+
+                    </div>
+
+                    <div className="space-y-2">
+
+                      <label className="text-xs font-bold text-gray-600 uppercase">
+                        {t(
+                          "pincode"
+                        )}
+                      </label>
+
+                      <input
+                        value={
+                          manualPincode
+                        }
+                        onChange={(
+                          e
+                        ) =>
+                          setManualPincode(
+                            e.target.value
+                              .replace(
+                                /\D/g,
+                                ""
+                              )
+                              .slice(
+                                0,
+                                6
+                              )
+                          )
+                        }
+                        maxLength={
+                          6
+                        }
+                        inputMode="numeric"
+                        className="w-full px-3.5 py-3 rounded-xl border border-gray-200 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                        placeholder="422001"
+                      />
+
+                    </div>
+
                   </div>
 
                 </div>
+
               </div>
             )}
 
-            {/* ==========================
+            {/* =================================================
                 STEP 3
-                ========================== */}
+                ================================================= */}
 
             {step === 3 && (
-              <div className="flex-1 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
 
                 <div>
+
                   <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+
                     <Leaf className="w-5 h-5 text-green-600" />
-                    {t("step3")}
+
+                    {t(
+                      "farming"
+                    )}
+
                   </h3>
 
                   <p className="text-gray-500 text-sm mt-1">
-                    {t("chooseCrops")}
+                    {t(
+                      "chooseCrops"
+                    )}
                   </p>
-                </div>
-
-                {/* ==========================
-                    CROP GRID
-                    ========================== */}
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-
-                  {AVAILABLE_CROPS.map((crop) => (
-                    <div
-                      key={crop.id}
-                      onClick={() => toggleCrop(crop.id)}
-                      className={`cursor-pointer border rounded-xl p-3 flex flex-col items-center justify-center text-center transition-all duration-200 ${
-                        selectedCrops.includes(crop.id)
-                          ? "bg-green-600 border-green-600 text-white shadow-md transform scale-105"
-                          : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-green-300"
-                      }`}
-                    >
-                      <span className="text-2xl mb-1">
-                        {crop.icon}
-                      </span>
-
-                      <span className="text-xs font-medium">
-                        {crop.label}
-                      </span>
-                    </div>
-                  ))}
 
                 </div>
 
-                {/* ==========================
-                    PASSWORD
-                    ========================== */}
+                {/* CROPS */}
 
-                <div className="pt-4 border-t border-gray-100 space-y-4">
+                <div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t("password")}{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
 
-                    <div className="relative">
+                    {AVAILABLE_CROPS.map(
+                      (crop) => {
 
-                      <Lock className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" />
+                        const selected =
+                          selectedCrops.includes(
+                            crop.id
+                          );
 
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(e) =>
-                          setPassword(e.target.value)
-                        }
-                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all outline-none"
-                        placeholder="Create your password"
-                        autoComplete="new-password"
-                      />
+                        return (
 
-                    </div>
+                          <button
+                            key={
+                              crop.id
+                            }
+                            type="button"
+                            onClick={() =>
+                              toggleCrop(
+                                crop.id
+                              )
+                            }
+                            className={`min-h-[72px] cursor-pointer border rounded-xl p-2.5 flex flex-col items-center justify-center text-center transition-all duration-200 ${
+                              selected
+                                ? "bg-green-600 border-green-600 text-white shadow-md"
+                                : "bg-white border-gray-200 text-gray-600 hover:bg-green-50 hover:border-green-300"
+                            }`}
+                          >
 
-                    <p className="text-xs text-gray-500 mt-1">
-                      {t("passwordHint")}
+                            <span className="text-2xl mb-1">
+                              {
+                                crop.icon
+                              }
+                            </span>
+
+                            <span className="text-xs font-medium leading-tight">
+                              {
+                                crop.label
+                              }
+                            </span>
+
+                          </button>
+                        );
+                      }
+                    )}
+
+                  </div>
+
+                  {errors.crops && (
+
+                    <p className="flex items-center gap-1 text-xs text-red-600 mt-2">
+
+                      <AlertCircle className="w-3.5 h-3.5" />
+
+                      {
+                        errors.crops
+                      }
+
                     </p>
-                  </div>
+                  )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t("confirmPassword")}{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
+                  {selectedCrops.length >
+                    0 && (
 
-                    <div className="relative">
-
-                      <Lock className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" />
-
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) =>
-                          setConfirmPassword(e.target.value)
-                        }
-                        className={`w-full pl-11 pr-4 py-3 rounded-xl border transition-all outline-none ${
-                          confirmPassword &&
-                          confirmPassword !== password
-                            ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-                            : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                        }`}
-                        placeholder="Confirm your password"
-                        autoComplete="new-password"
-                      />
-
-                    </div>
-
-                    {confirmPassword &&
-                      confirmPassword !== password && (
-                        <p className="text-xs text-red-500 mt-1">
-                          Passwords do not match.
-                        </p>
-                      )}
-                  </div>
+                    <p className="text-xs text-green-700 mt-2">
+                      ✓{" "}
+                      {
+                        selectedCrops.length
+                      }{" "}
+                      crop
+                      {selectedCrops.length >
+                      1
+                        ? "s"
+                        : ""}{" "}
+                      selected
+                    </p>
+                  )}
 
                 </div>
 
-                {/* ==========================
-                    FARMING METHOD
-                    ========================== */}
+                {/* FARMING METHOD */}
 
-                <div className="pt-4 border-t border-gray-100">
+                <div className="pt-5 border-t border-gray-100">
 
                   <div className="mb-3">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      {t("farmingType")}
+
+                    <label className="block text-sm font-semibold text-gray-800">
+                      {t(
+                        "farmingType"
+                      )}
                     </label>
 
                     <p className="text-xs text-gray-500 mt-1">
-                      {t("farmingDescriptionTitle")}
+                      {t(
+                        "chooseMethod"
+                      )}
                     </p>
+
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 
-                    {farmingMethods.map((type) => {
-                      const isSelected =
-                        farmingType === type.id;
+                    {FARMING_METHODS.map(
+                      (method) => {
 
-                      return (
-                        <button
-                          key={type.id}
-                          type="button"
-                          onClick={() =>
-                            setFarmingType(
-                              type.id as
-                                | "organic"
-                                | "traditional"
-                                | "modern"
-                            )
-                          }
-                          className={`text-left rounded-xl border p-4 transition-all duration-200 ${
-                            isSelected
-                              ? "bg-green-50 border-green-600 ring-2 ring-green-100 shadow-sm"
-                              : "bg-white border-gray-200 hover:border-green-300 hover:bg-green-50/40"
-                          }`}
-                        >
+                        const Icon =
+                          method.icon;
 
-                          {/* Icon + title */}
+                        const selected =
+                          farmingType ===
+                          method.id;
 
-                          <div className="flex items-center gap-2 mb-2">
+                        return (
 
-                            <div
-                              className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                                isSelected
-                                  ? "bg-green-600 text-white"
-                                  : "bg-green-50 text-green-700"
-                              }`}
-                            >
-                              {type.icon}
-                            </div>
-
-                            <span
-                              className={`text-sm font-semibold ${
-                                isSelected
-                                  ? "text-green-800"
-                                  : "text-gray-700"
-                              }`}
-                            >
-                              {type.label}
-                            </span>
-
-                          </div>
-
-                          {/* Short explanation */}
-
-                          <p
-                            className={`text-xs leading-relaxed ${
-                              isSelected
-                                ? "text-green-800"
-                                : "text-gray-500"
+                          <button
+                            key={
+                              method.id
+                            }
+                            type="button"
+                            onClick={() =>
+                              setFarmingType(
+                                method.id as
+                                  | "organic"
+                                  | "traditional"
+                                  | "modern"
+                              )
+                            }
+                            className={`text-left rounded-xl border p-3.5 transition-all ${
+                              selected
+                                ? "border-green-600 bg-green-50 ring-2 ring-green-100 shadow-sm"
+                                : "border-gray-200 bg-white hover:border-green-300 hover:bg-gray-50"
                             }`}
                           >
-                            {type.description}
-                          </p>
 
-                          {/* Selected indicator */}
+                            <div className="flex items-center gap-2 mb-2">
 
-                          {isSelected && (
-                            <div className="flex items-center gap-1.5 mt-3 text-xs font-semibold text-green-700">
-                              <CheckCircle2 className="w-4 h-4" />
-                              Selected
+                              <div
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                  selected
+                                    ? "bg-green-600 text-white"
+                                    : "bg-gray-100 text-gray-600"
+                                }`}
+                              >
+
+                                <Icon className="w-4 h-4" />
+
+                              </div>
+
+                              <span
+                                className={`text-sm font-semibold ${
+                                  selected
+                                    ? "text-green-800"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                {t(
+                                  method.id
+                                )}
+                              </span>
+
                             </div>
-                          )}
 
-                        </button>
-                      );
-                    })}
+                            <p className="text-[11px] leading-relaxed text-gray-500">
+                              {t(
+                                `${method.id}Info`
+                              )}
+                            </p>
+
+                            {selected && (
+
+                              <div className="flex items-center gap-1 mt-2 text-[11px] font-semibold text-green-700">
+
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+
+                                Selected
+
+                              </div>
+                            )}
+
+                          </button>
+                        );
+                      }
+                    )}
 
                   </div>
 
-                  {/* Detailed explanation of selected method */}
+                </div>
 
-                  <div className="mt-4 rounded-xl bg-gray-50 border border-gray-200 p-4">
+                {/* =================================================
+                    MPIN
+                    ================================================= */}
 
-                    <div className="flex items-start gap-3">
+                <div className="pt-5 border-t border-gray-100">
 
-                      <div className="w-8 h-8 shrink-0 rounded-lg bg-green-100 text-green-700 flex items-center justify-center">
-                        {farmingMethods.find(
-                          (method) =>
-                            method.id === farmingType
-                        )?.icon}
-                      </div>
+                  <div className="flex items-start gap-3 mb-4">
+
+                    <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+
+                      <Lock className="w-4 h-4 text-green-700" />
+
+                    </div>
+
+                    <div>
+
+                      <h4 className="font-semibold text-gray-800">
+                        {t(
+                          "mpinTitle"
+                        )}
+                      </h4>
+
+                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                        {t(
+                          "mpinDescription"
+                        )}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  {/* MPIN */}
+
+                  <div className="space-y-2 mb-4">
+
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t(
+                        "mpin"
+                      )}{" "}
+                      <span className="text-red-500">
+                        *
+                      </span>
+                    </label>
+
+                    <div className="relative">
+
+                      <input
+                        type={
+                          showMpin
+                            ? "text"
+                            : "password"
+                        }
+                        value={
+                          mpin
+                        }
+                        onChange={(
+                          e
+                        ) => {
+                          const value =
+                            e.target.value
+                              .replace(
+                                /\D/g,
+                                ""
+                              )
+                              .slice(
+                                0,
+                                4
+                              );
+
+                          setMpin(
+                            value
+                          );
+
+                          clearError(
+                            "mpin"
+                          );
+                        }}
+                        inputMode="numeric"
+                        maxLength={
+                          4
+                        }
+                        autoComplete="new-password"
+                        placeholder={t(
+                          "mpinPlaceholder"
+                        )}
+                        className={`w-full pl-4 pr-12 py-3 rounded-xl border outline-none tracking-[0.35em] font-semibold ${
+                          errors.mpin
+                            ? "border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100"
+                            : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                        }`}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowMpin(
+                            (value) =>
+                              !value
+                          )
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-gray-700"
+                        aria-label={
+                          showMpin
+                            ? t(
+                                "hideMpin"
+                              )
+                            : t(
+                                "showMpin"
+                              )
+                        }
+                      >
+
+                        {showMpin ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+
+                      </button>
+
+                    </div>
+
+                    <div className="flex justify-between">
 
                       <div>
 
-                        <p className="text-xs font-semibold text-gray-700 mb-1">
-                          {
-                            farmingMethods.find(
-                              (method) =>
-                                method.id === farmingType
-                            )?.label
-                          }
-                        </p>
+                        {errors.mpin && (
 
-                        <p className="text-xs leading-relaxed text-gray-600">
-                          {
-                            farmingMethods.find(
-                              (method) =>
-                                method.id === farmingType
-                            )?.detailedDescription
-                          }
-                        </p>
+                          <p className="flex items-center gap-1 text-xs text-red-600">
+
+                            <AlertCircle className="w-3.5 h-3.5" />
+
+                            {
+                              errors.mpin
+                            }
+
+                          </p>
+                        )}
+
+                        {!errors.mpin &&
+                          mpin.length >
+                            0 && (
+
+                          <p
+                            className={`text-xs ${
+                              mpin.length ===
+                              4
+                                ? "text-green-600"
+                                : "text-gray-500"
+                            }`}
+                          >
+                            {
+                              mpin.length
+                            }
+                            /4
+                          </p>
+                        )}
 
                       </div>
 
@@ -2089,58 +2971,284 @@ export default function RegisterPage() {
 
                   </div>
 
+                  {/* CONFIRM MPIN */}
+
+                  <div className="space-y-2">
+
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t(
+                        "confirmMpin"
+                      )}{" "}
+                      <span className="text-red-500">
+                        *
+                      </span>
+                    </label>
+
+                    <div className="relative">
+
+                      <input
+                        type={
+                          showConfirmMpin
+                            ? "text"
+                            : "password"
+                        }
+                        value={
+                          confirmMpin
+                        }
+                        onChange={(
+                          e
+                        ) => {
+                          const value =
+                            e.target.value
+                              .replace(
+                                /\D/g,
+                                ""
+                              )
+                              .slice(
+                                0,
+                                4
+                              );
+
+                          setConfirmMpin(
+                            value
+                          );
+
+                          clearError(
+                            "confirmMpin"
+                          );
+                        }}
+                        inputMode="numeric"
+                        maxLength={
+                          4
+                        }
+                        autoComplete="new-password"
+                        placeholder={t(
+                          "confirmMpinPlaceholder"
+                        )}
+                        className={`w-full pl-4 pr-12 py-3 rounded-xl border outline-none tracking-[0.35em] font-semibold ${
+                          errors.confirmMpin
+                            ? "border-red-400 bg-red-50 focus:ring-2 focus:ring-red-100"
+                            : "border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                        }`}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmMpin(
+                            (value) =>
+                              !value
+                          )
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-gray-700"
+                        aria-label={
+                          showConfirmMpin
+                            ? t(
+                                "hideMpin"
+                              )
+                            : t(
+                                "showMpin"
+                              )
+                        }
+                      >
+
+                        {showConfirmMpin ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+
+                      </button>
+
+                    </div>
+
+                    {errors.confirmMpin ? (
+
+                      <p className="flex items-center gap-1 text-xs text-red-600">
+
+                        <AlertCircle className="w-3.5 h-3.5" />
+
+                        {
+                          errors.confirmMpin
+                        }
+
+                      </p>
+
+                    ) : (
+                      confirmMpin &&
+                      confirmMpin ===
+                        mpin && (
+
+                        <p className="flex items-center gap-1 text-xs text-green-600">
+
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+
+                          MPIN matches
+
+                        </p>
+                      )
+                    )}
+
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
+
+                    <ShieldCheck className="w-4 h-4 text-green-600 shrink-0" />
+
+                    {t(
+                      "security"
+                    )}
+
+                  </div>
+
                 </div>
+
               </div>
             )}
 
-            {/* ==========================
+            {/* =================================================
                 NAVIGATION
-                ========================== */}
+                ================================================= */}
 
-            <div className="mt-8 flex items-center justify-between pt-6 border-t border-gray-100">
+            <div className="mt-7 pt-5 border-t border-gray-100 flex items-center justify-between gap-4">
 
               {step > 1 ? (
+
                 <button
                   type="button"
-                  onClick={goBack}
-                  className="flex items-center gap-1 text-gray-500 hover:text-gray-800 font-medium px-4 py-2"
+                  onClick={
+                    goBack
+                  }
+                  disabled={
+                    loading ||
+                    checkingPhone
+                  }
+                  className="flex items-center gap-1.5 text-gray-500 hover:text-gray-800 font-medium px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
+
                   <ChevronLeft className="w-4 h-4" />
+
                   {t("back")}
+
                 </button>
+
               ) : (
                 <div />
               )}
 
               {step < 3 ? (
+
                 <Button
                   type="button"
-                  onClick={goNext}
-                  className="bg-green-600 hover:bg-green-700 text-white px-8 rounded-xl h-12 text-base shadow-lg shadow-green-200"
+                  onClick={
+                    goNext
+                  }
+                  disabled={
+                    loading ||
+                    checkingPhone
+                  }
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 rounded-xl h-11 sm:h-12 text-sm sm:text-base shadow-md shadow-green-100"
                 >
-                  {t("nextStep")}
 
-                  <ChevronRight className="w-4 h-4 ml-1" />
+                  {checkingPhone ? (
+
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+
+                      {t(
+                        "checkingPhone"
+                      )}
+                    </>
+
+                  ) : (
+
+                    <>
+                      {t("next")}
+
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </>
+
+                  )}
+
                 </Button>
+
               ) : (
+
                 <Button
                   type="submit"
-                  disabled={loading}
-                  className="bg-green-600 hover:bg-green-700 text-white px-8 rounded-xl h-12 text-base shadow-lg shadow-green-200 w-full sm:w-auto"
+                  disabled={
+                    loading
+                  }
+                  className="bg-green-600 hover:bg-green-700 text-white px-5 sm:px-7 rounded-xl h-11 sm:h-12 text-sm sm:text-base shadow-md shadow-green-100"
                 >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : null}
 
-                  {t("submit")}
+                  {loading ? (
+
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+
+                      {lang ===
+                      "mr-IN"
+                        ? "नोंदणी करत आहे..."
+                        : lang ===
+                          "hi-IN"
+                        ? "पंजीकरण हो रहा है..."
+                        : "Creating account..."}
+                    </>
+
+                  ) : (
+
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+
+                      {t(
+                        "submit"
+                      )}
+                    </>
+
+                  )}
+
                 </Button>
               )}
 
             </div>
 
+            {/* =================================================
+                ALREADY REGISTERED
+                ================================================= */}
+
+            <div className="mt-5 text-center">
+
+              <p className="text-sm text-gray-500">
+                {lang === "mr-IN"
+                  ? "आधीपासून खाते आहे?"
+                  : lang === "hi-IN"
+                  ? "क्या आपका खाता पहले से है?"
+                  : "Already have an account?"}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push("/login")
+                  }
+                  className="ml-1 font-semibold text-green-700 hover:text-green-800 hover:underline"
+                >
+                  {lang === "mr-IN"
+                    ? "लॉगिन करा"
+                    : lang === "hi-IN"
+                    ? "लॉगिन करें"
+                    : "Login"}
+                </button>
+              </p>
+
+            </div>
+
           </form>
+
         </div>
+
       </div>
+
     </div>
   );
 }
