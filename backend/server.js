@@ -31,6 +31,7 @@ app.use("/api/chatbot", require("./routes/chatbot"));
 app.use("/api/compare", require("./routes/compare"));
 app.use("/api/heatmap", require("./routes/heatmap"));
 app.use("/api/advisory", require("./routes/advisory"));
+app.use("/api/crop-advisory", require("./routes/cropAdvisory"));
 app.use("/api/predict-sell", require("./routes/predictSell"));
 
 
