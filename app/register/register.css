@@ -1,107 +1,459 @@
-/* app/register/register.css */
-.simple-register {
-  display:flex;
-  justify-content:center;
-  padding:20px;
-}
-.card {
-  width: 100%;
-  max-width: 720px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  padding: 20px;
-}
-.title { font-size: 22px; margin: 0; }
-.subtitle { color: #555; margin-bottom: 12px; }
-.lang-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-.lang-buttons button { margin:0 6px; padding:8px 12px; }
-.lang-buttons .active { background:#2b9348; color:#fff; border-radius:6px; }
+/* =========================================================
+   FarmAI Registration Page
+   app/register/register.css
+   ========================================================= */
 
-.form { display:flex; flex-direction:column; gap:12px; }
-.label { font-weight:600; margin-bottom:6px; }
-.input { padding:10px; border:1px solid #ddd; border-radius:6px; width:100%; }
+/* -------------------------
+   Legacy / Simple Register
+   ------------------------- */
 
-.location-section { 
-  margin-bottom: 12px; 
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
-
-.location-btn { 
-  padding: 12px 20px; 
-  border-radius: 8px; 
-  border: 2px solid #2b9348; 
-  background: #fff; 
-  color: #2b9348;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.location-btn:hover:not(:disabled) { 
-  background: #2b9348; 
-  color: #fff; 
-}
-
-.location-btn:disabled { 
-  opacity: 0.6; 
-  cursor: not-allowed; 
-}
-
-.location-info { 
-  margin-top: 12px;
-  padding: 12px; 
-  background: #fff;
-  border-radius: 6px;
-  border: 1px solid #d4edda;
-  background-color: #d4edda;
-}
-
-.location-info strong {
-  display: block;
-  margin-bottom: 6px;
-  color: #155724;
-}
-
-.detected-address {
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 6px;
-  line-height: 1.5;
-}
-
-.manual-location {
-  margin-top: 16px;
-  padding: 15px;
-  background: #fff;
-  border-radius: 8px;
-  border: 2px dashed #2b9348;
-}
-
-.manual-location select,
-.manual-location input {
-  margin-bottom: 12px;
-}
-
-.crop-grid { display:flex; flex-wrap:wrap; gap:8px; }
-.crop-card {
-  display:flex; align-items:center; gap:8px;
-  border:1px solid #eee; padding:8px 12px; border-radius:10px; cursor:pointer;
-}
-.crop-card .emoji { font-size:20px; }
-.crop-card.active { background:#f1faee; border-color:#2b9348; box-shadow:0 2px 6px rgba(43,147,72,0.08); }
-
-.farming-buttons button { margin-right:8px; padding:8px 12px; border-radius:8px; border:1px solid #ddd; }
-.farming-buttons .active { background:#2b9348; color:#fff; border-color:#2b9348; }
-
-.submit-row { display:flex; justify-content:center; margin-top:8px; }
-.submit-btn { background:#2b9348; color:#fff; padding:10px 20px; border-radius:8px; border:none; cursor:pointer; }
-.error { color:#c23; margin-top:6px; font-size:13px; }
+   .simple-register {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: #f0fdf4;
+    box-sizing: border-box;
+  }
+  
+  .card {
+    width: 100%;
+    max-width: 720px;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    padding: 28px;
+    border: 1px solid #e5f5e9;
+    box-sizing: border-box;
+  }
+  
+  .title {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0;
+    color: #1f2937;
+  }
+  
+  .subtitle {
+    color: #6b7280;
+    margin: 6px 0 18px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  
+  /* -------------------------
+     Language Selector
+     ------------------------- */
+  
+  .lang-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  
+  .lang-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+  }
+  
+  .lang-buttons button {
+    border: none;
+    background: transparent;
+    color: #4b5563;
+    margin: 0;
+    padding: 7px 11px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      transform 0.2s ease;
+  }
+  
+  .lang-buttons button:hover {
+    background: #e5e7eb;
+  }
+  
+  .lang-buttons .active {
+    background: #16a34a;
+    color: #ffffff;
+    box-shadow: 0 2px 5px rgba(22, 163, 74, 0.2);
+  }
+  
+  
+  /* -------------------------
+     Form
+     ------------------------- */
+  
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  
+  .label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 7px;
+    color: #374151;
+    font-size: 14px;
+  }
+  
+  .input {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px 14px;
+    border: 1px solid #dfe4ea;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #1f2937;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  
+  .input::placeholder {
+    color: #9ca3af;
+  }
+  
+  .input:focus {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+  }
+  
+  
+  /* -------------------------
+     Location Section
+     ------------------------- */
+  
+  .location-section {
+    width: 100%;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    box-sizing: border-box;
+  }
+  
+  .location-btn {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 18px;
+    border-radius: 10px;
+    border: 2px dashed #86efac;
+    background: #f0fdf4;
+    color: #15803d;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .location-btn:hover:not(:disabled) {
+    background: #dcfce7;
+    border-color: #4ade80;
+  }
+  
+  .location-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  
+  .location-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .location-info {
+    margin-top: 12px;
+    padding: 13px;
+    background: #f0fdf4;
+    border-radius: 10px;
+    border: 1px solid #bbf7d0;
+  }
+  
+  .location-info strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #166534;
+    font-size: 14px;
+  }
+  
+  .detected-address {
+    font-size: 13px;
+    color: #374151;
+    margin-bottom: 6px;
+    line-height: 1.5;
+  }
+  
+  
+  /* -------------------------
+     Manual Location
+     ------------------------- */
+  
+  .manual-location {
+    margin-top: 16px;
+    padding: 16px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #bbf7d0;
+  }
+  
+  .manual-location select,
+  .manual-location input {
+    width: 100%;
+    min-height: 44px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid #dfe4ea;
+    border-radius: 9px;
+    background: #ffffff;
+    outline: none;
+    box-sizing: border-box;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  
+  .manual-location select:focus,
+  .manual-location input:focus {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+  }
+  
+  
+  /* -------------------------
+     Crop Selection
+     ------------------------- */
+  
+  .crop-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  
+  .crop-card {
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid #e5e7eb;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    background: #ffffff;
+    color: #4b5563;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  
+  .crop-card:hover {
+    background: #f9fafb;
+    border-color: #86efac;
+  }
+  
+  .crop-card .emoji {
+    font-size: 22px;
+  }
+  
+  .crop-card.active {
+    background: #f0fdf4;
+    border-color: #16a34a;
+    color: #166534;
+    box-shadow: 0 3px 8px rgba(22, 163, 74, 0.12);
+  }
+  
+  .crop-card:active {
+    transform: scale(0.98);
+  }
+  
+  
+  /* -------------------------
+     Farming Method Buttons
+     ------------------------- */
+  
+  .farming-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  
+  .farming-buttons button {
+    width: 100%;
+    min-height: 48px;
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  
+  .farming-buttons button:hover {
+    background: #f0fdf4;
+    border-color: #86efac;
+  }
+  
+  .farming-buttons .active {
+    background: #16a34a;
+    color: #ffffff;
+    border-color: #16a34a;
+    box-shadow: 0 3px 8px rgba(22, 163, 74, 0.16);
+  }
+  
+  
+  /* -------------------------
+     Submit / Navigation
+     ------------------------- */
+  
+  .submit-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 18px;
+    border-top: 1px solid #f0f0f0;
+  }
+  
+  .submit-btn {
+    min-height: 46px;
+    background: #16a34a;
+    color: #ffffff;
+    padding: 10px 22px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition:
+      background-color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
+  }
+  
+  .submit-btn:hover {
+    background: #15803d;
+    box-shadow: 0 5px 12px rgba(22, 163, 74, 0.2);
+  }
+  
+  .submit-btn:active {
+    transform: translateY(1px);
+  }
+  
+  .submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  
+  /* -------------------------
+     Error
+     ------------------------- */
+  
+  .error {
+    color: #dc2626;
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  
+  
+  /* =========================================================
+     Responsive Design
+     ========================================================= */
+  
+  @media (max-width: 768px) {
+    .simple-register {
+      padding: 14px;
+    }
+  
+    .card {
+      padding: 20px;
+      border-radius: 14px;
+    }
+  
+    .crop-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  
+    .farming-buttons {
+      grid-template-columns: 1fr;
+    }
+  
+    .submit-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .submit-btn {
+      width: 100%;
+    }
+  }
+  
+  
+  @media (max-width: 480px) {
+    .simple-register {
+      padding: 8px;
+    }
+  
+    .card {
+      padding: 16px;
+      border-radius: 12px;
+    }
+  
+    .title {
+      font-size: 21px;
+    }
+  
+    .crop-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+  
+    .crop-card {
+      min-height: 64px;
+      padding: 8px;
+    }
+  
+    .lang-buttons button {
+      padding: 6px 8px;
+    }
+  }
