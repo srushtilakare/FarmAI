@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   Loader2,
   Sprout,
+  UserPlus,
+  AlertCircle,
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -38,15 +40,22 @@ export default function LoginPage() {
 
   const [loading, setLoading] = useState(false);
 
+  // User existence status
+  const [userNotFound, setUserNotFound] =
+    useState(false);
+
   // OTP timer
   const [timer, setTimer] = useState(120);
 
   // MPIN input references
-  const mpinRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const mpinRefs = useRef<
+    (HTMLInputElement | null)[]
+  >([]);
 
   // -----------------------------------------
   // ENTER KEY SUPPORT
   // -----------------------------------------
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key !== "Enter") return;
@@ -60,16 +69,29 @@ export default function LoginPage() {
       }
     };
 
-    window.addEventListener("keydown", handler);
+    window.addEventListener(
+      "keydown",
+      handler
+    );
 
     return () => {
-      window.removeEventListener("keydown", handler);
+      window.removeEventListener(
+        "keydown",
+        handler
+      );
     };
-  }, [step, number, otp, mpin, timer]);
+  }, [
+    step,
+    number,
+    otp,
+    mpin,
+    timer,
+  ]);
 
   // -----------------------------------------
   // OTP TIMER
   // -----------------------------------------
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
@@ -87,11 +109,14 @@ export default function LoginPage() {
   // -----------------------------------------
   // FORMAT TIMER
   // -----------------------------------------
+
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = time % 60;
 
-    return `${minutes.toString().padStart(2, "0")}:${seconds
+    return `${minutes
+      .toString()
+      .padStart(2, "0")}:${seconds
       .toString()
       .padStart(2, "0")}`;
   };
@@ -99,8 +124,14 @@ export default function LoginPage() {
   // -----------------------------------------
   // RESET MPIN
   // -----------------------------------------
+
   const resetMpin = () => {
-    setMpin(["", "", "", ""]);
+    setMpin([
+      "",
+      "",
+      "",
+      "",
+    ]);
 
     setTimeout(() => {
       mpinRefs.current[0]?.focus();
@@ -108,36 +139,189 @@ export default function LoginPage() {
   };
 
   // -----------------------------------------
+  // CHECK WHETHER USER EXISTS
+  // -----------------------------------------
+
+  const checkLoginUser = async (
+    cleanedNumber: string
+  ) => {
+    try {
+      const res = await fetch(
+        `${API_URL}/api/auth/check-login-user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            phone: cleanedNumber,
+          }),
+        }
+      );
+
+      let data: any = {};
+
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
+
+      // -----------------------------------------
+      // USER NOT FOUND
+      // -----------------------------------------
+
+      if (
+        res.status === 404 ||
+        data.code === "USER_NOT_FOUND" ||
+        data.exists === false
+      ) {
+        setUserNotFound(true);
+
+        toast({
+          title: "FarmAI खाते सापडले नाही",
+          description:
+            "या मोबाईल क्रमांकावर कोणतेही FarmAI खाते नोंदणीकृत नाही. कृपया प्रथम नोंदणी करा.",
+          variant: "destructive",
+        });
+
+        return false;
+      }
+
+      // -----------------------------------------
+      // SERVER ERROR
+      // -----------------------------------------
+
+      if (!res.ok) {
+        toast({
+          title: "काहीतरी चूक झाली",
+          description:
+            data.message ||
+            "मोबाईल क्रमांक तपासता आला नाही. कृपया पुन्हा प्रयत्न करा.",
+          variant: "destructive",
+        });
+
+        return false;
+      }
+
+      // -----------------------------------------
+      // USER EXISTS
+      // -----------------------------------------
+
+      if (data.success && data.exists) {
+        setUserNotFound(false);
+        return true;
+      }
+
+      // -----------------------------------------
+      // FALLBACK
+      // -----------------------------------------
+
+      toast({
+        title: "मोबाईल क्रमांक तपासता आला नाही",
+        description:
+          data.message ||
+          "कृपया पुन्हा प्रयत्न करा.",
+        variant: "destructive",
+      });
+
+      return false;
+    } catch (err) {
+      console.error(
+        "Check login user error:",
+        err
+      );
+
+      toast({
+        title: "कनेक्शन समस्या",
+        description:
+          "सर्व्हरशी कनेक्ट होता आले नाही. कृपया सर्व्हर चालू आहे का ते तपासा.",
+        variant: "destructive",
+      });
+
+      return false;
+    }
+  };
+
+  // -----------------------------------------
   // STEP 1 → LOGIN METHOD
   // -----------------------------------------
-  const continueToLoginMethod = () => {
-    const cleanedNumber = number.replace(/\D/g, "");
 
-    if (!cleanedNumber) {
-      toast({
-        title: "⚠️ मोबाईल क्रमांक आवश्यक",
-        description: "कृपया तुमचा मोबाईल क्रमांक प्रविष्ट करा.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const continueToLoginMethod =
+    async () => {
+      const cleanedNumber =
+        number.replace(/\D/g, "");
 
-    if (cleanedNumber.length !== 10) {
-      toast({
-        title: "अवैध मोबाईल क्रमांक",
-        description: "कृपया 10 अंकी मोबाईल क्रमांक प्रविष्ट करा.",
-        variant: "destructive",
-      });
-      return;
-    }
+      // Clear previous error
+      setUserNotFound(false);
 
-    setNumber(cleanedNumber);
-    setStep(2);
-  };
+      if (!cleanedNumber) {
+        toast({
+          title:
+            "⚠️ मोबाईल क्रमांक आवश्यक",
+          description:
+            "कृपया तुमचा मोबाईल क्रमांक प्रविष्ट करा.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (
+        cleanedNumber.length !== 10
+      ) {
+        toast({
+          title:
+            "अवैध मोबाईल क्रमांक",
+          description:
+            "कृपया 10 अंकी मोबाईल क्रमांक प्रविष्ट करा.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate Indian mobile number
+      if (
+        !/^[6-9]\d{9}$/.test(
+          cleanedNumber
+        )
+      ) {
+        toast({
+          title:
+            "अवैध मोबाईल क्रमांक",
+          description:
+            "कृपया 6 ते 9 ने सुरू होणारा वैध 10 अंकी मोबाईल क्रमांक प्रविष्ट करा.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setNumber(cleanedNumber);
+      setLoading(true);
+
+      try {
+        const exists =
+          await checkLoginUser(
+            cleanedNumber
+          );
+
+        // IMPORTANT:
+        // Do NOT move to Step 2 if user
+        // does not exist.
+        if (!exists) {
+          return;
+        }
+
+        // Existing user → login methods
+        setStep(2);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   // -----------------------------------------
   // MPIN OPTION
   // -----------------------------------------
+
   const selectMpinLogin = () => {
     resetMpin();
     setStep(4);
@@ -150,6 +334,7 @@ export default function LoginPage() {
   // -----------------------------------------
   // OTP OPTION
   // -----------------------------------------
+
   const selectOtpLogin = () => {
     requestOtp();
   };
@@ -157,13 +342,17 @@ export default function LoginPage() {
   // -----------------------------------------
   // REQUEST OTP
   // -----------------------------------------
+
   const requestOtp = async () => {
-    const cleanedNumber = number.replace(/\D/g, "");
+    const cleanedNumber =
+      number.replace(/\D/g, "");
 
     if (!cleanedNumber) {
       toast({
-        title: "⚠️ मोबाईल क्रमांक आवश्यक",
-        description: "कृपया मोबाईल क्रमांक प्रविष्ट करा.",
+        title:
+          "⚠️ मोबाईल क्रमांक आवश्यक",
+        description:
+          "कृपया मोबाईल क्रमांक प्रविष्ट करा.",
         variant: "destructive",
       });
       return;
@@ -172,25 +361,49 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/otp/request`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          number: cleanedNumber,
-        }),
-      });
+      const res = await fetch(
+        `${API_URL}/api/auth/otp/request`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            number: cleanedNumber,
+          }),
+        }
+      );
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
+      if (
+        !res.ok ||
+        !data.success
+      ) {
         toast({
-          title: "OTP पाठवता आला नाही",
+          title:
+            data.code ===
+            "USER_NOT_FOUND"
+              ? "FarmAI खाते सापडले नाही"
+              : "OTP पाठवता आला नाही",
           description:
-            data.message || "कृपया पुन्हा प्रयत्न करा.",
+            data.message ||
+            "कृपया पुन्हा प्रयत्न करा.",
           variant: "destructive",
         });
+
+        // Extra safety:
+        // If backend says user doesn't exist,
+        // return to Step 1.
+        if (
+          data.code ===
+          "USER_NOT_FOUND"
+        ) {
+          setStep(1);
+          setUserNotFound(true);
+        }
+
         return;
       }
 
@@ -220,11 +433,14 @@ export default function LoginPage() {
   // -----------------------------------------
   // VERIFY OTP
   // -----------------------------------------
+
   const verifyOtp = async () => {
     if (timer === 0) {
       toast({
-        title: "OTP कालबाह्य झाला",
-        description: "कृपया नवीन OTP मिळवा.",
+        title:
+          "OTP कालबाह्य झाला",
+        description:
+          "कृपया नवीन OTP मिळवा.",
         variant: "destructive",
       });
       return;
@@ -233,16 +449,22 @@ export default function LoginPage() {
     if (!otp.trim()) {
       toast({
         title: "OTP आवश्यक",
-        description: "कृपया 6 अंकी OTP टाका.",
+        description:
+          "कृपया 6 अंकी OTP टाका.",
         variant: "destructive",
       });
       return;
     }
 
-    if (!/^\d{6}$/.test(otp.trim())) {
+    if (
+      !/^\d{6}$/.test(
+        otp.trim()
+      )
+    ) {
       toast({
         title: "अवैध OTP",
-        description: "कृपया 6 अंकी OTP प्रविष्ट करा.",
+        description:
+          "कृपया 6 अंकी OTP प्रविष्ट करा.",
         variant: "destructive",
       });
       return;
@@ -256,7 +478,8 @@ export default function LoginPage() {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
           body: JSON.stringify({
             number,
@@ -265,9 +488,13 @@ export default function LoginPage() {
         }
       );
 
-      const data = await res.json();
+      const data =
+        await res.json();
 
-      if (!res.ok || !data.success) {
+      if (
+        !res.ok ||
+        !data.success
+      ) {
         toast({
           title: "OTP चुकीचा",
           description:
@@ -278,26 +505,39 @@ export default function LoginPage() {
         return;
       }
 
-      localStorage.setItem("token", data.token);
+      localStorage.setItem(
+        "token",
+        data.token
+      );
+
       localStorage.setItem(
         "user",
-        JSON.stringify(data.user)
+        JSON.stringify(
+          data.user
+        )
       );
 
       toast({
-        title: "✓ लॉगिन यशस्वी!",
+        title:
+          "✓ लॉगिन यशस्वी!",
         description:
-          `स्वागत आहे, ${data.user?.fullName || "शेतकरी"}!`,
+          `स्वागत आहे, ${
+            data.user?.fullName ||
+            "शेतकरी"
+          }!`,
         className:
           "bg-green-600 text-white border-none",
       });
 
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push(
+          "/dashboard"
+        );
       }, 900);
     } catch (err) {
       toast({
-        title: "काहीतरी चूक झाली",
+        title:
+          "काहीतरी चूक झाली",
         description:
           "OTP पडताळताना समस्या आली.",
         variant: "destructive",
@@ -310,176 +550,254 @@ export default function LoginPage() {
   // -----------------------------------------
   // MPIN INPUT HANDLER
   // -----------------------------------------
+
   const handleMpinChange = (
     index: number,
     value: string
   ) => {
-    const digit = value.replace(/\D/g, "").slice(-1);
+    const digit =
+      value
+        .replace(/\D/g, "")
+        .slice(-1);
 
-    const updatedMpin = [...mpin];
-    updatedMpin[index] = digit;
+    const updatedMpin = [
+      ...mpin,
+    ];
+
+    updatedMpin[index] =
+      digit;
 
     setMpin(updatedMpin);
 
-    // Automatically move forward
-    if (digit && index < 3) {
-      mpinRefs.current[index + 1]?.focus();
+    if (
+      digit &&
+      index < 3
+    ) {
+      mpinRefs.current[
+        index + 1
+      ]?.focus();
     }
   };
 
   // -----------------------------------------
   // MPIN BACKSPACE
   // -----------------------------------------
+
   const handleMpinKeyDown = (
     index: number,
     e: React.KeyboardEvent<HTMLInputElement>
   ) => {
     if (
-      e.key === "Backspace" &&
+      e.key ===
+        "Backspace" &&
       !mpin[index] &&
       index > 0
     ) {
-      mpinRefs.current[index - 1]?.focus();
+      mpinRefs.current[
+        index - 1
+      ]?.focus();
     }
   };
 
   // -----------------------------------------
   // MPIN PASTE
   // -----------------------------------------
+
   const handleMpinPaste = (
     e: React.ClipboardEvent<HTMLInputElement>
   ) => {
     e.preventDefault();
 
-    const pasted = e.clipboardData
-      .getData("text")
-      .replace(/\D/g, "")
-      .slice(0, 4);
+    const pasted =
+      e.clipboardData
+        .getData("text")
+        .replace(/\D/g, "")
+        .slice(0, 4);
 
     if (!pasted) return;
 
-    const digits = pasted.split("");
+    const digits =
+      pasted.split("");
 
-    const updatedMpin = ["", "", "", ""];
+    const updatedMpin = [
+      "",
+      "",
+      "",
+      "",
+    ];
 
-    digits.forEach((digit, index) => {
-      updatedMpin[index] = digit;
-    });
+    digits.forEach(
+      (digit, index) => {
+        updatedMpin[index] =
+          digit;
+      }
+    );
 
     setMpin(updatedMpin);
 
-    const nextIndex = Math.min(
-      pasted.length,
-      3
-    );
+    const nextIndex =
+      Math.min(
+        pasted.length,
+        3
+      );
 
     setTimeout(() => {
-      mpinRefs.current[nextIndex]?.focus();
+      mpinRefs.current[
+        nextIndex
+      ]?.focus();
     }, 50);
   };
 
   // -----------------------------------------
   // MPIN LOGIN
   // -----------------------------------------
-  const loginWithMpin = async () => {
-    const enteredMpin = mpin.join("");
 
-    if (enteredMpin.length !== 4) {
-      toast({
-        title: "MPIN अपूर्ण आहे",
-        description:
-          "कृपया तुमचा 4 अंकी MPIN टाका.",
-        variant: "destructive",
-      });
+  const loginWithMpin =
+    async () => {
+      const enteredMpin =
+        mpin.join("");
 
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      /*
-       * IMPORTANT:
-       * Backend will be changed to:
-       * POST /api/auth/mpin/login
-       */
-      const res = await fetch(
-        `${API_URL}/api/auth/mpin/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            phone: number,
-            mpin: enteredMpin,
-          }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
+      if (
+        enteredMpin.length !==
+        4
+      ) {
         toast({
-          title: "लॉगिन अयशस्वी",
+          title:
+            "MPIN अपूर्ण आहे",
           description:
-            data.message ||
-            "मोबाईल क्रमांक किंवा MPIN चुकीचा आहे.",
-          variant: "destructive",
+            "कृपया तुमचा 4 अंकी MPIN टाका.",
+          variant:
+            "destructive",
         });
 
-        resetMpin();
         return;
       }
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem(
-        "user",
-        JSON.stringify(data.user)
-      );
+      setLoading(true);
 
-      toast({
-        title: "✓ लॉगिन यशस्वी!",
-        description:
-          `स्वागत आहे, ${data.user?.fullName || "शेतकरी"}!`,
-        className:
-          "bg-green-600 text-white border-none",
-      });
+      try {
+        const res = await fetch(
+          `${API_URL}/api/auth/mpin/login`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              phone: number,
+              mpin:
+                enteredMpin,
+            }),
+          }
+        );
 
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 900);
-    } catch (err) {
-      toast({
-        title: "कनेक्शन समस्या",
-        description:
-          "सर्व्हरशी कनेक्ट होता आले नाही.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+        const data =
+          await res.json();
+
+        if (
+          !res.ok ||
+          !data.success
+        ) {
+          toast({
+            title:
+              data.code ===
+              "USER_NOT_FOUND"
+                ? "FarmAI खाते सापडले नाही"
+                : "लॉगिन अयशस्वी",
+            description:
+              data.message ||
+              "मोबाईल क्रमांक किंवा MPIN चुकीचा आहे.",
+            variant:
+              "destructive",
+          });
+
+          // If somehow user was removed
+          // after the first check.
+          if (
+            data.code ===
+            "USER_NOT_FOUND"
+          ) {
+            setStep(1);
+            setUserNotFound(
+              true
+            );
+          }
+
+          resetMpin();
+          return;
+        }
+
+        localStorage.setItem(
+          "token",
+          data.token
+        );
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(
+            data.user
+          )
+        );
+
+        toast({
+          title:
+            "✓ लॉगिन यशस्वी!",
+          description:
+            `स्वागत आहे, ${
+              data.user
+                ?.fullName ||
+              "शेतकरी"
+            }!`,
+          className:
+            "bg-green-600 text-white border-none",
+        });
+
+        setTimeout(() => {
+          router.push(
+            "/dashboard"
+          );
+        }, 900);
+      } catch (err) {
+        toast({
+          title:
+            "कनेक्शन समस्या",
+          description:
+            "सर्व्हरशी कनेक्ट होता आले नाही.",
+          variant:
+            "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
   // -----------------------------------------
   // BACK TO PHONE
   // -----------------------------------------
-  const goBackToPhone = () => {
-    setStep(1);
-    setOtp("");
-    resetMpin();
-    setTimer(120);
-  };
+
+  const goBackToPhone =
+    () => {
+      setStep(1);
+      setOtp("");
+      resetMpin();
+      setTimer(120);
+      setUserNotFound(
+        false
+      );
+    };
 
   // -----------------------------------------
   // BACK TO LOGIN METHOD
   // -----------------------------------------
-  const goBackToMethod = () => {
-    setStep(2);
-    setOtp("");
-    resetMpin();
-    setTimer(120);
-  };
+
+  const goBackToMethod =
+    () => {
+      setStep(2);
+      setOtp("");
+      resetMpin();
+      setTimer(120);
+    };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100 flex items-center justify-center px-4 py-8">
@@ -561,9 +879,22 @@ export default function LoginPage() {
                         const value =
                           e.target.value
                             .replace(/\D/g, "")
-                            .slice(0, 10);
+                            .slice(
+                              0,
+                              10
+                            );
 
-                        setNumber(value);
+                        setNumber(
+                          value
+                        );
+
+                        // Remove old
+                        // "not found"
+                        // message when
+                        // number changes.
+                        setUserNotFound(
+                          false
+                        );
                       }}
                       maxLength={10}
                       className="w-full border border-gray-300 px-4 py-3.5 rounded-r-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all text-base"
@@ -577,12 +908,61 @@ export default function LoginPage() {
 
                 </div>
 
+                {/* USER NOT FOUND BOX */}
+                {userNotFound && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-3">
+
+                    <div className="flex items-start gap-3">
+
+                      <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <AlertCircle className="w-5 h-5 text-red-600" />
+                      </div>
+
+                      <div>
+                        <p className="font-semibold text-red-800">
+                          FarmAI खाते सापडले नाही
+                        </p>
+
+                        <p className="text-sm text-red-700 mt-1 leading-5">
+                          या मोबाईल क्रमांकावर FarmAI खाते नोंदणीकृत नाही.
+                        </p>
+                      </div>
+
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        router.push(
+                          "/register"
+                        )
+                      }
+                      className="w-full h-11 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700"
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      नवीन वापरकर्ता? नोंदणी करा
+                    </Button>
+
+                  </div>
+                )}
+
                 <Button
-                  onClick={continueToLoginMethod}
-                  disabled={loading}
+                  onClick={
+                    continueToLoginMethod
+                  }
+                  disabled={
+                    loading
+                  }
                   className="w-full h-12 bg-green-600 text-white rounded-xl text-base font-semibold hover:bg-green-700 transition-all shadow-md"
                 >
-                  पुढे जा
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      तपासत आहे...
+                    </>
+                  ) : (
+                    "पुढे जा"
+                  )}
                 </Button>
 
               </div>
@@ -611,7 +991,9 @@ export default function LoginPage() {
 
                   <button
                     type="button"
-                    onClick={goBackToPhone}
+                    onClick={
+                      goBackToPhone
+                    }
                     className="text-green-700 text-xs font-medium mt-2 hover:underline"
                   >
                     चुकीचा क्रमांक? बदला
@@ -624,8 +1006,12 @@ export default function LoginPage() {
                   {/* MPIN */}
                   <button
                     type="button"
-                    onClick={selectMpinLogin}
-                    disabled={loading}
+                    onClick={
+                      selectMpinLogin
+                    }
+                    disabled={
+                      loading
+                    }
                     className="w-full p-4 rounded-xl border-2 border-green-600 bg-green-600 text-white text-left hover:bg-green-700 transition-all shadow-sm disabled:opacity-60"
                   >
 
@@ -652,8 +1038,12 @@ export default function LoginPage() {
                   {/* OTP */}
                   <button
                     type="button"
-                    onClick={selectOtpLogin}
-                    disabled={loading}
+                    onClick={
+                      selectOtpLogin
+                    }
+                    disabled={
+                      loading
+                    }
                     className="w-full p-4 rounded-xl border-2 border-gray-200 bg-white text-left hover:border-green-400 hover:bg-green-50 transition-all disabled:opacity-60"
                   >
 
@@ -724,22 +1114,35 @@ export default function LoginPage() {
                     onChange={(e) => {
                       const value =
                         e.target.value
-                          .replace(/\D/g, "")
-                          .slice(0, 6);
+                          .replace(
+                            /\D/g,
+                            ""
+                          )
+                          .slice(
+                            0,
+                            6
+                          );
 
-                      setOtp(value);
+                      setOtp(
+                        value
+                      );
                     }}
                     maxLength={6}
-                    disabled={timer === 0}
+                    disabled={
+                      timer === 0
+                    }
                     className="w-full border border-gray-300 px-4 py-3.5 rounded-xl text-center text-xl tracking-[0.5em] font-semibold focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none disabled:bg-gray-100"
                   />
 
                 </div>
 
                 <Button
-                  onClick={verifyOtp}
+                  onClick={
+                    verifyOtp
+                  }
                   disabled={
-                    loading || timer === 0
+                    loading ||
+                    timer === 0
                   }
                   className="w-full h-12 bg-green-600 text-white rounded-xl text-base font-semibold hover:bg-green-700 disabled:bg-gray-400 transition-all"
                 >
@@ -762,22 +1165,28 @@ export default function LoginPage() {
                     <p className="text-sm text-gray-500">
                       OTP वैध आहे{" "}
                       <span className="font-bold text-green-700">
-                        {formatTime(timer)}
+                        {formatTime(
+                          timer
+                        )}
                       </span>
                     </p>
                   ) : (
                     <div>
+
                       <p className="text-sm text-red-500 font-medium">
                         OTP कालबाह्य झाला आहे.
                       </p>
 
                       <Button
                         variant="link"
-                        onClick={requestOtp}
+                        onClick={
+                          requestOtp
+                        }
                         className="text-green-700 font-bold p-0 h-auto mt-1"
                       >
                         पुन्हा OTP पाठवा
                       </Button>
+
                     </div>
                   )}
 
@@ -785,7 +1194,9 @@ export default function LoginPage() {
 
                 <button
                   type="button"
-                  onClick={goBackToMethod}
+                  onClick={
+                    goBackToMethod
+                  }
                   className="w-full flex items-center justify-center gap-1 text-green-700 text-sm font-medium hover:underline"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -825,34 +1236,57 @@ export default function LoginPage() {
                 {/* MPIN BOXES */}
                 <div className="flex justify-center gap-3 py-3">
 
-                  {mpin.map((digit, index) => (
-                    <input
-                      key={index}
-                      ref={(el) => {
-                        mpinRefs.current[index] = el;
-                      }}
-                      type="password"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) =>
-                        handleMpinChange(
-                          index,
-                          e.target.value
-                        )
-                      }
-                      onKeyDown={(e) =>
-                        handleMpinKeyDown(index, e)
-                      }
-                      onPaste={handleMpinPaste}
-                      className={`w-14 h-14 sm:w-16 sm:h-16 text-center text-2xl font-bold rounded-xl border-2 outline-none transition-all ${
-                        digit
-                          ? "border-green-600 bg-green-50 text-green-700"
-                          : "border-gray-300 bg-white focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                      }`}
-                      aria-label={`MPIN digit ${index + 1}`}
-                    />
-                  ))}
+                  {mpin.map(
+                    (
+                      digit,
+                      index
+                    ) => (
+                      <input
+                        key={index}
+                        ref={(
+                          el
+                        ) => {
+                          mpinRefs.current[
+                            index
+                          ] =
+                            el;
+                        }}
+                        type="password"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(
+                          e
+                        ) =>
+                          handleMpinChange(
+                            index,
+                            e.target
+                              .value
+                          )
+                        }
+                        onKeyDown={(
+                          e
+                        ) =>
+                          handleMpinKeyDown(
+                            index,
+                            e
+                          )
+                        }
+                        onPaste={
+                          handleMpinPaste
+                        }
+                        className={`w-14 h-14 sm:w-16 sm:h-16 text-center text-2xl font-bold rounded-xl border-2 outline-none transition-all ${
+                          digit
+                            ? "border-green-600 bg-green-50 text-green-700"
+                            : "border-gray-300 bg-white focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                        }`}
+                        aria-label={`MPIN digit ${
+                          index +
+                          1
+                        }`}
+                      />
+                    )
+                  )}
 
                 </div>
 
@@ -862,8 +1296,12 @@ export default function LoginPage() {
 
                 <Button
                   type="button"
-                  onClick={loginWithMpin}
-                  disabled={loading}
+                  onClick={
+                    loginWithMpin
+                  }
+                  disabled={
+                    loading
+                  }
                   className="w-full h-12 bg-green-600 text-white rounded-xl text-base font-semibold hover:bg-green-700 transition-all shadow-md"
                 >
                   {loading ? (
@@ -878,7 +1316,9 @@ export default function LoginPage() {
 
                 <button
                   type="button"
-                  onClick={goBackToMethod}
+                  onClick={
+                    goBackToMethod
+                  }
                   className="w-full flex items-center justify-center gap-1 text-green-700 text-sm font-medium hover:underline"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -898,7 +1338,9 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() =>
-                    router.push("/register")
+                    router.push(
+                      "/register"
+                    )
                   }
                   className="text-green-700 font-bold hover:underline"
                 >

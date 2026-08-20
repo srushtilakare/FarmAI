@@ -86,7 +86,6 @@ function isWeakMpin(mpin) {
   const pin = String(mpin);
 
   const weakPins = [
-    // Same digits
     "0000",
     "1111",
     "2222",
@@ -98,11 +97,9 @@ function isWeakMpin(mpin) {
     "8888",
     "9999",
 
-    // Common sequences
     "1234",
     "4321",
 
-    // Common patterns
     "1122",
     "2211",
     "1212",
@@ -110,7 +107,6 @@ function isWeakMpin(mpin) {
     "1221",
     "2112",
 
-    // Other commonly used PINs
     "2580",
     "0852",
     "6969",
@@ -123,7 +119,6 @@ function isWeakMpin(mpin) {
     return true;
   }
 
-  // All digits same
   if (/^(\d)\1{3}$/.test(pin)) {
     return true;
   }
@@ -160,16 +155,19 @@ function isWeakMpin(mpin) {
 }
 
 // =========================================================
-// POST /api/auth/check-phone
+// POST /api/auth/check-login-user
 //
-// Registration page uses this BEFORE moving to Step 2.
+// LOGIN PAGE USES THIS BEFORE MOVING TO LOGIN METHOD.
 //
-// If number already exists:
-// → frontend can immediately show "Account already exists"
-// → user should login instead
+// If user exists:
+// → allow login
+//
+// If user does not exist:
+// → do NOT allow login
+// → frontend shows registration option
 // =========================================================
 
-router.post("/check-phone", async (req, res) => {
+router.post("/check-login-user", async (req, res) => {
   try {
     const phone = normalizePhone(req.body.phone);
 
@@ -180,9 +178,9 @@ router.post("/check-phone", async (req, res) => {
     if (!phone) {
       return res.status(400).json({
         success: false,
-        available: false,
+        exists: false,
         code: "PHONE_REQUIRED",
-        message: "Mobile number is required.",
+        message: "Please enter your mobile number.",
       });
     }
 
@@ -193,9 +191,10 @@ router.post("/check-phone", async (req, res) => {
     if (!isValidPhone(phone)) {
       return res.status(400).json({
         success: false,
-        available: false,
+        exists: false,
         code: "INVALID_PHONE",
-        message: "Please enter a valid 10-digit mobile number.",
+        message:
+          "Please enter a valid 10-digit Indian mobile number.",
       });
     }
 
@@ -203,13 +202,85 @@ router.post("/check-phone", async (req, res) => {
     // CHECK DATABASE
     // -----------------------------------------
 
+    const user = await User.findOne({
+      phone,
+    }).select("_id fullName phone");
+
+    // -----------------------------------------
+    // USER DOES NOT EXIST
+    // -----------------------------------------
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        exists: false,
+        code: "USER_NOT_FOUND",
+        message:
+          "No FarmAI account is registered with this mobile number. Please register first.",
+      });
+    }
+
+    // -----------------------------------------
+    // USER EXISTS
+    // -----------------------------------------
+
+    return res.json({
+      success: true,
+      exists: true,
+      code: "USER_EXISTS",
+      message: "FarmAI account found.",
+    });
+  } catch (err) {
+    console.error("Check login user error:", err);
+
+    return res.status(500).json({
+      success: false,
+      exists: false,
+      code: "SERVER_ERROR",
+      message:
+        "Unable to check the mobile number right now. Please try again.",
+    });
+  }
+});
+
+// =========================================================
+// POST /api/auth/check-phone
+//
+// REGISTRATION PAGE USES THIS.
+//
+// IMPORTANT:
+// This endpoint is intentionally kept separate from
+// check-login-user because its meaning is opposite.
+//
+// Registration:
+// available = true → number can register
+// =========================================================
+
+router.post("/check-phone", async (req, res) => {
+  try {
+    const phone = normalizePhone(req.body.phone);
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        available: false,
+        code: "PHONE_REQUIRED",
+        message: "Mobile number is required.",
+      });
+    }
+
+    if (!isValidPhone(phone)) {
+      return res.status(400).json({
+        success: false,
+        available: false,
+        code: "INVALID_PHONE",
+        message: "Please enter a valid 10-digit mobile number.",
+      });
+    }
+
     const existingUser = await User.findOne({
       phone,
     });
-
-    // -----------------------------------------
-    // USER ALREADY EXISTS
-    // -----------------------------------------
 
     if (existingUser) {
       return res.status(409).json({
@@ -220,10 +291,6 @@ router.post("/check-phone", async (req, res) => {
           "An account with this mobile number already exists. Please login instead.",
       });
     }
-
-    // -----------------------------------------
-    // NUMBER AVAILABLE
-    // -----------------------------------------
 
     return res.json({
       success: true,
@@ -245,8 +312,6 @@ router.post("/check-phone", async (req, res) => {
 
 // =========================================================
 // POST /api/auth/register
-//
-// REGISTER NEW FARMER USING 4-DIGIT MPIN
 // =========================================================
 
 router.post("/register", async (req, res) => {
@@ -266,10 +331,6 @@ router.post("/register", async (req, res) => {
       farmingType,
       mpin,
     } = req.body;
-
-    // =====================================================
-    // CLEAN VALUES
-    // =====================================================
 
     const cleanName = String(fullName || "").trim();
 
@@ -291,10 +352,6 @@ router.post("/register", async (req, res) => {
 
     const cleanMpin = String(mpin || "").trim();
 
-    // =====================================================
-    // NAME VALIDATION
-    // =====================================================
-
     if (!cleanName) {
       return res.status(400).json({
         success: false,
@@ -302,10 +359,6 @@ router.post("/register", async (req, res) => {
         message: "Please enter your full name.",
       });
     }
-
-    // =====================================================
-    // PHONE VALIDATION
-    // =====================================================
 
     if (!cleanPhone) {
       return res.status(400).json({
@@ -323,10 +376,6 @@ router.post("/register", async (req, res) => {
           "Please enter a valid 10-digit Indian mobile number.",
       });
     }
-
-    // =====================================================
-    // LOCATION VALIDATION
-    // =====================================================
 
     if (!cleanFarmLocation) {
       return res.status(400).json({
@@ -352,10 +401,6 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // =====================================================
-    // CROPS VALIDATION
-    // =====================================================
-
     if (!Array.isArray(crops) || crops.length === 0) {
       return res.status(400).json({
         success: false,
@@ -364,10 +409,6 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // =====================================================
-    // FARMING TYPE VALIDATION
-    // =====================================================
-
     if (!farmingType || !String(farmingType).trim()) {
       return res.status(400).json({
         success: false,
@@ -375,10 +416,6 @@ router.post("/register", async (req, res) => {
         message: "Please select your farming method.",
       });
     }
-
-    // =====================================================
-    // MPIN VALIDATION
-    // =====================================================
 
     if (!cleanMpin) {
       return res.status(400).json({
@@ -396,10 +433,6 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // =====================================================
-    // WEAK MPIN CHECK
-    // =====================================================
-
     if (isWeakMpin(cleanMpin)) {
       return res.status(400).json({
         success: false,
@@ -408,10 +441,6 @@ router.post("/register", async (req, res) => {
           "This MPIN is too easy to guess. Please choose a different 4-digit MPIN.",
       });
     }
-
-    // =====================================================
-    // CHECK EXISTING USER
-    // =====================================================
 
     const existingUser = await User.findOne({
       phone: cleanPhone,
@@ -426,37 +455,22 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // =====================================================
-    // HASH MPIN
-    //
-    // NEVER store the actual MPIN in MongoDB.
-    // =====================================================
-
     const hashedMpin = await bcrypt.hash(
       cleanMpin,
       10
     );
 
-    // =====================================================
-    // CREATE USER
-    // =====================================================
-
     const newUser = new User({
       fullName: cleanName,
-
       phone: cleanPhone,
 
       preferredLanguage:
         preferredLanguage || "en-US",
 
       farmLocation: cleanFarmLocation,
-
       state: cleanState,
-
       district: cleanDistrict,
-
       pincode: cleanPincode,
-
       village: cleanVillage,
 
       latitude:
@@ -475,15 +489,10 @@ router.post("/register", async (req, res) => {
         farmingType
       ).trim(),
 
-      // Store ONLY hashed MPIN
       mpin: hashedMpin,
     });
 
     await newUser.save();
-
-    // =====================================================
-    // REGISTRATION SUCCESS
-    // =====================================================
 
     return res.status(201).json({
       success: true,
@@ -496,7 +505,6 @@ router.post("/register", async (req, res) => {
       err
     );
 
-    // MongoDB duplicate phone protection
     if (err.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -517,8 +525,6 @@ router.post("/register", async (req, res) => {
 
 // =========================================================
 // POST /api/auth/mpin/login
-//
-// LOGIN USING PHONE + 4-DIGIT MPIN
 // =========================================================
 
 router.post("/mpin/login", async (req, res) => {
@@ -530,10 +536,6 @@ router.post("/mpin/login", async (req, res) => {
     const mpin = String(
       req.body.mpin || ""
     ).trim();
-
-    // =====================================================
-    // PHONE VALIDATION
-    // =====================================================
 
     if (!phone) {
       return res.status(400).json({
@@ -553,10 +555,6 @@ router.post("/mpin/login", async (req, res) => {
       });
     }
 
-    // =====================================================
-    // MPIN VALIDATION
-    // =====================================================
-
     if (!mpin) {
       return res.status(400).json({
         success: false,
@@ -575,10 +573,6 @@ router.post("/mpin/login", async (req, res) => {
       });
     }
 
-    // =====================================================
-    // FIND USER
-    // =====================================================
-
     const user = await User.findOne({
       phone,
     });
@@ -592,10 +586,6 @@ router.post("/mpin/login", async (req, res) => {
       });
     }
 
-    // =====================================================
-    // CHECK MPIN EXISTS
-    // =====================================================
-
     if (!user.mpin) {
       return res.status(400).json({
         success: false,
@@ -604,10 +594,6 @@ router.post("/mpin/login", async (req, res) => {
           "MPIN login is not available for this account. Please use OTP login.",
       });
     }
-
-    // =====================================================
-    // COMPARE MPIN
-    // =====================================================
 
     const isMpinCorrect =
       await bcrypt.compare(
@@ -624,19 +610,11 @@ router.post("/mpin/login", async (req, res) => {
       });
     }
 
-    // =====================================================
-    // GENERATE JWT
-    // =====================================================
-
     const token =
       generateToken(user);
 
     const userResponse =
       getUserResponse(user);
-
-    // =====================================================
-    // LOGIN SUCCESS
-    // =====================================================
 
     return res.json({
       success: true,
@@ -663,11 +641,6 @@ router.post("/mpin/login", async (req, res) => {
 
 // =========================================================
 // OLD PASSWORD LOGIN
-//
-// Kept temporarily so old users/routes don't immediately
-// break.
-//
-// NEW USERS SHOULD USE MPIN.
 // =========================================================
 
 router.post(
@@ -681,10 +654,6 @@ router.post(
       const password = String(
         req.body.password || ""
       );
-
-      // -----------------------------------------
-      // VALIDATION
-      // -----------------------------------------
 
       if (!phone || !password) {
         return res.status(400).json({
@@ -704,10 +673,6 @@ router.post(
         });
       }
 
-      // -----------------------------------------
-      // FIND USER
-      // -----------------------------------------
-
       const user =
         await User.findOne({
           phone,
@@ -722,10 +687,6 @@ router.post(
         });
       }
 
-      // -----------------------------------------
-      // PASSWORD EXISTS?
-      // -----------------------------------------
-
       if (!user.password) {
         return res.status(400).json({
           success: false,
@@ -734,10 +695,6 @@ router.post(
             "Password login is not available for this account. Please use MPIN or OTP login.",
         });
       }
-
-      // -----------------------------------------
-      // CHECK PASSWORD
-      // -----------------------------------------
 
       const isPasswordCorrect =
         await bcrypt.compare(
@@ -753,10 +710,6 @@ router.post(
             "Incorrect password.",
         });
       }
-
-      // -----------------------------------------
-      // LOGIN
-      // -----------------------------------------
 
       const token =
         generateToken(user);
