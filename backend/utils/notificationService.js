@@ -376,22 +376,24 @@ async function notifyLevelUp({
 // ============================================================
 
 async function notifyWeatherAlert({
-  userId,
-  title,
-  message,
-  metadata = {},
-}) {
-  return createNotification({
-    recipient: userId,
-    type: "weather_alert",
-    category: "farming",
+    userId,
     title,
     message,
-    icon: "cloud-rain",
-    link: "/dashboard/weather-alerts",
-    metadata,
-  });
-}
+    metadata = {},
+    uniqueKey = null,
+  }) {
+    return createNotification({
+      recipient: userId,
+      type: "weather_alert",
+      category: "farming",
+      title,
+      message,
+      icon: "cloud-rain",
+      link: "/dashboard/weather",
+      metadata,
+      uniqueKey,
+    });
+  }
 
 async function notifyCropTask({
   userId,
