@@ -142,6 +142,8 @@ app.use(
   require("./routes/cropCalendar")
 );
 
+app.use("/api/notifications", require("./routes/notifications"));
+
 app.use(
   "/api/forum",
   require("./routes/forum")
