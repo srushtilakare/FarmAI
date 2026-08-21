@@ -1,4 +1,5 @@
 /* eslint-env node */
+
 const express = require('express');
 const router = express.Router();
 const ForumPost = require('../models/Forum');
@@ -6,19 +7,18 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { logActivity } = require('./activities');
 const { moderateContent } = require('../utils/contentModeration');
 
-// Configure multer for image uploads
-const fs = require('fs');
-
+// =========================================================
+// MULTER CONFIGURATION FOR FORUM IMAGE UPLOADS
+// =========================================================
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // ✅ FIXED: absolute path
     const dir = path.join(__dirname, '../uploads/forum');
 
-    // ✅ ensure folder exists
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -27,19 +27,21 @@ const storage = multer.diskStorage({
   },
 
   filename: (req, file, cb) => {
+    const extension = path.extname(file.originalname).toLowerCase();
+
     cb(
       null,
-      Date.now() +
-        '-' +
-        Math.random().toString(36).substring(7) +
-        path.extname(file.originalname)
+      `${Date.now()}-${Math.random().toString(36).substring(2, 10)}${extension}`
     );
   }
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  },
 
   fileFilter: (req, file, cb) => {
     const allowedMimeTypes = [
@@ -48,482 +50,1333 @@ const upload = multer({
       'image/png',
       'image/gif',
       'image/webp',
-      'image/heic' // for iPhone
+      'image/heic',
+      'image/heif'
     ];
 
     const allowedExtensions = [
-      '.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic'
+      '.jpg',
+      '.jpeg',
+      '.png',
+      '.gif',
+      '.webp',
+      '.heic',
+      '.heif'
     ];
 
-    const ext = path.extname(file.originalname).toLowerCase();
+    const extension = path.extname(file.originalname).toLowerCase();
 
     if (
       allowedMimeTypes.includes(file.mimetype) ||
-      allowedExtensions.includes(ext)
+      allowedExtensions.includes(extension)
     ) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed (jpg, png, gif, webp, heic)'));
+      cb(
+        new Error(
+          'Only image files are allowed (jpg, jpeg, png, gif, webp, heic, heif)'
+        )
+      );
     }
   }
 });
 
-// Middleware to check if user is blocked from forum
-async function checkForumAccess(req, res, next) {
-  try {
-    const user = await User.findById(req.user._id);
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+// =========================================================
+// HELPER: DELETE UPLOADED FILES
+// =========================================================
 
-    // Check if user is permanently blocked
-    if (user.isBlockedFromForum) {
-      return res.status(403).json({ 
-        error: 'You have been blocked from the forum due to repeated violations of community guidelines.',
-        blocked: true,
-        warnings: user.forumWarnings
-      });
-    }
-
-    // Check if user is temporarily blocked
-    if (user.forumBlockedUntil && new Date() < user.forumBlockedUntil) {
-      const daysRemaining = Math.ceil((user.forumBlockedUntil - new Date()) / (1000 * 60 * 60 * 24));
-      return res.status(403).json({ 
-        error: `You are temporarily blocked from the forum. Access will be restored in ${daysRemaining} day(s).`,
-        blocked: true,
-        blockedUntil: user.forumBlockedUntil,
-        warnings: user.forumWarnings
-      });
-    }
-
-    // Clear temporary block if expired
-    if (user.forumBlockedUntil && new Date() >= user.forumBlockedUntil) {
-      user.forumBlockedUntil = null;
-      await user.save();
-    }
-
-    req.user = user; // Update req.user with fresh data
-    next();
-  } catch (error) {
-    console.error('Error checking forum access:', error);
-    res.status(500).json({ error: 'Failed to verify forum access' });
+function deleteUploadedFiles(files) {
+  if (!files || !Array.isArray(files)) {
+    return;
   }
+
+  files.forEach((file) => {
+    try {
+      if (file && file.path && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+    } catch (error) {
+      console.error('Error deleting uploaded file:', error);
+    }
+  });
 }
 
-// Helper function to handle content moderation and warnings
-async function handleContentModeration(user, content, title = '') {
-  const moderationResult = moderateContent(content, title);
-  
-  if (moderationResult.isAbusive) {
-    // Increment warning count
-    user.forumWarnings = (user.forumWarnings || 0) + 1;
-    
-    // Add to warning history
-    user.forumWarningHistory = user.forumWarningHistory || [];
-    user.forumWarningHistory.push({
-      date: new Date(),
-      reason: `Detected abusive language: ${moderationResult.detectedWords.join(', ')}`,
-      content: title ? `${title} ${content}` : content
-    });
+// =========================================================
+// HELPER: GET FORUM STATUS
+// =========================================================
 
-    // Block user after 3 warnings
-    if (user.forumWarnings >= 3) {
-      user.isBlockedFromForum = true;
-      await user.save();
-      return {
-        blocked: true,
-        warnings: user.forumWarnings,
-        message: 'You have been permanently blocked from the forum due to repeated violations.'
-      };
-    }
+function getForumStatus(user) {
+  const now = new Date();
 
-    // Temporary block after 2 warnings (7 days)
-    if (user.forumWarnings === 2) {
-      const blockUntil = new Date();
-      blockUntil.setDate(blockUntil.getDate() + 7);
-      user.forumBlockedUntil = blockUntil;
-      await user.save();
-      return {
-        blocked: true,
-        warnings: user.forumWarnings,
-        message: 'You have been temporarily blocked from the forum for 7 days due to repeated violations.',
-        blockedUntil: blockUntil
-      };
-    }
-
-    await user.save();
+  // -------------------------------------------------------
+  // Backward compatibility with old permanent-block field
+  // -------------------------------------------------------
+  if (user.isBlockedFromForum === true) {
     return {
-      blocked: false,
-      warned: true,
-      warnings: user.forumWarnings,
-      message: `Warning: Your content contains inappropriate language. You have ${user.forumWarnings} warning(s). After 3 warnings, you will be permanently blocked.`,
-      detectedWords: moderationResult.detectedWords
+      status: 'banned',
+      canParticipate: false,
+      blocked: true,
+      suspended: false,
+      banned: true,
+      warnings: user.forumWarnings || 0,
+      blockedUntil: null,
+      message:
+        'Your forum participation has been permanently blocked due to repeated violations of the community guidelines.'
     };
   }
 
-  return { blocked: false, warned: false };
+  // -------------------------------------------------------
+  // Temporary suspension
+  // -------------------------------------------------------
+  if (
+    user.forumBlockedUntil &&
+    new Date(user.forumBlockedUntil) > now
+  ) {
+    return {
+      status: 'suspended',
+      canParticipate: false,
+      blocked: true,
+      suspended: true,
+      banned: false,
+      warnings: user.forumWarnings || 0,
+      blockedUntil: user.forumBlockedUntil,
+      message:
+        'Your forum participation is temporarily suspended due to repeated violations of the community guidelines.'
+    };
+  }
+
+  // -------------------------------------------------------
+  // Expired old suspension
+  // -------------------------------------------------------
+  if (
+    user.forumBlockedUntil &&
+    new Date(user.forumBlockedUntil) <= now
+  ) {
+    return {
+      status: 'active',
+      canParticipate: true,
+      blocked: false,
+      suspended: false,
+      banned: false,
+      warnings: user.forumWarnings || 0,
+      blockedUntil: null,
+      message: 'Your forum access is active.'
+    };
+  }
+
+  // -------------------------------------------------------
+  // New forumStatus field
+  // -------------------------------------------------------
+  if (user.forumStatus === 'banned') {
+    return {
+      status: 'banned',
+      canParticipate: false,
+      blocked: true,
+      suspended: false,
+      banned: true,
+      warnings: user.forumWarnings || 0,
+      blockedUntil: null,
+      message:
+        'Your forum participation has been permanently blocked due to repeated violations of the community guidelines.'
+    };
+  }
+
+  if (
+    user.forumStatus === 'suspended' &&
+    user.forumBlockedUntil &&
+    new Date(user.forumBlockedUntil) > now
+  ) {
+    return {
+      status: 'suspended',
+      canParticipate: false,
+      blocked: true,
+      suspended: true,
+      banned: false,
+      warnings: user.forumWarnings || 0,
+      blockedUntil: user.forumBlockedUntil,
+      message:
+        'Your forum participation is temporarily suspended due to repeated violations of the community guidelines.'
+    };
+  }
+
+  // -------------------------------------------------------
+  // Active user
+  // -------------------------------------------------------
+  return {
+    status: 'active',
+    canParticipate: true,
+    blocked: false,
+    suspended: false,
+    banned: false,
+    warnings: user.forumWarnings || 0,
+    blockedUntil: null,
+    message: 'Your forum access is active.'
+  };
 }
 
-// Create a new forum post
-router.post('/posts', auth, checkForumAccess, upload.array('images', 3), async (req, res) => {
+// =========================================================
+// MIDDLEWARE: CHECK FORUM PARTICIPATION ACCESS
+// =========================================================
+
+async function checkForumAccess(req, res, next) {
   try {
-    console.log("🔥 USER DATA:", req.user);
-    console.log("🔥 WARNINGS:", req.user.forumWarnings);
-    console.log("🔥 BLOCKED UNTIL:", req.user.forumBlockedUntil);
-    const { title, content, category, crop, tags } = req.body;
-    
-    if (!title || !content || !category) {
-      return res.status(400).json({ error: 'Title, content, and category are required' });
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found'
+      });
     }
 
-    // Check content for abusive language
-    const moderationResult = await handleContentModeration(req.user, content, title);
-    
-    if (moderationResult.blocked) {
+    const forumStatus = getForumStatus(user);
+
+    // -------------------------------------------------------
+    // Automatically restore an expired suspension
+    // -------------------------------------------------------
+    if (
+      user.forumBlockedUntil &&
+      new Date(user.forumBlockedUntil) <= new Date() &&
+      user.forumStatus === 'suspended'
+    ) {
+      user.forumBlockedUntil = null;
+      user.forumStatus = 'active';
+
+      await user.save();
+
+      forumStatus.status = 'active';
+      forumStatus.canParticipate = true;
+      forumStatus.blocked = false;
+      forumStatus.suspended = false;
+      forumStatus.banned = false;
+      forumStatus.blockedUntil = null;
+      forumStatus.message = 'Your forum access is active.';
+    }
+
+    // -------------------------------------------------------
+    // Permanent ban
+    // -------------------------------------------------------
+    if (
+      forumStatus.status === 'banned' ||
+      user.isBlockedFromForum === true
+    ) {
       return res.status(403).json({
         success: false,
-        error: moderationResult.message,
+        error:
+          'You have been permanently blocked from posting and commenting in the forum due to repeated inappropriate-language violations.',
         blocked: true,
-        warnings: moderationResult.warnings,
-        blockedUntil: moderationResult.blockedUntil
+        banned: true,
+        suspended: false,
+        forumStatus: 'banned',
+        warnings: user.forumWarnings || 0,
+        blockedUntil: null,
+        canParticipate: false
       });
     }
 
-    if (moderationResult.warned) {
-      return res.status(400).json({
+    // -------------------------------------------------------
+    // Temporary suspension
+    // -------------------------------------------------------
+    if (
+      forumStatus.status === 'suspended' ||
+      (
+        user.forumBlockedUntil &&
+        new Date(user.forumBlockedUntil) > new Date()
+      )
+    ) {
+      const blockedUntil = user.forumBlockedUntil;
+
+      const remainingMs =
+        new Date(blockedUntil).getTime() - Date.now();
+
+      const daysRemaining = Math.max(
+        1,
+        Math.ceil(remainingMs / (1000 * 60 * 60 * 24))
+      );
+
+      return res.status(403).json({
         success: false,
-        error: moderationResult.message,
-        warned: true,
-        warnings: moderationResult.warnings,
-        detectedWords: moderationResult.detectedWords
+        error:
+          `Your forum participation is suspended. ` +
+          `You can post and comment again after ${new Date(
+            blockedUntil
+          ).toLocaleString('en-IN')}.`,
+        blocked: true,
+        banned: false,
+        suspended: true,
+        forumStatus: 'suspended',
+        warnings: user.forumWarnings || 0,
+        blockedUntil,
+        daysRemaining,
+        canParticipate: false
       });
     }
-    
-    const images = req.files ? req.files.map(file => `/uploads/forum/${file.filename}`) : [];
-    
-    const forumPost = new ForumPost({
-      userId: req.user._id,
-      userName: req.user.fullName || 'Anonymous Farmer',
-      userLocation: req.user.state || '',
-      title,
-      content,
-      category,
-      crop,
-      images,
-      tags: tags ? JSON.parse(tags) : []
+
+    // Fresh user information
+    req.user = user;
+
+    next();
+  } catch (error) {
+    console.error('Error checking forum access:', error);
+
+    res.status(500).json({
+      error: 'Failed to verify forum access'
     });
-    
-    await forumPost.save();
-    
-    // Log activity
-    await logActivity(req.user._id, {
-      activityType: 'community-forum',
-      title: `Forum Post Created - ${title}`,
-      description: `Created forum post in ${category} category`,
-      status: 'completed',
-      result: 'Post published successfully',
-      relatedId: forumPost._id,
-      relatedModel: 'ForumPost',
-      metadata: { category, crop, hasImages: images.length > 0 }
+  }
+}
+
+// =========================================================
+// HELPER: HANDLE CONTENT MODERATION
+// =========================================================
+//
+// Violation rules:
+//
+// 1st inappropriate submission -> Warning
+// 2nd inappropriate submission -> Warning
+// 3rd inappropriate submission -> 7-day suspension
+// 4th inappropriate submission -> Permanent forum ban
+//
+// IMPORTANT:
+// Merely typing inappropriate words does NOT increase the count.
+// The count increases only when the user attempts to submit
+// inappropriate content to the forum.
+//
+
+async function handleContentModeration(user, content, title = '') {
+  const moderationResult = moderateContent(content, title);
+
+  // Clean content
+  if (!moderationResult.isAbusive) {
+    return {
+      blocked: false,
+      warned: false,
+      suspended: false,
+      banned: false,
+      warnings: user.forumWarnings || 0,
+      detectedWords: [],
+      severity: 'low'
+    };
+  }
+
+  // -------------------------------------------------------
+  // Record the new violation
+  // -------------------------------------------------------
+
+  const currentWarnings = Number(user.forumWarnings || 0);
+  const violationNumber = currentWarnings + 1;
+
+  user.forumWarnings = violationNumber;
+
+  if (!Array.isArray(user.forumWarningHistory)) {
+    user.forumWarningHistory = [];
+  }
+
+  const combinedContent = title
+    ? `${title} ${content}`
+    : content;
+
+  // -------------------------------------------------------
+  // 4TH VIOLATION = PERMANENT BAN
+  // -------------------------------------------------------
+
+  if (violationNumber >= 4) {
+    user.forumWarnings = 4;
+    user.forumStatus = 'banned';
+    user.isBlockedFromForum = true;
+    user.forumBlockedUntil = null;
+
+    user.forumWarningHistory.push({
+      date: new Date(),
+      reason: `Detected inappropriate language: ${moderationResult.detectedWords.join(
+        ', '
+      )}`,
+      content: combinedContent,
+      violationNumber: 4,
+      action: 'ban'
     });
-    
+
+    await user.save();
+
+    return {
+      blocked: true,
+      warned: false,
+      suspended: false,
+      banned: true,
+      warnings: 4,
+      blockedUntil: null,
+      detectedWords: moderationResult.detectedWords,
+      severity: moderationResult.severity,
+      message:
+        'Your forum participation has been permanently blocked after 4 inappropriate-language violations. You can still read posts and comments, but you cannot create posts or comments.'
+    };
+  }
+
+  // -------------------------------------------------------
+  // 3RD VIOLATION = 7-DAY SUSPENSION
+  // -------------------------------------------------------
+
+  if (violationNumber === 3) {
+    const blockUntil = new Date();
+
+    blockUntil.setDate(blockUntil.getDate() + 7);
+
+    user.forumStatus = 'suspended';
+    user.isBlockedFromForum = false;
+    user.forumBlockedUntil = blockUntil;
+
+    user.forumWarningHistory.push({
+      date: new Date(),
+      reason: `Detected inappropriate language: ${moderationResult.detectedWords.join(
+        ', '
+      )}`,
+      content: combinedContent,
+      violationNumber: 3,
+      action: 'suspension'
+    });
+
+    await user.save();
+
+    return {
+      blocked: true,
+      warned: false,
+      suspended: true,
+      banned: false,
+      warnings: 3,
+      blockedUntil: blockUntil,
+      detectedWords: moderationResult.detectedWords,
+      severity: moderationResult.severity,
+      message:
+        'You have received your 3rd forum violation. Your ability to post and comment has been suspended for 7 days due to repeated inappropriate-language violations.'
+    };
+  }
+
+  // -------------------------------------------------------
+  // 1ST / 2ND VIOLATION = WARNING ONLY
+  // -------------------------------------------------------
+
+  user.forumStatus = 'active';
+  user.isBlockedFromForum = false;
+  user.forumBlockedUntil = null;
+
+  user.forumWarningHistory.push({
+    date: new Date(),
+    reason: `Detected inappropriate language: ${moderationResult.detectedWords.join(
+      ', '
+    )}`,
+    content: combinedContent,
+    violationNumber,
+    action: 'warning'
+  });
+
+  await user.save();
+
+  const remainingWarningsUntilSuspension =
+    Math.max(0, 3 - violationNumber);
+
+  return {
+    blocked: false,
+    warned: true,
+    suspended: false,
+    banned: false,
+    warnings: violationNumber,
+    blockedUntil: null,
+    detectedWords: moderationResult.detectedWords,
+    severity: moderationResult.severity,
+    message:
+      `Warning ${violationNumber}: Your content contains inappropriate language. ` +
+      `Please remove it before posting. ` +
+      `${
+        remainingWarningsUntilSuspension === 1
+          ? 'One more violation will result in a 7-day forum suspension.'
+          : `${remainingWarningsUntilSuspension} more violations will result in a 7-day forum suspension.`
+      }`
+  };
+}
+
+// =========================================================
+// GET CURRENT USER'S FORUM STATUS
+// =========================================================
+
+router.get('/status', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    const currentStatus = getForumStatus(user);
+
+    // Automatically restore expired suspension
+    if (
+      user.forumStatus === 'suspended' &&
+      user.forumBlockedUntil &&
+      new Date(user.forumBlockedUntil) <= new Date()
+    ) {
+      user.forumStatus = 'active';
+      user.forumBlockedUntil = null;
+      user.isBlockedFromForum = false;
+
+      await user.save();
+
+      currentStatus.status = 'active';
+      currentStatus.canParticipate = true;
+      currentStatus.blocked = false;
+      currentStatus.suspended = false;
+      currentStatus.banned = false;
+      currentStatus.blockedUntil = null;
+      currentStatus.message = 'Your forum access is active.';
+    }
+
+    let remainingMs = 0;
+
+    if (
+      currentStatus.status === 'suspended' &&
+      currentStatus.blockedUntil
+    ) {
+      remainingMs = Math.max(
+        0,
+        new Date(currentStatus.blockedUntil).getTime() - Date.now()
+      );
+    }
+
     res.json({
       success: true,
-      message: 'Post created successfully',
-      post: forumPost
+
+      forumStatus: currentStatus.status,
+
+      canParticipate: currentStatus.canParticipate,
+
+      blocked: currentStatus.blocked,
+
+      suspended: currentStatus.suspended,
+
+      banned: currentStatus.banned,
+
+      warnings: user.forumWarnings || 0,
+
+      blockedUntil: currentStatus.blockedUntil,
+
+      remainingMs,
+
+      message: currentStatus.message
     });
   } catch (error) {
-    console.error('Error creating forum post:', error);
-    res.status(500).json({ error: 'Failed to create post' });
+    console.error('Error fetching forum status:', error);
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch forum status'
+    });
   }
 });
 
-// Get all forum posts with pagination and filters
+// =========================================================
+// CREATE A NEW FORUM POST
+// =========================================================
+
+router.post(
+  '/posts',
+  auth,
+  checkForumAccess,
+  upload.array('images', 3),
+  async (req, res) => {
+    try {
+      console.log('🔥 USER DATA:', req.user);
+      console.log('🔥 WARNINGS:', req.user.forumWarnings);
+      console.log('🔥 FORUM STATUS:', req.user.forumStatus);
+      console.log('🔥 BLOCKED UNTIL:', req.user.forumBlockedUntil);
+
+      const {
+        title,
+        content,
+        category,
+        crop,
+        tags
+      } = req.body;
+
+      // -------------------------------------------------------
+      // Basic validation
+      // -------------------------------------------------------
+
+      if (!title || !content || !category) {
+        deleteUploadedFiles(req.files);
+
+        return res.status(400).json({
+          error: 'Title, content, and category are required'
+        });
+      }
+
+      // -------------------------------------------------------
+      // Content moderation
+      // -------------------------------------------------------
+
+      const moderationResult = await handleContentModeration(
+        req.user,
+        content,
+        title
+      );
+
+      // -------------------------------------------------------
+      // 4th violation = permanent ban
+      // -------------------------------------------------------
+
+      if (moderationResult.banned) {
+        deleteUploadedFiles(req.files);
+
+        return res.status(403).json({
+          success: false,
+          error: moderationResult.message,
+          blocked: true,
+          banned: true,
+          suspended: false,
+          warned: false,
+          forumStatus: 'banned',
+          warnings: moderationResult.warnings,
+          blockedUntil: null,
+          detectedWords: moderationResult.detectedWords
+        });
+      }
+
+      // -------------------------------------------------------
+      // 3rd violation = 7-day suspension
+      // -------------------------------------------------------
+
+      if (moderationResult.suspended) {
+        deleteUploadedFiles(req.files);
+
+        return res.status(403).json({
+          success: false,
+          error: moderationResult.message,
+          blocked: true,
+          banned: false,
+          suspended: true,
+          warned: false,
+          forumStatus: 'suspended',
+          warnings: moderationResult.warnings,
+          blockedUntil: moderationResult.blockedUntil,
+          detectedWords: moderationResult.detectedWords
+        });
+      }
+
+      // -------------------------------------------------------
+      // 1st / 2nd violation = warning
+      // -------------------------------------------------------
+
+      if (moderationResult.warned) {
+        deleteUploadedFiles(req.files);
+
+        return res.status(400).json({
+          success: false,
+          error: moderationResult.message,
+          blocked: false,
+          banned: false,
+          suspended: false,
+          warned: true,
+          forumStatus: 'active',
+          warnings: moderationResult.warnings,
+          blockedUntil: null,
+          detectedWords: moderationResult.detectedWords
+        });
+      }
+
+      // -------------------------------------------------------
+      // Process images
+      // -------------------------------------------------------
+
+      const images = req.files
+        ? req.files.map(
+            (file) => `/uploads/forum/${file.filename}`
+          )
+        : [];
+
+      // -------------------------------------------------------
+      // Parse tags safely
+      // -------------------------------------------------------
+
+      let parsedTags = [];
+
+      if (tags) {
+        try {
+          parsedTags = JSON.parse(tags);
+
+          if (!Array.isArray(parsedTags)) {
+            parsedTags = [];
+          }
+        } catch (error) {
+          deleteUploadedFiles(req.files);
+
+          return res.status(400).json({
+            error: 'Invalid tags format'
+          });
+        }
+      }
+
+      // -------------------------------------------------------
+      // Create post
+      // -------------------------------------------------------
+
+      const forumPost = new ForumPost({
+        userId: req.user._id,
+        userName: req.user.fullName || 'Anonymous Farmer',
+        userLocation: req.user.state || '',
+        title: title.trim(),
+        content: content.trim(),
+        category,
+        crop: crop ? crop.trim() : '',
+        images,
+        tags: parsedTags
+      });
+
+      await forumPost.save();
+
+      // -------------------------------------------------------
+      // Log activity
+      // -------------------------------------------------------
+
+      await logActivity(req.user._id, {
+        activityType: 'community-forum',
+        title: `Forum Post Created - ${title}`,
+        description: `Created forum post in ${category} category`,
+        status: 'completed',
+        result: 'Post published successfully',
+        relatedId: forumPost._id,
+        relatedModel: 'ForumPost',
+        metadata: {
+          category,
+          crop,
+          hasImages: images.length > 0
+        }
+      });
+
+      res.json({
+        success: true,
+        message: 'Post created successfully',
+        post: forumPost
+      });
+    } catch (error) {
+      console.error('Error creating forum post:', error);
+
+      // Remove files if something failed after upload
+      deleteUploadedFiles(req.files);
+
+      res.status(500).json({
+        error: 'Failed to create post'
+      });
+    }
+  }
+);
+
+// =========================================================
+// GET ALL FORUM POSTS
+// =========================================================
+
 router.get('/posts', async (req, res) => {
   try {
-    const { 
-      category, 
-      crop, 
-      status, 
+    const {
+      category,
+      crop,
+      status,
       search,
-      page = 1, 
+      page = 1,
       limit = 20,
-      sort = 'recent' 
+      sort = 'recent'
     } = req.query;
-    
+
     const query = {};
-    if (category) query.category = category;
-    if (crop) query.crop = crop;
-    if (status) query.status = status;
+
+    if (category) {
+      query.category = category;
+    }
+
+    if (crop) {
+      query.crop = crop;
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
     if (search) {
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { content: { $regex: search, $options: 'i' } },
-        { tags: { $regex: search, $options: 'i' } }
+        {
+          title: {
+            $regex: search,
+            $options: 'i'
+          }
+        },
+        {
+          content: {
+            $regex: search,
+            $options: 'i'
+          }
+        },
+        {
+          tags: {
+            $regex: search,
+            $options: 'i'
+          }
+        }
       ];
     }
-    
+
     let sortOption = {};
-    if (sort === 'recent') sortOption = { createdAt: -1 };
-    else if (sort === 'popular') sortOption = { views: -1, 'upvotes': -1 };
-    else if (sort === 'answered') sortOption = { 'replies': -1 };
-    
+
+    if (sort === 'recent') {
+      sortOption = {
+        createdAt: -1
+      };
+    } else if (sort === 'popular') {
+      sortOption = {
+        views: -1,
+        upvotes: -1
+      };
+    } else if (sort === 'answered') {
+      sortOption = {
+        replies: -1
+      };
+    }
+
+    const parsedPage = Math.max(
+      1,
+      parseInt(page, 10) || 1
+    );
+
+    const parsedLimit = Math.min(
+      50,
+      Math.max(1, parseInt(limit, 10) || 20)
+    );
+
     const posts = await ForumPost.find(query)
       .sort(sortOption)
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-    
-    // Add replyCount to each post and remove full replies array for performance
-    const postsWithCount = posts.map(post => {
+      .limit(parsedLimit)
+      .skip((parsedPage - 1) * parsedLimit);
+
+    // Add replyCount and remove full replies from list response
+    const postsWithCount = posts.map((post) => {
       const postObj = post.toObject();
-      const replyCount = postObj.replies ? postObj.replies.length : 0;
+
+      const replyCount = postObj.replies
+        ? postObj.replies.length
+        : 0;
+
       postObj.replyCount = replyCount;
-      delete postObj.replies; // Remove full replies array to keep response light
+
+      delete postObj.replies;
+
       return postObj;
     });
-    
-    
+
     const count = await ForumPost.countDocuments(query);
-    
+
     res.json({
       success: true,
       posts: postsWithCount,
-      totalPages: Math.ceil(count / limit),
-      currentPage: parseInt(page, 10),
+      totalPages: Math.ceil(
+        count / parsedLimit
+      ),
+      currentPage: parsedPage,
       totalPosts: count
     });
   } catch (error) {
     console.error('Error fetching forum posts:', error);
-    res.status(500).json({ error: 'Failed to fetch posts' });
+
+    res.status(500).json({
+      error: 'Failed to fetch posts'
+    });
   }
 });
 
-// Get a single post with all replies
+// =========================================================
+// GET SINGLE POST WITH REPLIES
+// =========================================================
+
 router.get('/posts/:postId', async (req, res) => {
   try {
-    const post = await ForumPost.findById(req.params.postId);
-    
+    const post = await ForumPost.findById(
+      req.params.postId
+    );
+
     if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+      return res.status(404).json({
+        error: 'Post not found'
+      });
     }
-    
+
     // Increment views
-    post.views += 1;
+    post.views = (post.views || 0) + 1;
+
     await post.save();
-    
-    res.json({ success: true, post });
+
+    res.json({
+      success: true,
+      post
+    });
   } catch (error) {
     console.error('Error fetching post:', error);
-    res.status(500).json({ error: 'Failed to fetch post' });
+
+    res.status(500).json({
+      error: 'Failed to fetch post'
+    });
   }
 });
 
-// Add a reply to a post
-router.post('/posts/:postId/replies', auth, checkForumAccess, upload.array('images', 2), async (req, res) => {
-  try {
-    const { content } = req.body;
-    
-    if (!content) {
-      return res.status(400).json({ error: 'Content is required' });
-    }
+// =========================================================
+// ADD REPLY
+// =========================================================
 
-    // Check content for abusive language
-    const moderationResult = await handleContentModeration(req.user, content);
-    
-    if (moderationResult.blocked) {
-      return res.status(403).json({
-        success: false,
-        error: moderationResult.message,
-        blocked: true,
-        warnings: moderationResult.warnings,
-        blockedUntil: moderationResult.blockedUntil
+router.post(
+  '/posts/:postId/replies',
+  auth,
+  checkForumAccess,
+  upload.array('images', 2),
+  async (req, res) => {
+    try {
+      const { content } = req.body;
+
+      if (!content || !content.trim()) {
+        deleteUploadedFiles(req.files);
+
+        return res.status(400).json({
+          error: 'Content is required'
+        });
+      }
+
+      // -------------------------------------------------------
+      // Content moderation
+      // -------------------------------------------------------
+
+      const moderationResult = await handleContentModeration(
+        req.user,
+        content
+      );
+
+      // -------------------------------------------------------
+      // Permanent ban
+      // -------------------------------------------------------
+
+      if (moderationResult.banned) {
+        deleteUploadedFiles(req.files);
+
+        return res.status(403).json({
+          success: false,
+          error: moderationResult.message,
+          blocked: true,
+          banned: true,
+          suspended: false,
+          warned: false,
+          forumStatus: 'banned',
+          warnings: moderationResult.warnings,
+          blockedUntil: null,
+          detectedWords: moderationResult.detectedWords
+        });
+      }
+
+      // -------------------------------------------------------
+      // 7-day suspension
+      // -------------------------------------------------------
+
+      if (moderationResult.suspended) {
+        deleteUploadedFiles(req.files);
+
+        return res.status(403).json({
+          success: false,
+          error: moderationResult.message,
+          blocked: true,
+          banned: false,
+          suspended: true,
+          warned: false,
+          forumStatus: 'suspended',
+          warnings: moderationResult.warnings,
+          blockedUntil: moderationResult.blockedUntil,
+          detectedWords: moderationResult.detectedWords
+        });
+      }
+
+      // -------------------------------------------------------
+      // Warning
+      // -------------------------------------------------------
+
+      if (moderationResult.warned) {
+        deleteUploadedFiles(req.files);
+
+        return res.status(400).json({
+          success: false,
+          error: moderationResult.message,
+          blocked: false,
+          banned: false,
+          suspended: false,
+          warned: true,
+          forumStatus: 'active',
+          warnings: moderationResult.warnings,
+          blockedUntil: null,
+          detectedWords: moderationResult.detectedWords
+        });
+      }
+
+      // -------------------------------------------------------
+      // Find post
+      // -------------------------------------------------------
+
+      const post = await ForumPost.findById(
+        req.params.postId
+      );
+
+      if (!post) {
+        deleteUploadedFiles(req.files);
+
+        return res.status(404).json({
+          error: 'Post not found'
+        });
+      }
+
+      // -------------------------------------------------------
+      // Process reply images
+      // -------------------------------------------------------
+
+      const images = req.files
+        ? req.files.map(
+            (file) => `/uploads/forum/${file.filename}`
+          )
+        : [];
+
+      const reply = {
+        userId: req.user._id,
+        userName:
+          req.user.fullName || 'Anonymous Farmer',
+        content: content.trim(),
+        images
+      };
+
+      post.replies.push(reply);
+
+      // Update status if open
+      if (
+        post.status === 'open' &&
+        post.replies.length > 0
+      ) {
+        post.status = 'answered';
+      }
+
+      await post.save();
+
+      // -------------------------------------------------------
+      // Log activity
+      // -------------------------------------------------------
+
+      await logActivity(req.user._id, {
+        activityType: 'community-forum',
+        title: `Reply Added - ${post.title}`,
+        description:
+          `Added reply to forum post: ${post.title}`,
+        status: 'completed',
+        result: 'Reply published successfully',
+        relatedId: post._id,
+        relatedModel: 'ForumPost',
+        metadata: {
+          postTitle: post.title,
+          category: post.category,
+          hasImages: images.length > 0
+        }
+      });
+
+      res.json({
+        success: true,
+        message: 'Reply added successfully',
+        reply:
+          post.replies[post.replies.length - 1]
+      });
+    } catch (error) {
+      console.error('Error adding reply:', error);
+
+      deleteUploadedFiles(req.files);
+
+      res.status(500).json({
+        error: 'Failed to add reply'
       });
     }
+  }
+);
 
-    if (moderationResult.warned) {
-      return res.status(400).json({
-        success: false,
-        error: moderationResult.message,
-        warned: true,
-        warnings: moderationResult.warnings,
-        detectedWords: moderationResult.detectedWords
+// =========================================================
+// UPVOTE A POST
+// =========================================================
+
+router.post(
+  '/posts/:postId/upvote',
+  auth,
+  async (req, res) => {
+    try {
+      const post = await ForumPost.findById(
+        req.params.postId
+      );
+
+      if (!post) {
+        return res.status(404).json({
+          error: 'Post not found'
+        });
+      }
+
+      const userId = req.user._id;
+
+      const upvoteIndex =
+        post.upvotes.indexOf(userId);
+
+      if (upvoteIndex > -1) {
+        post.upvotes.splice(upvoteIndex, 1);
+      } else {
+        post.upvotes.push(userId);
+      }
+
+      await post.save();
+
+      res.json({
+        success: true,
+        upvoted: upvoteIndex === -1,
+        upvoteCount: post.upvotes.length
+      });
+    } catch (error) {
+      console.error(
+        'Error upvoting post:',
+        error
+      );
+
+      res.status(500).json({
+        error: 'Failed to upvote post'
       });
     }
-    
-    const post = await ForumPost.findById(req.params.postId);
-    if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
-    }
-    
-    const images = req.files ? req.files.map(file => `/uploads/forum/${file.filename}`) : [];
-    
-    const reply = {
-      userId: req.user._id,
-      userName: req.user.fullName || 'Anonymous Farmer',
-      content,
-      images
-    };
-    
-    post.replies.push(reply);
-    
-    // Update post status if it was open
-    if (post.status === 'open' && post.replies.length > 0) {
-      post.status = 'answered';
-    }
-    
-    await post.save();
-    
-    // Log activity
-    await logActivity(req.user._id, {
-      activityType: 'community-forum',
-      title: `Reply Added - ${post.title}`,
-      description: `Added reply to forum post: ${post.title}`,
-      status: 'completed',
-      result: 'Reply published successfully',
-      relatedId: post._id,
-      relatedModel: 'ForumPost',
-      metadata: { postTitle: post.title, category: post.category, hasImages: images.length > 0 }
-    });
-    
-    res.json({
-      success: true,
-      message: 'Reply added successfully',
-      reply: post.replies[post.replies.length - 1]
-    });
-  } catch (error) {
-    console.error('Error adding reply:', error);
-    res.status(500).json({ error: 'Failed to add reply' });
   }
-});
+);
 
-// Upvote a post
-router.post('/posts/:postId/upvote', auth, async (req, res) => {
-  try {
-    const post = await ForumPost.findById(req.params.postId);
-    
-    if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+// =========================================================
+// UPVOTE A REPLY
+// =========================================================
+
+router.post(
+  '/posts/:postId/replies/:replyId/upvote',
+  auth,
+  async (req, res) => {
+    try {
+      const post = await ForumPost.findById(
+        req.params.postId
+      );
+
+      if (!post) {
+        return res.status(404).json({
+          error: 'Post not found'
+        });
+      }
+
+      const reply = post.replies.id(
+        req.params.replyId
+      );
+
+      if (!reply) {
+        return res.status(404).json({
+          error: 'Reply not found'
+        });
+      }
+
+      const userId = req.user._id;
+
+      const upvoteIndex =
+        reply.upvotes.indexOf(userId);
+
+      if (upvoteIndex > -1) {
+        reply.upvotes.splice(upvoteIndex, 1);
+      } else {
+        reply.upvotes.push(userId);
+      }
+
+      await post.save();
+
+      res.json({
+        success: true,
+        upvoted: upvoteIndex === -1,
+        upvoteCount: reply.upvotes.length
+      });
+    } catch (error) {
+      console.error(
+        'Error upvoting reply:',
+        error
+      );
+
+      res.status(500).json({
+        error: 'Failed to upvote reply'
+      });
     }
-    
-    const userId = req.user._id;
-    const upvoteIndex = post.upvotes.indexOf(userId);
-    
-    if (upvoteIndex > -1) {
-      // Remove upvote
-      post.upvotes.splice(upvoteIndex, 1);
-    } else {
-      // Add upvote
-      post.upvotes.push(userId);
-    }
-    
-    await post.save();
-    
-    res.json({
-      success: true,
-      upvoted: upvoteIndex === -1,
-      upvoteCount: post.upvotes.length
-    });
-  } catch (error) {
-    console.error('Error upvoting post:', error);
-    res.status(500).json({ error: 'Failed to upvote post' });
   }
-});
+);
 
-// Upvote a reply
-router.post('/posts/:postId/replies/:replyId/upvote', auth, async (req, res) => {
-  try {
-    const post = await ForumPost.findById(req.params.postId);
-    
-    if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
-    }
-    
-    const reply = post.replies.id(req.params.replyId);
-    if (!reply) {
-      return res.status(404).json({ error: 'Reply not found' });
-    }
-    
-    const userId = req.user._id;
-    const upvoteIndex = reply.upvotes.indexOf(userId);
-    
-    if (upvoteIndex > -1) {
-      reply.upvotes.splice(upvoteIndex, 1);
-    } else {
-      reply.upvotes.push(userId);
-    }
-    
-    await post.save();
-    
-    res.json({
-      success: true,
-      upvoted: upvoteIndex === -1,
-      upvoteCount: reply.upvotes.length
-    });
-  } catch (error) {
-    console.error('Error upvoting reply:', error);
-    res.status(500).json({ error: 'Failed to upvote reply' });
-  }
-});
+// =========================================================
+// GET USER'S POSTS
+// =========================================================
 
-// Get user's posts
 router.get('/my-posts', auth, async (req, res) => {
   try {
-    const posts = await ForumPost.find({ userId: req.user._id })
-      .sort({ createdAt: -1 })
+    const posts = await ForumPost.find({
+      userId: req.user._id
+    })
+      .sort({
+        createdAt: -1
+      })
       .select('-replies');
-    
-    res.json({ success: true, posts });
+
+    res.json({
+      success: true,
+      posts
+    });
   } catch (error) {
-    console.error('Error fetching user posts:', error);
-    res.status(500).json({ error: 'Failed to fetch posts' });
+    console.error(
+      'Error fetching user posts:',
+      error
+    );
+
+    res.status(500).json({
+      error: 'Failed to fetch posts'
+    });
   }
 });
 
-// Flag a post
-router.post('/posts/:postId/flag', auth, async (req, res) => {
-  try {
-    const { reason } = req.body;
-    
-    const post = await ForumPost.findById(req.params.postId);
-    if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+// =========================================================
+// FLAG A POST
+// =========================================================
+
+router.post(
+  '/posts/:postId/flag',
+  auth,
+  async (req, res) => {
+    try {
+      const { reason } = req.body;
+
+      const post = await ForumPost.findById(
+        req.params.postId
+      );
+
+      if (!post) {
+        return res.status(404).json({
+          error: 'Post not found'
+        });
+      }
+
+      post.flagged = true;
+      post.flagReason =
+        reason || 'Reported by user';
+
+      await post.save();
+
+      res.json({
+        success: true,
+        message: 'Post flagged for review'
+      });
+    } catch (error) {
+      console.error(
+        'Error flagging post:',
+        error
+      );
+
+      res.status(500).json({
+        error: 'Failed to flag post'
+      });
     }
-    
-    post.flagged = true;
-    post.flagReason = reason || 'Reported by user';
-    await post.save();
-    
-    res.json({ success: true, message: 'Post flagged for review' });
-  } catch (error) {
-    console.error('Error flagging post:', error);
-    res.status(500).json({ error: 'Failed to flag post' });
   }
-});
+);
 
-// Get popular tags
+// =========================================================
+// GET POPULAR TAGS
+// =========================================================
+
 router.get('/tags', async (req, res) => {
   try {
-    const posts = await ForumPost.find({}, 'tags');
+    const posts = await ForumPost.find(
+      {},
+      'tags'
+    );
+
     const tagCounts = {};
-    
-    posts.forEach(post => {
-      post.tags.forEach(tag => {
-        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+
+    posts.forEach((post) => {
+      post.tags.forEach((tag) => {
+        tagCounts[tag] =
+          (tagCounts[tag] || 0) + 1;
       });
     });
-    
+
     const sortedTags = Object.entries(tagCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 20)
-      .map(([tag, count]) => ({ tag, count }));
-    
-    res.json({ success: true, tags: sortedTags });
+      .map(([tag, count]) => ({
+        tag,
+        count
+      }));
+
+    res.json({
+      success: true,
+      tags: sortedTags
+    });
   } catch (error) {
-    console.error('Error fetching tags:', error);
-    res.status(500).json({ error: 'Failed to fetch tags' });
+    console.error(
+      'Error fetching tags:',
+      error
+    );
+
+    res.status(500).json({
+      error: 'Failed to fetch tags'
+    });
   }
 });
 
-module.exports = router;
+// =========================================================
+// MULTER / UPLOAD ERROR HANDLER
+// =========================================================
+//
+// This is placed after the forum routes so upload errors
+// are converted into clean JSON responses instead of
+// returning an HTML error page.
+//
 
+router.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        error: 'Image size must be 5MB or smaller.'
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      error: error.message || 'Image upload failed.'
+    });
+  }
+
+  if (error) {
+    if (
+      error.message &&
+      error.message.includes(
+        'Only image files are allowed'
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+
+    console.error(
+      'Forum route error:',
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      error: 'Forum request failed.'
+    });
+  }
+
+  next();
+});
+
+module.exports = router;
