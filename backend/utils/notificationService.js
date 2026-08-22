@@ -395,24 +395,91 @@ async function notifyWeatherAlert({
     });
   }
 
+// ============================================================
+// CROP TASK NOTIFICATION
+// ============================================================
+
 async function notifyCropTask({
-  userId,
-  title,
-  message,
-  taskId = null,
-}) {
-  return createNotification({
-    recipient: userId,
-    type: "crop_task",
-    category: "farming",
+    userId,
+    crop,
+    taskId,
+    calendarId,
+    taskTitle,
+    taskType,
+    scheduledDate,
     title,
     message,
-    icon: "calendar",
-    relatedId: taskId,
-    relatedModel: taskId ? "CropTask" : null,
-    link: "/dashboard/crop-calendar",
-  });
-}
+  }) {
+    try {
+      const Notification = require("../models/Notification");
+  
+      const uniqueKey =
+        `crop_task_${userId}_${calendarId}_${taskId}_${new Date(
+          scheduledDate
+        ).toISOString().split("T")[0]}`;
+  
+      const existing =
+        await Notification.findOne({
+          uniqueKey,
+        });
+  
+      if (existing) {
+        return existing;
+      }
+  
+      const notification =
+        await Notification.create({
+          recipient: userId,
+  
+          sender: null,
+  
+          senderName: "FarmAI",
+  
+          type: "crop_task",
+  
+          category: "farming",
+  
+          title:
+            title ||
+            "Crop Task Reminder",
+  
+          message:
+            message ||
+            `${taskTitle} is scheduled for your ${crop} crop.`,
+  
+          icon: "calendar",
+  
+          relatedId: taskId,
+  
+          relatedModel: "CropTask",
+  
+          link:
+            `/dashboard/crop-calendar/${calendarId}`,
+  
+          isRead: false,
+  
+          metadata: {
+            crop,
+            taskId,
+            calendarId,
+            taskTitle,
+            taskType,
+            scheduledDate,
+          },
+  
+          uniqueKey,
+        });
+  
+      return notification;
+    } catch (error) {
+      console.error(
+        "Error creating crop task notification:",
+        error
+      );
+  
+      throw error;
+    }
+  }
 
 async function notifyMarketUpdate({
   userId,
