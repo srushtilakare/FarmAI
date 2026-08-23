@@ -6,9 +6,10 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
-    // -----------------------------------------
+    // =========================================================
     // BASIC USER INFORMATION
-    // -----------------------------------------
+    // =========================================================
+
     fullName: {
       type: String,
       required: true,
@@ -28,27 +29,34 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // -----------------------------------------
+    // =========================================================
     // AUTHENTICATION
-    // -----------------------------------------
-    // MPIN is stored as a bcrypt hash.
-    // Never store the actual 4-digit MPIN.
+    // =========================================================
+
     mpin: {
       type: String,
       required: true,
     },
 
-    // -----------------------------------------
+    // =========================================================
     // LANGUAGE
-    // -----------------------------------------
+    // =========================================================
+
     preferredLanguage: {
       type: String,
       default: "en-US",
     },
 
-    // -----------------------------------------
+    // =========================================================
     // FARM LOCATION
-    // -----------------------------------------
+    // =========================================================
+
+    farmName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     farmLocation: {
       type: String,
       required: true,
@@ -57,21 +65,25 @@ const userSchema = new mongoose.Schema(
     state: {
       type: String,
       required: true,
+      trim: true,
     },
 
     district: {
       type: String,
       required: true,
+      trim: true,
     },
 
     pincode: {
       type: String,
       default: "",
+      trim: true,
     },
 
     village: {
       type: String,
       default: "",
+      trim: true,
     },
 
     latitude: {
@@ -84,88 +96,167 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
 
-    // -----------------------------------------
+    // =========================================================
     // FARMING INFORMATION
-    // -----------------------------------------
+    // =========================================================
+
     crops: {
       type: [String],
       required: true,
+      default: [],
     },
 
     farmingType: {
       type: String,
       required: true,
+      default: "traditional",
     },
 
-    // -----------------------------------------
+    // =========================================================
+    // FARMER ELIGIBILITY INFORMATION
+    // Used later by Government Schemes module
+    // =========================================================
+
+    dateOfBirth: {
+      type: Date,
+      default: null,
+    },
+
+    gender: {
+      type: String,
+      enum: ["male", "female", "other", ""],
+      default: "",
+    },
+
+    socialCategory: {
+      type: String,
+      enum: ["general", "obc", "sc", "st", "other", ""],
+      default: "",
+    },
+
+    farmerCategory: {
+      type: String,
+      enum: [
+        "small",
+        "marginal",
+        "medium",
+        "large",
+        "landless",
+        ""
+      ],
+      default: "",
+    },
+
+    annualFamilyIncome: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+
+    landHolding: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+
+    landUnit: {
+      type: String,
+      enum: ["acre", "hectare", ""],
+      default: "",
+    },
+
+    landOwnership: {
+      type: String,
+      enum: [
+        "owned",
+        "leased",
+        "shared",
+        "government",
+        "other",
+        ""
+      ],
+      default: "",
+    },
+
+    irrigationType: {
+      type: String,
+      enum: [
+        "rainfed",
+        "canal",
+        "well",
+        "borewell",
+        "drip",
+        "sprinkler",
+        "mixed",
+        "other",
+        ""
+      ],
+      default: "",
+    },
+
+    aadhaarLinked: {
+      type: Boolean,
+      default: null,
+    },
+
+    bankAccountAvailable: {
+      type: Boolean,
+      default: null,
+    },
+
+    pmKisanRegistered: {
+      type: Boolean,
+      default: null,
+    },
+
+    // =========================================================
     // PROFILE
-    // -----------------------------------------
+    // =========================================================
+
     profilePhoto: {
       type: String,
       default: "",
     },
 
-    // -----------------------------------------
+    // =========================================================
     // FAVORITE CROPS
-    // -----------------------------------------
+    // =========================================================
+
     favoriteCrops: {
       type: [String],
       default: [],
     },
 
-    // -----------------------------------------
+    // =========================================================
     // FORUM MODERATION
-    // -----------------------------------------
+    // =========================================================
 
-    // Number of actual inappropriate-content
-    // submission attempts made by the user.
-    //
-    // 1st attempt  -> Warning
-    // 2nd attempt  -> Warning
-    // 3rd attempt  -> 7-day suspension
-    // 4th attempt  -> Permanent forum ban
     forumWarnings: {
       type: Number,
       default: 0,
       min: 0,
     },
 
-    // Current forum participation status.
-    //
-    // active    -> Can post and comment
-    // suspended -> Can read, but cannot post/comment
-    // banned    -> Can read, but cannot post/comment permanently
-    //
-    // Default is active so existing users are not affected.
     forumStatus: {
       type: String,
       enum: ["active", "suspended", "banned"],
       default: "active",
     },
 
-    // Permanent forum restriction.
-    //
-    // Kept for compatibility with the existing forum code
-    // and any existing data that may already use this field.
     isBlockedFromForum: {
       type: Boolean,
       default: false,
     },
 
-    // End date/time of a temporary forum suspension.
-    //
-    // This remains null for active users and permanently
-    // banned users.
     forumBlockedUntil: {
       type: Date,
       default: null,
     },
 
-    // -----------------------------------------
+    // =========================================================
     // FORUM WARNING HISTORY
-    // -----------------------------------------
-    // Stores each actual inappropriate-content
-    // submission attempt.
+    // =========================================================
+
     forumWarningHistory: [
       {
         date: {
@@ -183,18 +274,11 @@ const userSchema = new mongoose.Schema(
           default: "",
         },
 
-        // Stores the violation number at the time
-        // it occurred: 1, 2, 3, or 4.
         violationNumber: {
           type: Number,
           default: 0,
         },
 
-        // Stores the action taken for that violation.
-        // Example:
-        // "warning"
-        // "suspension"
-        // "ban"
         action: {
           type: String,
           default: "warning",
