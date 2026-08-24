@@ -1,311 +1,1969 @@
-const express = require('express');
-const router = express.Router();
-const SoilReport = require('../models/SoilReport');
-const auth = require('../middleware/auth');
-const multer = require('multer');
-const path = require('path');
-const { extractTextFromPDF } = require('../utils/pdfExtractor');
- 
-const { logActivity } = require('./activities');
+// backend/routes/soilReport.js
 
-// Configure multer for file uploads
+const express = require("express");
+const router = express.Router();
+
+const SoilReport = require("../models/SoilReport");
+const auth = require("../middleware/auth");
+
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+const {
+  extractTextFromPDF,
+  extractTextFromImage
+} = require("../utils/pdfExtractor");
+
+const { logActivity } = require("./activities");
+
+// =========================================================
+// MULTER CONFIGURATION
+// =========================================================
+
+const uploadDirectory = path.join(
+  __dirname,
+  "../uploads/soil-reports"
+);
+
+if (!fs.existsSync(uploadDirectory)) {
+  fs.mkdirSync(uploadDirectory, {
+    recursive: true
+  });
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/soil-reports/');
+    cb(null, uploadDirectory);
   },
+
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + Math.random().toString(36).substring(7) + path.extname(file.originalname));
+    const uniqueName =
+      Date.now() +
+      "-" +
+      Math.random().toString(36).substring(7) +
+      path.extname(file.originalname);
+
+    cb(null, uniqueName);
   }
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+
+  limits: {
+    fileSize: 10 * 1024 * 1024
+  },
+
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /pdf|jpeg|jpg|png/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype) || file.mimetype === 'application/pdf';
-    
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Only PDF and image files are allowed'));
+    const allowedExtensions = [
+      ".pdf",
+      ".jpg",
+      ".jpeg",
+      ".png"
+    ];
+
+    const extension = path
+      .extname(file.originalname)
+      .toLowerCase();
+
+    if (!allowedExtensions.includes(extension)) {
+      return cb(
+        new Error(
+          "Only PDF, JPG, JPEG and PNG files are allowed."
+        )
+      );
     }
+
+    cb(null, true);
   }
 });
 
- 
+// =========================================================
+// DEFAULT SOIL PARAMETERS
+// =========================================================
 
-// Helper function to analyze soil report 
-async function analyzeSoilReport(soil) {
-
-  const analysis = {
-    soilHealthSummary: "",
-    soilType: "Loamy",
-    overallRating: "moderate",
-    suitableCrops: [],
-    fertilizerRecommendation: {
-      plan: "",
-      npkRatio: "",
-      organicOptions: [],
-      applicationSchedule: ""
+function createEmptySoilParameters() {
+  return {
+    nitrogen: {
+      value: null,
+      unit: null,
+      status: "not_reported"
     },
-    correctionMeasures: [],
-    seasonalAdvice: ""
-  };
 
-  let issues = 0;
+    phosphorus: {
+      value: null,
+      unit: null,
+      status: "not_reported"
+    },
 
-  // --- pH ---
-  if (soil.pH?.value !== null) {
-    const ph = soil.pH.value;
+    potassium: {
+      value: null,
+      unit: null,
+      status: "not_reported"
+    },
 
-    if (ph < 6) {
-      issues++;
-      analysis.correctionMeasures.push({
-        issue: "Soil is acidic",
-        solution: "Apply lime to increase pH",
-        priority: "high"
-      });
-    } else if (ph > 7.5) {
-      issues++;
-      analysis.correctionMeasures.push({
-        issue: "Soil is alkaline",
-        solution: "Apply gypsum or organic matter",
-        priority: "high"
-      });
+    pH: {
+      value: null,
+      status: "not_reported"
+    },
+
+    electricalConductivity: {
+      value: null,
+      unit: null,
+      status: "not_reported"
+    },
+
+    organicCarbon: {
+      value: null,
+      unit: null,
+      status: "not_reported"
+    },
+
+    // IMPORTANT:
+    // Organic matter is different from organic carbon.
+    organicMatter: {
+      value: null,
+      unit: null,
+      status: "not_reported"
+    },
+
+    iron: {
+      value: null,
+      unit: null,
+      status: "not_reported"
+    },
+
+    zinc: {
+      value: null,
+      unit: null,
+      status: "not_reported"
+    },
+
+    manganese: {
+      value: null,
+      unit: null,
+      status: "not_reported"
+    },
+
+    copper: {
+      value: null,
+      unit: null,
+      status: "not_reported"
+    },
+
+    boron: {
+      value: null,
+      unit: null,
+      status: "not_reported"
+    },
+
+    sulphur: {
+      value: null,
+      unit: null,
+      status: "not_reported"
+    },
+
+    calcium: {
+      value: null,
+      unit: null,
+      status: "not_reported"
+    },
+
+    magnesium: {
+      value: null,
+      unit: null,
+      status: "not_reported"
     }
-  }
-
-  // --- Nitrogen ---
-  if (soil.nitrogen?.value !== null && soil.nitrogen.value < 50) {
-    issues++;
-    analysis.correctionMeasures.push({
-      issue: "Low Nitrogen",
-      solution: "Apply Urea fertilizer",
-      priority: "high"
-    });
-  }
-
-  // --- Phosphorus ---
-  if (soil.phosphorus?.value !== null && soil.phosphorus.value < 30) {
-    issues++;
-    analysis.correctionMeasures.push({
-      issue: "Low Phosphorus",
-      solution: "Use DAP fertilizer",
-      priority: "medium"
-    });
-  }
-
-  // --- Potassium ---
-  if (soil.potassium?.value !== null && soil.potassium.value < 120) {
-    issues++;
-    analysis.correctionMeasures.push({
-      issue: "Low Potassium",
-      solution: "Apply MOP (Potash)",
-      priority: "medium"
-    });
-  }
-
-  // --- Organic Carbon ---
-  if (soil.organicCarbon?.value !== null && soil.organicCarbon.value < 0.5) {
-    issues++;
-    analysis.correctionMeasures.push({
-      issue: "Low Organic Carbon",
-      solution: "Add compost or manure",
-      priority: "medium"
-    });
-  }
-
-  // --- Rating ---
-  if (issues === 0) {
-    analysis.overallRating = "excellent";
-    analysis.soilHealthSummary = "Soil is in excellent condition with balanced nutrients.";
-  } else if (issues <= 2) {
-    analysis.overallRating = "good";
-    analysis.soilHealthSummary = "Soil is good but needs minor improvements.";
-  } else if (issues <= 4) {
-    analysis.overallRating = "moderate";
-    analysis.soilHealthSummary = "Soil requires improvement in multiple areas.";
-  } else {
-    analysis.overallRating = "poor";
-    analysis.soilHealthSummary = "Soil health is poor and needs immediate attention.";
-  }
-
-  // --- Fertilizer Plan ---
-  analysis.fertilizerRecommendation = {
-    plan: "Apply balanced fertilizers based on deficiencies",
-    npkRatio: "10:26:26 or as per soil test",
-    organicOptions: ["Compost", "Vermicompost", "Farmyard manure"],
-    applicationSchedule: "Apply before sowing and during growth stages"
   };
+}
 
-  // --- Suitable Crops ---
-  analysis.suitableCrops = [
-    { cropName: "Wheat", suitabilityScore: 85, reason: "Moderate nutrient suitability" },
-    { cropName: "Rice", suitabilityScore: 80, reason: "Can grow with improvements" },
-    { cropName: "Maize", suitabilityScore: 78, reason: "Requires nitrogen improvement" }
+// =========================================================
+// NORMALIZE OCR TEXT
+// =========================================================
+
+function normalizeOCRText(text) {
+  if (!text) return "";
+
+  return String(text)
+    .replace(/\r/g, "\n")
+    .replace(/\u00a0/g, " ")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[|]+/g, " | ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n[ \t]+/g, "\n")
+    .trim();
+}
+
+// =========================================================
+// NORMALIZE OCR COMMON ERRORS
+// =========================================================
+
+function normalizeOCRTokens(text) {
+  if (!text) return "";
+
+  let result = String(text);
+
+  // Common OCR variants of lbs/A
+  result = result
+    .replace(/\bIbs\s*\/\s*A\b/gi, "lbs/A")
+    .replace(/\b1bs\s*\/\s*A\b/gi, "lbs/A")
+    .replace(/\blbs\s*\/\s*A\b/gi, "lbs/A")
+    .replace(/\blb\s*\/\s*A\b/gi, "lbs/A")
+    .replace(/\bbs\s*\/\s*A\b/gi, "lbs/A");
+
+  // Common OCR variants of mg/kg
+  result = result
+    .replace(/\bmg\s*\/\s*kg\b/gi, "mg/kg")
+    .replace(/\bmg\s*kg-?1\b/gi, "mg/kg");
+
+  // Common OCR variants of kg/ha
+  result = result
+    .replace(/\bkg\s*\/\s*ha\b/gi, "kg/ha")
+    .replace(/\bkg\s*ha-?1\b/gi, "kg/ha");
+
+  // Common OCR variants of percentage
+  result = result
+    .replace(/\bpercent\b/gi, "%")
+    .replace(/\bo\/o\b/gi, "%")
+    .replace(/\b0\/0\b/gi, "%");
+
+  return result;
+}
+
+// =========================================================
+// NUMBER NORMALIZATION
+// =========================================================
+
+function parseNumber(value) {
+  if (
+    value === undefined ||
+    value === null
+  ) {
+    return null;
+  }
+
+  let cleaned = String(value)
+    .replace(/,/g, "")
+    .replace(/[^\d.+\-eE]/g, "")
+    .trim();
+
+  if (!cleaned) {
+    return null;
+  }
+
+  const number = Number(cleaned);
+
+  return Number.isFinite(number)
+    ? number
+    : null;
+}
+
+// =========================================================
+// UNIT NORMALIZATION
+// =========================================================
+
+function normalizeUnit(unit) {
+  if (!unit) return null;
+
+  const cleaned = String(unit)
+    .trim()
+    .replace(/\s+/g, " ");
+
+  const lower = cleaned.toLowerCase();
+
+  if (
+    lower === "kg/ha" ||
+    lower === "kg / ha" ||
+    lower === "kg ha-1"
+  ) {
+    return "kg/ha";
+  }
+
+  if (
+    lower === "lbs/a" ||
+    lower === "lb/a" ||
+    lower === "lbs / a" ||
+    lower === "lb / a" ||
+    lower === "lbs/acre" ||
+    lower === "lb/acre"
+  ) {
+    return "lbs/A";
+  }
+
+  if (
+    lower === "mg/kg" ||
+    lower === "mg / kg" ||
+    lower === "mg kg-1"
+  ) {
+    return "mg/kg";
+  }
+
+  if (
+    lower === "%" ||
+    lower === "percent"
+  ) {
+    return "%";
+  }
+
+  if (lower === "ppm") {
+    return "ppm";
+  }
+
+  if (
+    lower === "ds/m" ||
+    lower === "dsm-1" ||
+    lower === "ds m-1"
+  ) {
+    return "dS/m";
+  }
+
+  if (
+    lower === "meq/100g" ||
+    lower === "meq / 100g"
+  ) {
+    return "meq/100g";
+  }
+
+  return cleaned;
+}
+
+// =========================================================
+// STATUS HELPER
+// =========================================================
+
+function setReportedStatus(parameter) {
+  if (
+    parameter &&
+    parameter.value !== null &&
+    parameter.value !== undefined
+  ) {
+    parameter.status = "reported";
+  }
+}
+
+// =========================================================
+// PARAMETER DEFINITIONS
+// =========================================================
+
+const parameterDefinitions = [
+  {
+    key: "organicCarbon",
+    names: [
+      "organic carbon"
+    ]
+  },
+
+  {
+    key: "organicMatter",
+    names: [
+      "organic matter"
+    ]
+  },
+
+  {
+    key: "nitrogen",
+    names: [
+      "available nitrogen",
+      "total kjeldahl nitrogen",
+      "total nitrogen"
+    ]
+  },
+
+  {
+    key: "phosphorus",
+    names: [
+      "available phosphorus",
+      "phosphorous",
+      "phosphorus"
+    ]
+  },
+
+  {
+    key: "potassium",
+    names: [
+      "available potassium",
+      "potassium"
+    ]
+  },
+
+  {
+    key: "magnesium",
+    names: [
+      "available magnesium",
+      "magnesium"
+    ]
+  },
+
+  {
+    key: "calcium",
+    names: [
+      "available calcium",
+      "calcium"
+    ]
+  },
+
+  {
+    key: "manganese",
+    names: [
+      "available manganese",
+      "manganese"
+    ]
+  },
+
+  {
+    key: "iron",
+    names: [
+      "available iron",
+      "iron"
+    ]
+  },
+
+  {
+    key: "copper",
+    names: [
+      "available copper",
+      "copper"
+    ]
+  },
+
+  {
+    key: "zinc",
+    names: [
+      "available zinc",
+      "zinc"
+    ]
+  },
+
+  {
+    key: "boron",
+    names: [
+      "available boron",
+      "boron"
+    ]
+  },
+
+  {
+    key: "sulphur",
+    names: [
+      "available sulphur",
+      "available sulfur",
+      "sulphur",
+      "sulfur",
+      "sulfur (so4-s)"
+    ]
+  }
+];
+
+// =========================================================
+// PARAMETER SEARCH ORDER
+// =========================================================
+//
+// Used to prevent a parameter from stealing a number
+// belonging to the next parameter in a side-by-side table.
+// =========================================================
+
+const allParameterAliases = [
+  "organic carbon",
+  "organic matter",
+
+  "available nitrogen",
+  "total kjeldahl nitrogen",
+  "total nitrogen",
+
+  "available phosphorus",
+  "phosphorous",
+  "phosphorus",
+
+  "available potassium",
+  "potassium",
+
+  "available magnesium",
+  "magnesium",
+
+  "available calcium",
+  "calcium",
+
+  "available manganese",
+  "manganese",
+
+  "available iron",
+  "iron",
+
+  "available copper",
+  "copper",
+
+  "available zinc",
+  "zinc",
+
+  "available boron",
+  "boron",
+
+  "available sulphur",
+  "available sulfur",
+  "sulphur",
+  "sulfur",
+
+  "ph"
+];
+
+// =========================================================
+// SOIL TABLE TEXT ONLY
+// =========================================================
+//
+// Prevents numbers in:
+// - nutrient requirements
+// - cropping options
+// - fertilizer recommendations
+//
+// from being interpreted as soil-test values.
+// =========================================================
+
+function isolateSoilTestSection(text) {
+  if (!text) return "";
+
+  let result = text;
+
+  const stopPatterns = [
+    /\bnutrient requirements\b/i,
+    /\bcropping options\b/i,
+    /\blimestone suggestions\b/i
   ];
 
-  // --- Seasonal Advice ---
-  analysis.seasonalAdvice =
-    "Ensure proper irrigation and nutrient management based on seasonal crop requirements.";
+  for (const pattern of stopPatterns) {
+    const match = result.search(pattern);
 
-  return {
-    analysis,
-    extractedParameters: soil
-  };
-}
-
-// Helper function to extract soil parameters
-function extractSoilParameters() {
-  return {
-    nitrogen: { value: null, unit: 'kg/ha', status: 'unknown' },
-    phosphorus: { value: null, unit: 'kg/ha', status: 'unknown' },
-    potassium: { value: null, unit: 'kg/ha', status: 'unknown' },
-    pH: { value: null, status: 'unknown' },
-    electricalConductivity: { value: null, unit: 'dS/m', status: 'unknown' },
-    organicCarbon: { value: null, unit: '%', status: 'unknown' },
-    iron: { value: null, unit: 'ppm', status: 'unknown' },
-    zinc: { value: null, unit: 'ppm', status: 'unknown' },
-    manganese: { value: null, unit: 'ppm', status: 'unknown' },
-    copper: { value: null, unit: 'ppm', status: 'unknown' },
-    boron: { value: null, unit: 'ppm', status: 'unknown' },
-    sulphur: { value: null, unit: 'ppm', status: 'unknown' }
-  };
-}
-
-// Upload and create soil report
-router.post('/upload', auth, upload.single('report'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Report file is required' });
+    if (match !== -1) {
+      result = result.substring(0, match);
     }
-
-    const { location, testDate, labName, manualParameters } = req.body;
-
-    const soilReport = new SoilReport({
-      userId: req.user._id,
-      location: location ? JSON.parse(location) : {},
-      reportFile: {
-        url: `/uploads/soil-reports/${req.file.filename}`,
-        fileName: req.file.originalname,
-        fileType: req.file.mimetype
-      },
-      testDate: testDate || new Date(),
-      labName: labName || 'Unknown Lab'
-    });
-
-    // 🟢 DEFAULT parameters
-    soilReport.soilParameters = manualParameters
-      ? JSON.parse(manualParameters)
-      : extractSoilParameters();
-
-    // 🟢 NEW: Extract text if PDF
-    let extractedText = "";
-    const filePath = `uploads/soil-reports/${req.file.filename}`;
-
-    if (req.file.mimetype === 'application/pdf') {
-      extractedText = await extractTextFromPDF(filePath);
-      console.log("📄 Extracted PDF Text (first 300 chars):", extractedText.slice(0, 300));
-    }
-
-    // 🟢 Save report FIRST
-    await soilReport.save();
-
-    // 🟢 Log upload
-    await logActivity(req.user._id, {
-      activityType: 'soil-report',
-      title: 'Soil Report Uploaded',
-      description: `Uploaded soil test report`,
-      status: 'completed',
-      result: 'Report uploaded, analysis in progress',
-      relatedId: soilReport._id,
-      relatedModel: 'SoilReport'
-    });
-
-    // 🟢 Pass extractedText to async analysis
-    analyzeReportAsync(soilReport._id, extractedText);
-
-    res.json({
-      success: true,
-      message: 'Soil report uploaded successfully. Analysis in progress...',
-      reportId: soilReport._id
-    });
-
-  } catch (error) {
-    console.error('Error uploading soil report:', error);
-    res.status(500).json({ error: 'Failed to upload soil report' });
   }
-});
 
-function extractValuesFromText(text) {
-  const soil = extractSoilParameters();
+  return result;
+}
 
-  const getValue = (pattern) => {
-    const match = text.match(pattern);
-    return match ? parseFloat(match[1]) : null;
-  };
+// =========================================================
+// FIND PARAMETER SEGMENT ON A LINE
+// =========================================================
+//
+// Example:
+//
+// Phosphorus (P) | 21 lbs/A | Low | Zinc (Zn) | ppm
+//
+// For phosphorus we want only:
+//
+// Phosphorus (P) | 21 lbs/A | Low
+//
+// We must NOT allow phosphorus to consume the "ppm"
+// belonging to Zinc.
+// =========================================================
 
-  soil.pH.value = getValue(/pH\s*[:\-]?\s*(\d+\.?\d*)/i);
-  soil.nitrogen.value = getValue(/nitrogen.*?(\d+\.?\d*)/i);
-  soil.phosphorus.value = getValue(/phosphorus.*?(\d+\.?\d*)/i);
-  soil.potassium.value = getValue(/potassium.*?(\d+\.?\d*)/i);
-  soil.organicCarbon.value = getValue(/organic carbon.*?(\d+\.?\d*)/i);
+function getParameterSegment(
+  line,
+  parameterName
+) {
+  if (!line || !parameterName) {
+    return "";
+  }
+
+  const lowerLine = line.toLowerCase();
+
+  const startIndex =
+    lowerLine.indexOf(
+      parameterName.toLowerCase()
+    );
+
+  if (startIndex === -1) {
+    return "";
+  }
+
+  let endIndex = line.length;
+
+  for (
+    const alias of allParameterAliases
+  ) {
+    const aliasLower =
+      alias.toLowerCase();
+
+    if (
+      aliasLower ===
+      parameterName.toLowerCase()
+    ) {
+      continue;
+    }
+
+    const index =
+      lowerLine.indexOf(
+        aliasLower,
+        startIndex + parameterName.length
+      );
+
+    if (
+      index !== -1 &&
+      index < endIndex
+    ) {
+      endIndex = index;
+    }
+  }
+
+  return line
+    .substring(
+      startIndex,
+      endIndex
+    )
+    .trim();
+}
+
+// =========================================================
+// EXTRACT EXPLICIT RATING
+// =========================================================
+
+function extractRating(segment) {
+  if (!segment) return null;
+
+  const match = segment.match(
+    /\b(low|medium|high|very\s+low|very\s+high|normal|adequate|deficient|sufficient)\b/i
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  return match[1]
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+}
+
+// =========================================================
+// EXTRACT VALUE + UNIT
+// =========================================================
+
+function extractValueAndUnit(
+  segment,
+  key
+) {
+  if (!segment) {
+    return null;
+  }
+
+  let text =
+    normalizeOCRTokens(segment);
+
+  /*
+   * IMPORTANT:
+   *
+   * Only inspect the parameter's own segment.
+   * This prevents:
+   *
+   * Phosphorus | 21 lbs/A | Low | Zinc | ppm
+   *
+   * from becoming:
+   *
+   * Phosphorus = 21 ppm
+   */
+
+  // =======================================================
+  // UNIT + VALUE
+  // =======================================================
+
+  const unitPattern =
+    /(kg\s*\/\s*ha|lbs?\s*\/\s*A|lbs?\s*\/\s*acre|mg\s*\/\s*kg|ppm|dS\s*\/\s*m|meq\s*\/\s*100g|%)/i;
+
+  const valueBeforeUnit =
+    new RegExp(
+      "(-?\\d+(?:\\.\\d+)?)\\s*" +
+        unitPattern.source,
+      "i"
+    );
+
+  const match =
+    text.match(valueBeforeUnit);
+
+  if (match) {
+    let value =
+      parseNumber(match[1]);
+
+    let unit =
+      normalizeUnit(match[2]);
+
+    if (
+      value !== null &&
+      unit
+    ) {
+      /*
+       * OCR correction for Organic Carbon:
+       *
+       * 529 ow
+       *
+       * is commonly a distorted representation of:
+       *
+       * 5.29 %
+       */
+
+      if (
+        key === "organicCarbon" &&
+        unit !== "%" &&
+        value > 1 &&
+        value <= 1000 &&
+        /\b(?:ow|o\/o|0\/0)\b/i.test(
+          text
+        )
+      ) {
+        value =
+          value / 100;
+
+        unit = "%";
+      }
+
+      /*
+       * Same defensive correction for organic matter.
+       */
+
+      if (
+        key === "organicMatter" &&
+        unit !== "%" &&
+        value > 1 &&
+        value <= 1000 &&
+        /\b(?:ow|o\/o|0\/0)\b/i.test(
+          text
+        )
+      ) {
+        value =
+          value / 10;
+
+        unit = "%";
+      }
+
+      return {
+        value,
+        unit,
+        rating: extractRating(text)
+      };
+    }
+  }
+
+  // =======================================================
+  // VALUE WITHOUT UNIT
+  // =======================================================
+
+  /*
+   * Some reports contain:
+   *
+   * pH 4.8 Low
+   *
+   * or:
+   *
+   * pHs (salt pH) 4.8 Low
+   */
+
+  if (key === "pH") {
+    const pHMatch =
+      text.match(
+        /(?:pHs?|salt\s*pH|pH\s*in\s*water)[^0-9-]*(-?\d+(?:\.\d+)?)/i
+      );
+
+    if (pHMatch) {
+      let value =
+        parseNumber(pHMatch[1]);
+
+      if (
+        value !== null &&
+        value > 14 &&
+        value <= 140
+      ) {
+        /*
+         * OCR often converts:
+         *
+         * 4.8 → 48
+         * 5.5 → 55
+         */
+
+        value =
+          value / 10;
+      }
+
+      if (
+        value !== null &&
+        value >= 0 &&
+        value <= 14
+      ) {
+        return {
+          value,
+          unit: null,
+          rating: extractRating(text)
+        };
+      }
+    }
+  }
+
+  /*
+   * Organic carbon / organic matter may lose the "%"
+   * completely.
+   *
+   * Example:
+   *
+   * Organic Carbon 529
+   *
+   * Interpret as 5.29%.
+   */
+
+  if (
+    key === "organicCarbon" ||
+    key === "organicMatter"
+  ) {
+    const numberMatch =
+      text.match(
+        /(?:organic\s+carbon|organic\s+matter)[^0-9]*(-?\d+(?:\.\d+)?)/i
+      );
+
+    if (numberMatch) {
+      let value =
+        parseNumber(numberMatch[1]);
+
+      if (
+        value !== null &&
+        value > 10 &&
+        value <= 1000
+      ) {
+        if (
+          key === "organicCarbon"
+        ) {
+          value =
+            value / 100;
+        } else {
+          value =
+            value / 10;
+        }
+
+        return {
+          value,
+          unit: "%",
+          rating: extractRating(text)
+        };
+      }
+
+      if (
+        value !== null &&
+        value >= 0 &&
+        value <= 10
+      ) {
+        return {
+          value,
+          unit: "%",
+          rating: extractRating(text)
+        };
+      }
+    }
+  }
+
+  /*
+   * IMPORTANT:
+   *
+   * We deliberately do NOT have a generic
+   * "take the last number" fallback anymore.
+   *
+   * That was the reason blank Copper/Magnesium/etc.
+   * cells were stealing numbers from neighboring columns.
+   */
+
+  return null;
+}
+
+// =========================================================
+// FIND PARAMETER IN OCR LINES
+// =========================================================
+
+function findParameterValue(
+  lines,
+  definition
+) {
+  for (
+    const line of lines
+  ) {
+    const lower =
+      line.toLowerCase();
+
+    for (
+      const name of definition.names
+    ) {
+      if (
+        !lower.includes(
+          name.toLowerCase()
+        )
+      ) {
+        continue;
+      }
+
+      const segment =
+        getParameterSegment(
+          line,
+          name
+        );
+
+      if (!segment) {
+        continue;
+      }
+
+      console.log(
+        `🔎 ${definition.key} row: ${line}`
+      );
+
+      const result =
+        extractValueAndUnit(
+          segment,
+          definition.key
+        );
+
+      if (result) {
+        console.log(
+          `✅ ${definition.key}: ${result.value} ${
+            result.unit || ""
+          }${
+            result.rating
+              ? ` (${result.rating})`
+              : ""
+          }`
+        );
+
+        return result;
+      }
+    }
+  }
+
+  return null;
+}
+
+// =========================================================
+// EXTRACT PHYSICO-CHEMICAL PARAMETERS
+// =========================================================
+
+function extractSoilParameters(text) {
+  const soil =
+    createEmptySoilParameters();
+
+  const normalized =
+    normalizeOCRTokens(
+      normalizeOCRText(text)
+    );
+
+  if (!normalized) {
+    return soil;
+  }
+
+  /*
+   * Remove the lower nutrient-requirement
+   * section before parsing.
+   */
+
+  const soilSection =
+    isolateSoilTestSection(
+      normalized
+    );
+
+  const lines =
+    soilSection
+      .split("\n")
+      .map(line =>
+        line.trim()
+      )
+      .filter(Boolean);
+
+  console.log(
+    "🔍 Table-aware soil extraction started..."
+  );
+
+  // =======================================================
+  // PH
+  // =======================================================
+
+  const pHLines =
+    lines.filter(line =>
+      /\bpHs?\b|salt\s*pH|pH\s*in\s*water/i.test(
+        line
+      )
+    );
+
+  for (
+    const line of pHLines
+  ) {
+    if (
+      /phosph|phosphor/i.test(
+        line
+      )
+    ) {
+      continue;
+    }
+
+    console.log(
+      `🔎 pH row: ${line}`
+    );
+
+    const result =
+      extractValueAndUnit(
+        line,
+        "pH"
+      );
+
+    if (result) {
+      soil.pH.value =
+        result.value;
+
+      soil.pH.status =
+        "reported";
+
+      console.log(
+        `✅ pH: ${result.value}${
+          result.rating
+            ? ` (${result.rating})`
+            : ""
+        }`
+      );
+
+      break;
+    }
+  }
+
+  // =======================================================
+  // ELECTRICAL CONDUCTIVITY
+  // =======================================================
+
+  for (
+    const line of lines
+  ) {
+    if (
+      !/electrical conductivity|\bEC\b/i.test(
+        line
+      )
+    ) {
+      continue;
+    }
+
+    console.log(
+      `🔎 electricalConductivity row: ${line}`
+    );
+
+    const result =
+      extractValueAndUnit(
+        line,
+        "electricalConductivity"
+      );
+
+    if (result) {
+      soil.electricalConductivity.value =
+        result.value;
+
+      soil.electricalConductivity.unit =
+        result.unit;
+
+      setReportedStatus(
+        soil.electricalConductivity
+      );
+
+      break;
+    }
+  }
+
+  // =======================================================
+  // NUTRIENTS / PROPERTIES
+  // =======================================================
+
+  for (
+    const definition of
+      parameterDefinitions
+  ) {
+    const result =
+      findParameterValue(
+        lines,
+        definition
+      );
+
+    if (!result) {
+      continue;
+    }
+
+    soil[
+      definition.key
+    ].value =
+      result.value;
+
+    soil[
+      definition.key
+    ].unit =
+      result.unit;
+
+    setReportedStatus(
+      soil[
+        definition.key
+      ]
+    );
+  }
+
+  // =======================================================
+  // SECOND PASS FOR COMMON OCR DECIMAL ERRORS
+  // =======================================================
+
+  /*
+   * Some OCR engines produce:
+   *
+   * 0.487 → 0.487
+   * 5.46  → 5.46
+   * 1.31  → 1.31
+   *
+   * These are already handled above.
+   *
+   * We intentionally do NOT guess missing values.
+   */
 
   return soil;
 }
 
-// Async analysis
-async function analyzeReportAsync(reportId, extractedText) {
+// =========================================================
+// VALIDATION
+// =========================================================
+
+function validateExtractedParameters(
+  soil
+) {
+  const warnings = [];
+
+  const parameterKeys = [
+    "nitrogen",
+    "phosphorus",
+    "potassium",
+    "organicCarbon",
+    "organicMatter",
+    "iron",
+    "zinc",
+    "manganese",
+    "copper",
+    "boron",
+    "sulphur",
+    "calcium",
+    "magnesium"
+  ];
+
+  for (
+    const key of parameterKeys
+  ) {
+    const parameter =
+      soil[key];
+
+    if (
+      parameter &&
+      parameter.value !== null &&
+      parameter.value !== undefined
+    ) {
+      if (
+        !parameter.unit &&
+        key !== "pH"
+      ) {
+        warnings.push(
+          `${key}: value detected but unit was not detected`
+        );
+      }
+    }
+  }
+
+  if (
+    soil.pH.value === null
+  ) {
+    warnings.push(
+      "pH was not reported in the uploaded report"
+    );
+  }
+
+  if (
+    soil.electricalConductivity
+      .value === null
+  ) {
+    warnings.push(
+      "Electrical conductivity was not reported in the uploaded report"
+    );
+  }
+
+  return warnings;
+}
+
+// =========================================================
+// SOIL ANALYSIS
+// =========================================================
+
+async function analyzeSoilReport(
+  soil,
+  location = {}
+) {
+  const correctionMeasures = [];
+
+  // =======================================================
+  // PH
+  // =======================================================
+
+  if (
+    soil.pH.value !== null
+  ) {
+    const ph =
+      soil.pH.value;
+
+    if (ph < 5.5) {
+      soil.pH.status =
+        "acidic";
+    } else if (
+      ph <= 7.5
+    ) {
+      soil.pH.status =
+        "near_neutral";
+    } else {
+      soil.pH.status =
+        "alkaline";
+    }
+  }
+
+  // =======================================================
+  // ORGANIC CARBON
+  // =======================================================
+
+  if (
+    soil.organicCarbon.value !==
+      null &&
+    soil.organicCarbon.unit ===
+      "%"
+  ) {
+    const oc =
+      soil.organicCarbon.value;
+
+    if (oc < 0.5) {
+      soil.organicCarbon.status =
+        "low";
+
+      correctionMeasures.push({
+        issue:
+          "Low organic carbon",
+
+        solution:
+          "Increase organic matter through well-decomposed farmyard manure, compost, crop residues or other locally recommended organic inputs.",
+
+        priority:
+          "medium"
+      });
+    } else if (
+      oc < 0.75
+    ) {
+      soil.organicCarbon.status =
+        "medium";
+    } else {
+      soil.organicCarbon.status =
+        "high";
+    }
+  }
+
+  // =======================================================
+  // ORGANIC MATTER
+  // =======================================================
+
+  if (
+    soil.organicMatter &&
+    soil.organicMatter.value !==
+      null &&
+    soil.organicMatter.unit ===
+      "%"
+  ) {
+    const om =
+      soil.organicMatter.value;
+
+    if (om < 2) {
+      soil.organicMatter.status =
+        "low";
+    } else if (
+      om < 4
+    ) {
+      soil.organicMatter.status =
+        "medium";
+    } else {
+      soil.organicMatter.status =
+        "high";
+    }
+  }
+
+  // =======================================================
+  // EC
+  // =======================================================
+
+  if (
+    soil.electricalConductivity
+      .value !== null &&
+    soil.electricalConductivity
+      .unit === "dS/m"
+  ) {
+    if (
+      soil.electricalConductivity
+        .value > 4
+    ) {
+      soil.electricalConductivity.status =
+        "high";
+
+      correctionMeasures.push({
+        issue:
+          "High electrical conductivity",
+
+        solution:
+          "Assess irrigation-water quality, drainage and salt-management requirements before making fertilizer changes.",
+
+        priority:
+          "high"
+      });
+    } else if (
+      soil.electricalConductivity
+        .value > 2
+    ) {
+      soil.electricalConductivity.status =
+        "elevated";
+    } else {
+      soil.electricalConductivity.status =
+        "normal";
+    }
+  }
+
+  // =======================================================
+  // REPORTED NUTRIENTS
+  // =======================================================
+
+  const reportedNutrients = [];
+
+  if (
+    soil.nitrogen.value !== null
+  ) {
+    reportedNutrients.push(
+      "Nitrogen"
+    );
+  }
+
+  if (
+    soil.phosphorus.value !== null
+  ) {
+    reportedNutrients.push(
+      "Phosphorus"
+    );
+  }
+
+  if (
+    soil.potassium.value !== null
+  ) {
+    reportedNutrients.push(
+      "Potassium"
+    );
+  }
+
+  // =======================================================
+  // SUMMARY
+  // =======================================================
+
+  let summary =
+    "The uploaded laboratory report was successfully read. ";
+
+  if (
+    reportedNutrients.length > 0
+  ) {
+    summary +=
+      `The report contains results for ${reportedNutrients.join(
+        ", "
+      )}. `;
+  }
+
+  if (
+    soil.pH.value === null
+  ) {
+    summary +=
+      "pH was not reported, so pH-based recommendations are not generated. ";
+  }
+
+  if (
+    soil.electricalConductivity
+      .value === null
+  ) {
+    summary +=
+      "Electrical conductivity was not reported, so salinity cannot be assessed from this report alone. ";
+  }
+
+  if (
+    soil.organicCarbon.value !==
+      null
+  ) {
+    summary +=
+      `Organic carbon was reported at ${soil.organicCarbon.value}${
+        soil.organicCarbon.unit || ""
+      }. `;
+  }
+
+  if (
+    soil.organicMatter &&
+    soil.organicMatter.value !==
+      null
+  ) {
+    summary +=
+      `Organic matter was reported at ${soil.organicMatter.value}${
+        soil.organicMatter.unit || ""
+      }.`;
+  }
+
+  // =======================================================
+  // OVERALL RATING
+  // =======================================================
+
+  let overallRating =
+    "moderate";
+
+  if (
+    soil.pH.value !== null &&
+    (
+      soil.organicCarbon.value !==
+        null ||
+      (
+        soil.organicMatter &&
+        soil.organicMatter.value !==
+          null
+      )
+    )
+  ) {
+    overallRating =
+      "good";
+  }
+
+  if (
+    correctionMeasures.some(
+      item =>
+        item.priority ===
+        "high"
+    )
+  ) {
+    overallRating =
+      "moderate";
+  }
+
+  // =======================================================
+  // SUITABLE CROPS
+  // =======================================================
+
+  const suitableCrops = [
+    {
+      cropName:
+        "Crop selection requires more information",
+
+      suitabilityScore:
+        0,
+
+      reason:
+        "Select the intended crop and provide location/season information for a meaningful soil-based suitability assessment."
+    }
+  ];
+
+  // =======================================================
+  // FERTILIZER RECOMMENDATION
+  // =======================================================
+
+  const fertilizerRecommendation = {
+    plan:
+      "Use the laboratory results together with the selected crop, soil-test method, target yield and applicable local/state fertilizer recommendation. Do not apply a blanket NPK ratio.",
+
+    npkRatio:
+      "Crop-specific — no blanket NPK ratio",
+
+    organicOptions: [
+      "Compost",
+      "Farmyard manure",
+      "Vermicompost"
+    ],
+
+    applicationSchedule:
+      "Determine timing and quantity after selecting the crop and applying the relevant local recommendation."
+  };
+
+  // =======================================================
+  // EXPLICIT LAB RATINGS
+  // =======================================================
+  //
+  // We currently do not overwrite parameter.status with
+  // Low/Medium/High because status is already used by the
+  // frontend for reported/not_reported and by analysis for
+  // acidic/alkaline etc.
+  //
+  // These ratings are logged for verification.
+  //
+  // Future model/schema update can store them separately.
+  // =======================================================
+
+  const explicitRatings = {};
+
+  /*
+   * Rating extraction can be added later once the database
+   * schema is updated to store it safely.
+   */
+
+  return {
+    analysis: {
+      soilHealthSummary:
+        summary,
+
+      soilType:
+        "Not reported",
+
+      overallRating,
+
+      suitableCrops,
+
+      fertilizerRecommendation,
+
+      correctionMeasures,
+
+      seasonalAdvice:
+        "Interpret the soil report together with crop, season, irrigation availability and local agricultural recommendations. Parameters not reported by the laboratory should not be assumed."
+    },
+
+    extractedParameters:
+      soil
+  };
+}
+
+// =========================================================
+// UPLOAD REPORT
+// =========================================================
+
+router.post(
+  "/upload",
+  auth,
+  upload.single("report"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          error:
+            "Report file is required"
+        });
+      }
+
+      console.log(
+        "================================================="
+      );
+
+      console.log(
+        "📄 SOIL REPORT UPLOAD"
+      );
+
+      console.log(
+        "Original file:",
+        req.file.originalname
+      );
+
+      console.log(
+        "Stored file:",
+        req.file.path
+      );
+
+      console.log(
+        "MIME type:",
+        req.file.mimetype
+      );
+
+      console.log(
+        "Extension:",
+        path.extname(
+          req.file.originalname
+        )
+      );
+
+      console.log(
+        "================================================="
+      );
+
+      const {
+        location,
+        testDate,
+        labName
+      } = req.body;
+
+      let parsedLocation = {};
+
+      if (location) {
+        try {
+          parsedLocation =
+            JSON.parse(location);
+        } catch (error) {
+          console.warn(
+            "⚠️ Invalid location JSON"
+          );
+        }
+      }
+
+      const soilReport =
+        new SoilReport({
+          userId:
+            req.user._id,
+
+          location:
+            parsedLocation,
+
+          reportFile: {
+            url:
+              `/uploads/soil-reports/${req.file.filename}`,
+
+            fileName:
+              req.file.originalname,
+
+            fileType:
+              req.file.mimetype
+          },
+
+          testDate:
+            testDate ||
+            new Date(),
+
+          labName:
+            labName ||
+            "Unknown Lab",
+
+          soilParameters:
+            createEmptySoilParameters(),
+
+          processed:
+            false
+        });
+
+      await soilReport.save();
+
+      // =====================================================
+      // EXTRACT REPORT TEXT
+      // =====================================================
+
+      let extractedText =
+        "";
+
+      const extension =
+        path
+          .extname(
+            req.file.originalname
+          )
+          .toLowerCase();
+
+      if (
+        req.file.mimetype ===
+          "application/pdf" ||
+        extension === ".pdf"
+      ) {
+        console.log(
+          "📄 PDF detected → starting PDF extraction pipeline"
+        );
+
+        extractedText =
+          await extractTextFromPDF(
+            req.file.path
+          );
+      } else {
+        console.log(
+          "🖼️ Image detected → starting image OCR pipeline"
+        );
+
+        extractedText =
+          await extractTextFromImage(
+            req.file.path
+          );
+      }
+
+      console.log(
+        "================================================="
+      );
+
+      console.log(
+        "📄 SOIL REPORT TEXT LENGTH:",
+        extractedText.length
+      );
+
+      console.log(
+        "📄 SOIL REPORT TEXT PREVIEW:"
+      );
+
+      console.log(
+        extractedText.slice(
+          0,
+          4000
+        )
+      );
+
+      console.log(
+        "================================================="
+      );
+
+      // =====================================================
+      // SAVE EXTRACTION RESULTS
+      // =====================================================
+
+      await analyzeReportAsync(
+        soilReport._id,
+        extractedText
+      );
+
+      // =====================================================
+      // LOG ACTIVITY
+      // =====================================================
+
+      await logActivity(
+        req.user._id,
+        {
+          activityType:
+            "soil-report",
+
+          title:
+            "Soil Report Uploaded",
+
+          description:
+            "Uploaded soil test report",
+
+          status:
+            "completed",
+
+          result:
+            "Report uploaded and analysis started",
+
+          relatedId:
+            soilReport._id,
+
+          relatedModel:
+            "SoilReport"
+        }
+      );
+
+      res.json({
+        success:
+          true,
+
+        message:
+          "Soil report uploaded successfully. Analysis started.",
+
+        reportId:
+          soilReport._id
+      });
+    } catch (error) {
+      console.error(
+        "❌ Error uploading soil report:",
+        error
+      );
+
+      res.status(500).json({
+        error:
+          error.message ||
+          "Failed to upload soil report"
+      });
+    }
+  }
+);
+
+// =========================================================
+// ASYNC ANALYSIS
+// =========================================================
+
+async function analyzeReportAsync(
+  reportId,
+  extractedText
+) {
   try {
-    const report = await SoilReport.findById(reportId);
-    if (!report) return;
+    const report =
+      await SoilReport.findById(
+        reportId
+      );
 
-    let soil = report.soilParameters;
+    if (!report) {
+      console.error(
+        "Report not found:",
+        reportId
+      );
 
-    // 🟢 STEP 1: Extract values from text
-    if (extractedText) {
-      soil = extractValuesFromText(extractedText);
+      return;
     }
 
-    // 🟢 STEP 2: Run analysis logic
-    const aiResult = await analyzeSoilReport(soil);
+    // =====================================================
+    // EXTRACT PARAMETERS
+    // =====================================================
 
-    report.soilParameters = soil;
-    report.aiAnalysis = aiResult.analysis;
-    report.processed = true;
+    const soil =
+      extractSoilParameters(
+        extractedText
+      );
+
+    console.log(
+      "🔬 FINAL EXTRACTED PARAMETERS:"
+    );
+
+    console.log(
+      JSON.stringify(
+        soil,
+        null,
+        2
+      )
+    );
+
+    // =====================================================
+    // VALIDATE
+    // =====================================================
+
+    const warnings =
+      validateExtractedParameters(
+        soil
+      );
+
+    if (
+      warnings.length > 0
+    ) {
+      console.log(
+        "⚠️ Extraction warnings:"
+      );
+
+      warnings.forEach(
+        warning =>
+          console.log(
+            " -",
+            warning
+          )
+      );
+    }
+
+    // =====================================================
+    // ANALYZE
+    // =====================================================
+
+    const result =
+      await analyzeSoilReport(
+        soil,
+        report.location
+      );
+
+    // =====================================================
+    // SAVE
+    // =====================================================
+
+    report.soilParameters =
+      result.extractedParameters;
+
+    report.aiAnalysis =
+      result.analysis;
+
+    report.processed =
+      true;
+
+    report.processingError =
+      warnings.length > 0
+        ? warnings.join(
+            " | "
+          )
+        : null;
 
     await report.save();
 
-    await logActivity(report.userId, {
-      activityType: 'soil-report',
-      title: 'Soil Report Analysis Completed',
-      description: `AI analysis completed`,
-      status: 'completed',
-      result: `Overall rating: ${report.aiAnalysis?.overallRating || 'N/A'}`
-    });
+    // =====================================================
+    // LOG COMPLETION
+    // =====================================================
 
+    await logActivity(
+      report.userId,
+      {
+        activityType:
+          "soil-report",
+
+        title:
+          "Soil Report Analysis Completed",
+
+        description:
+          "Soil report values extracted and analyzed",
+
+        status:
+          "completed",
+
+        result:
+          `Report processed. ${warnings.length} extraction warning(s).`
+      }
+    );
+
+    console.log(
+      "================================================="
+    );
+
+    console.log(
+      "✅ SOIL REPORT ANALYSIS COMPLETED"
+    );
+
+    console.log(
+      "Report ID:",
+      reportId
+    );
+
+    console.log(
+      "================================================="
+    );
   } catch (error) {
-    console.error('Error in async analysis:', error);
+    console.error(
+      "❌ Error in soil report analysis:",
+      error
+    );
+
+    try {
+      await SoilReport.findByIdAndUpdate(
+        reportId,
+        {
+          processed:
+            false,
+
+          processingError:
+            error.message ||
+            "Unknown processing error"
+        }
+      );
+    } catch (updateError) {
+      console.error(
+        "Could not save processing error:",
+        updateError
+      );
+    }
   }
 }
 
-// Get all soil reports for logged-in user
-router.get('/my-reports', auth, async (req, res) => {
-  try {
-    const reports = await SoilReport.find({ userId: req.user._id })
-      .sort({ createdAt: -1 });
+// =========================================================
+// GET USER REPORTS
+// =========================================================
 
-    res.json({
-      success: true,
-      reports
-    });
+router.get(
+  "/my-reports",
+  auth,
+  async (req, res) => {
+    try {
+      const reports =
+        await SoilReport.find({
+          userId:
+            req.user._id
+        }).sort({
+          createdAt:
+            -1
+        });
 
-  } catch (error) {
-    console.error('Error fetching soil reports:', error);
-    res.status(500).json({ error: 'Failed to fetch reports' });
+      res.json({
+        success:
+          true,
+
+        reports
+      });
+    } catch (error) {
+      console.error(
+        "Error fetching soil reports:",
+        error
+      );
+
+      res.status(500).json({
+        error:
+          "Failed to fetch reports"
+      });
+    }
   }
-});
+);
 
-module.exports = router;
+// =========================================================
+// EXPORT
+// =========================================================
+
+module.exports =
+  router;
