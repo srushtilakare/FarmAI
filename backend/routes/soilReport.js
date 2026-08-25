@@ -205,7 +205,10 @@ function normalizeOCRTokens(text) {
 
   let result = String(text);
 
-  // Common OCR variants of lbs/A
+  // =======================================================
+  // lbs/A
+  // =======================================================
+
   result = result
     .replace(/\bIbs\s*\/\s*A\b/gi, "lbs/A")
     .replace(/\b1bs\s*\/\s*A\b/gi, "lbs/A")
@@ -213,21 +216,38 @@ function normalizeOCRTokens(text) {
     .replace(/\blb\s*\/\s*A\b/gi, "lbs/A")
     .replace(/\bbs\s*\/\s*A\b/gi, "lbs/A");
 
-  // Common OCR variants of mg/kg
+  // =======================================================
+  // mg/kg
+  // =======================================================
+
   result = result
     .replace(/\bmg\s*\/\s*kg\b/gi, "mg/kg")
     .replace(/\bmg\s*kg-?1\b/gi, "mg/kg");
 
-  // Common OCR variants of kg/ha
+  // =======================================================
+  // kg/ha
+  // =======================================================
+
   result = result
     .replace(/\bkg\s*\/\s*ha\b/gi, "kg/ha")
     .replace(/\bkg\s*ha-?1\b/gi, "kg/ha");
 
-  // Common OCR variants of percentage
+  // =======================================================
+  // PERCENTAGE
+  // =======================================================
+
   result = result
     .replace(/\bpercent\b/gi, "%")
     .replace(/\bo\/o\b/gi, "%")
     .replace(/\b0\/0\b/gi, "%");
+
+  // =======================================================
+  // OCR DAMAGE AROUND UNITS
+  // =======================================================
+
+  result = result
+    .replace(/\bmg\s*\/\s*kg\b/gi, "mg/kg")
+    .replace(/\bkg\s*\/\s*ha\b/gi, "kg/ha");
 
   return result;
 }
@@ -459,10 +479,6 @@ const parameterDefinitions = [
 // =========================================================
 // PARAMETER SEARCH ORDER
 // =========================================================
-//
-// Used to prevent a parameter from stealing a number
-// belonging to the next parameter in a side-by-side table.
-// =========================================================
 
 const allParameterAliases = [
   "organic carbon",
@@ -511,14 +527,6 @@ const allParameterAliases = [
 // =========================================================
 // SOIL TABLE TEXT ONLY
 // =========================================================
-//
-// Prevents numbers in:
-// - nutrient requirements
-// - cropping options
-// - fertilizer recommendations
-//
-// from being interpreted as soil-test values.
-// =========================================================
 
 function isolateSoilTestSection(text) {
   if (!text) return "";
@@ -545,18 +553,6 @@ function isolateSoilTestSection(text) {
 // =========================================================
 // FIND PARAMETER SEGMENT ON A LINE
 // =========================================================
-//
-// Example:
-//
-// Phosphorus (P) | 21 lbs/A | Low | Zinc (Zn) | ppm
-//
-// For phosphorus we want only:
-//
-// Phosphorus (P) | 21 lbs/A | Low
-//
-// We must NOT allow phosphorus to consume the "ppm"
-// belonging to Zinc.
-// =========================================================
 
 function getParameterSegment(
   line,
@@ -566,7 +562,8 @@ function getParameterSegment(
     return "";
   }
 
-  const lowerLine = line.toLowerCase();
+  const lowerLine =
+    line.toLowerCase();
 
   const startIndex =
     lowerLine.indexOf(
@@ -595,7 +592,8 @@ function getParameterSegment(
     const index =
       lowerLine.indexOf(
         aliasLower,
-        startIndex + parameterName.length
+        startIndex +
+          parameterName.length
       );
 
     if (
@@ -621,9 +619,10 @@ function getParameterSegment(
 function extractRating(segment) {
   if (!segment) return null;
 
-  const match = segment.match(
-    /\b(low|medium|high|very\s+low|very\s+high|normal|adequate|deficient|sufficient)\b/i
-  );
+  const match =
+    segment.match(
+      /\b(low|medium|high|very\s+low|very\s+high|normal|adequate|deficient|sufficient)\b/i
+    );
 
   if (!match) {
     return null;
@@ -652,14 +651,14 @@ function extractValueAndUnit(
   /*
    * IMPORTANT:
    *
-   * Only inspect the parameter's own segment.
-   * This prevents:
+   * Only inspect this parameter's own
+   * segment.
    *
-   * Phosphorus | 21 lbs/A | Low | Zinc | ppm
+   * Example:
    *
-   * from becoming:
+   * Phosphorus | 144 | kg/ha | Low | Zinc | 1.31 | mg/kg
    *
-   * Phosphorus = 21 ppm
+   * The phosphorus segment must stop before Zinc.
    */
 
   // =======================================================
@@ -669,9 +668,17 @@ function extractValueAndUnit(
   const unitPattern =
     /(kg\s*\/\s*ha|lbs?\s*\/\s*A|lbs?\s*\/\s*acre|mg\s*\/\s*kg|ppm|dS\s*\/\s*m|meq\s*\/\s*100g|%)/i;
 
+  /*
+   * Permit optional OCR separators such as:
+   *
+   * 542 | kg/ha
+   * 542 kg/ha
+   * 542 |kg/ha
+   */
+
   const valueBeforeUnit =
     new RegExp(
-      "(-?\\d+(?:\\.\\d+)?)\\s*" +
+      "(-?\\d+(?:\\.\\d+)?)\\s*(?:\\|\\s*)?" +
         unitPattern.source,
       "i"
     );
@@ -690,15 +697,9 @@ function extractValueAndUnit(
       value !== null &&
       unit
     ) {
-      /*
-       * OCR correction for Organic Carbon:
-       *
-       * 529 ow
-       *
-       * is commonly a distorted representation of:
-       *
-       * 5.29 %
-       */
+      // ===================================================
+      // ORGANIC CARBON OCR CORRECTION
+      // ===================================================
 
       if (
         key === "organicCarbon" &&
@@ -715,9 +716,9 @@ function extractValueAndUnit(
         unit = "%";
       }
 
-      /*
-       * Same defensive correction for organic matter.
-       */
+      // ===================================================
+      // ORGANIC MATTER OCR CORRECTION
+      // ===================================================
 
       if (
         key === "organicMatter" &&
@@ -737,24 +738,15 @@ function extractValueAndUnit(
       return {
         value,
         unit,
-        rating: extractRating(text)
+        rating:
+          extractRating(text)
       };
     }
   }
 
   // =======================================================
-  // VALUE WITHOUT UNIT
+  // PH WITHOUT UNIT
   // =======================================================
-
-  /*
-   * Some reports contain:
-   *
-   * pH 4.8 Low
-   *
-   * or:
-   *
-   * pHs (salt pH) 4.8 Low
-   */
 
   if (key === "pH") {
     const pHMatch =
@@ -764,7 +756,9 @@ function extractValueAndUnit(
 
     if (pHMatch) {
       let value =
-        parseNumber(pHMatch[1]);
+        parseNumber(
+          pHMatch[1]
+        );
 
       if (
         value !== null &&
@@ -772,10 +766,10 @@ function extractValueAndUnit(
         value <= 140
       ) {
         /*
-         * OCR often converts:
+         * OCR:
          *
-         * 4.8 → 48
-         * 5.5 → 55
+         * 4.8 -> 48
+         * 5.5 -> 55
          */
 
         value =
@@ -790,22 +784,16 @@ function extractValueAndUnit(
         return {
           value,
           unit: null,
-          rating: extractRating(text)
+          rating:
+            extractRating(text)
         };
       }
     }
   }
 
-  /*
-   * Organic carbon / organic matter may lose the "%"
-   * completely.
-   *
-   * Example:
-   *
-   * Organic Carbon 529
-   *
-   * Interpret as 5.29%.
-   */
+  // =======================================================
+  // ORGANIC CARBON / MATTER WITHOUT %
+  // =======================================================
 
   if (
     key === "organicCarbon" ||
@@ -818,7 +806,9 @@ function extractValueAndUnit(
 
     if (numberMatch) {
       let value =
-        parseNumber(numberMatch[1]);
+        parseNumber(
+          numberMatch[1]
+        );
 
       if (
         value !== null &&
@@ -826,7 +816,8 @@ function extractValueAndUnit(
         value <= 1000
       ) {
         if (
-          key === "organicCarbon"
+          key ===
+          "organicCarbon"
         ) {
           value =
             value / 100;
@@ -838,7 +829,8 @@ function extractValueAndUnit(
         return {
           value,
           unit: "%",
-          rating: extractRating(text)
+          rating:
+            extractRating(text)
         };
       }
 
@@ -850,7 +842,8 @@ function extractValueAndUnit(
         return {
           value,
           unit: "%",
-          rating: extractRating(text)
+          rating:
+            extractRating(text)
         };
       }
     }
@@ -859,11 +852,11 @@ function extractValueAndUnit(
   /*
    * IMPORTANT:
    *
-   * We deliberately do NOT have a generic
-   * "take the last number" fallback anymore.
+   * There is NO generic "take any number"
+   * fallback here.
    *
-   * That was the reason blank Copper/Magnesium/etc.
-   * cells were stealing numbers from neighboring columns.
+   * This prevents values from being extracted
+   * without a reliable unit.
    */
 
   return null;
@@ -937,7 +930,9 @@ function findParameterValue(
 // EXTRACT PHYSICO-CHEMICAL PARAMETERS
 // =========================================================
 
-function extractSoilParameters(text) {
+function extractSoilParameters(
+  text
+) {
   const soil =
     createEmptySoilParameters();
 
@@ -951,8 +946,7 @@ function extractSoilParameters(text) {
   }
 
   /*
-   * Remove the lower nutrient-requirement
-   * section before parsing.
+   * Remove lower recommendation sections.
    */
 
   const soilSection =
@@ -1097,22 +1091,6 @@ function extractSoilParameters(text) {
       ]
     );
   }
-
-  // =======================================================
-  // SECOND PASS FOR COMMON OCR DECIMAL ERRORS
-  // =======================================================
-
-  /*
-   * Some OCR engines produce:
-   *
-   * 0.487 → 0.487
-   * 5.46  → 5.46
-   * 1.31  → 1.31
-   *
-   * These are already handled above.
-   *
-   * We intentionally do NOT guess missing values.
-   */
 
   return soil;
 }
@@ -1480,22 +1458,13 @@ async function analyzeSoilReport(
   // =======================================================
   // EXPLICIT LAB RATINGS
   // =======================================================
-  //
-  // We currently do not overwrite parameter.status with
-  // Low/Medium/High because status is already used by the
-  // frontend for reported/not_reported and by analysis for
-  // acidic/alkaline etc.
-  //
-  // These ratings are logged for verification.
-  //
-  // Future model/schema update can store them separately.
-  // =======================================================
 
   const explicitRatings = {};
 
   /*
-   * Rating extraction can be added later once the database
-   * schema is updated to store it safely.
+   * Ratings are intentionally not stored in parameter.status
+   * because status is already used by the frontend for
+   * reported/not_reported and analysis states.
    */
 
   return {
