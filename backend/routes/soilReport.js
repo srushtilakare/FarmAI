@@ -1,4 +1,4 @@
-// backend/routes/soilReport.js 
+// backend/routes/soilReport.js
 
 const express = require("express");
 const router = express.Router();
@@ -17,9 +17,9 @@ const {
 
 const { logActivity } = require("./activities");
 
-// ==========================================================
+// =========================================================
 // MULTER CONFIGURATION
-// ==========================================================
+// =========================================================
 
 const uploadDirectory = path.join(
   __dirname,

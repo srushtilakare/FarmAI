@@ -1,36 +1,10 @@
 // backend/utils/pdfExtractor.js
 
 const fs = require("fs");
+const path = require("path");
 const Tesseract = require("tesseract.js");
 const { PDFParse } = require("pdf-parse");
-
-// =========================================================
-// OPTIONAL IMAGE PROCESSING
-// =========================================================
-//
-// sharp is used to improve OCR quality for scanned laboratory
-// reports.
-//
-// If sharp is unavailable, the system will still work using
-// the original rendered PDF image.
-//
-// Install with:
-// npm install sharp
-// =========================================================
-
-let sharp = null;
-
-try {
-  sharp = require("sharp");
-  console.log("✅ Sharp image preprocessing available");
-} catch (error) {
-  console.warn(
-    "⚠️ Sharp is not installed. OCR will use raw PDF images."
-  );
-  console.warn(
-    "   Install it with: npm install sharp"
-  );
-}
+const sharp = require("sharp");
 
 // =========================================================
 // OCR CONFIGURATION
@@ -39,52 +13,63 @@ try {
 const OCR_LANGUAGE = "eng";
 
 // =========================================================
-// OCR IMAGE
+// IMAGE PREPROCESSING
+// =========================================================
+//
+// Makes small text/table values easier for Tesseract to read.
+//
+// We:
+// 1. Resize image to at least 3200px wide
+// 2. Convert to grayscale
+// 3. Increase contrast
+// 4. Sharpen
+// 5. Normalize
+//
 // =========================================================
 
-async function extractTextFromImage(filePath) {
+async function preprocessImage(
+  inputBuffer,
+  options = {}
+) {
   try {
-    console.log(
-      "🧠 Running OCR on image:",
-      filePath
-    );
+    const {
+      width = 3200,
+      threshold = false
+    } = options;
 
-    if (!fs.existsSync(filePath)) {
-      console.error(
-        "❌ Image file does not exist:",
-        filePath
-      );
+    let image = sharp(inputBuffer)
+      .rotate()
+      .resize({
+        width,
+        withoutEnlargement: false,
+        fit: "inside"
+      })
+      .grayscale()
+      .normalize()
+      .sharpen({
+        sigma: 1.2
+      });
 
-      return "";
+    if (threshold) {
+      image = image.threshold(170);
     }
 
-    let imageBuffer = fs.readFileSync(filePath);
+    const output = await image.png().toBuffer();
 
-    // Improve image before OCR
-    imageBuffer =
-      await preprocessImage(imageBuffer);
-
-    const result =
-      await runOCR(
-        imageBuffer,
-        "image"
-      );
-
-    const text =
-      result?.text || "";
+    const metadata = await sharp(output).metadata();
 
     console.log(
-      `📝 Image OCR extracted ${text.length} characters`
+      `✅ OCR image preprocessing complete. Width: ${metadata.width}px`
     );
 
-    return text;
+    return output;
   } catch (error) {
     console.error(
-      "❌ Image OCR extraction error:",
+      "❌ Image preprocessing error:",
       error
     );
 
-    return "";
+    return inputBuffer;
   }
 }
 
@@ -92,23 +77,15 @@ async function extractTextFromImage(filePath) {
 // RUN TESSERACT OCR
 // =========================================================
 
-async function runOCR(
+async function runTesseract(
   imageBuffer,
-  label = "page"
+  label = "image",
+  pageSegMode = 6
 ) {
   try {
     console.log(
       `🧠 Starting Tesseract OCR: ${label}`
     );
-
-    /*
-     * PSM 6:
-     *
-     * Treat image as a single uniform block of text.
-     *
-     * This works better for many laboratory tables than
-     * the default automatic page segmentation.
-     */
 
     const result =
       await Tesseract.recognize(
@@ -131,13 +108,18 @@ async function runOCR(
           },
 
           /*
-           * These settings are particularly useful for
-           * laboratory reports containing tables and
-           * small numeric values.
+           * Tesseract page segmentation modes:
+           *
+           * 6 = Assume a single uniform block of text
+           * 4 = Assume a single column of text
+           * 11 = Sparse text
+           *
+           * Soil tables often work better with 6 or 11.
            */
+
           config: {
-            tessedit_pageseg_mode: "6",
-            preserve_interword_spaces: "1"
+            tessedit_pageseg_mode:
+              String(pageSegMode)
           }
         }
       );
@@ -145,108 +127,346 @@ async function runOCR(
     const text =
       result?.data?.text || "";
 
-    return {
-      text,
-      data: result?.data || {}
-    };
+    return text;
   } catch (error) {
     console.error(
-      `❌ Tesseract OCR failed for ${label}:`,
+      `❌ Tesseract OCR failed (${label}):`,
       error
     );
 
-    return {
-      text: "",
-      data: {}
-    };
+    return "";
   }
 }
 
 // =========================================================
-// IMAGE PREPROCESSING
-// =========================================================
-//
-// Laboratory reports contain:
-// - thin table borders
-// - small decimal values
-// - kg/ha
-// - mg/kg
-// - numbers such as 5.29, 5.46, 2.02, 1.31
-//
-// Improving the image before OCR significantly helps
-// Tesseract recognize these values.
+// IMAGE OCR
 // =========================================================
 
-async function preprocessImage(
-  imageBuffer
+async function extractTextFromImage(
+  filePath
 ) {
-  if (!sharp) {
-    return imageBuffer;
-  }
-
   try {
     console.log(
-      "🛠️ Preprocessing image for OCR..."
+      "🧠 Running OCR on image:",
+      filePath
     );
 
-    const metadata =
-      await sharp(imageBuffer)
-        .metadata();
-
-    const originalWidth =
-      metadata.width || 2000;
-
-    /*
-     * Make the page large enough for small table values.
-     *
-     * We don't blindly upscale tiny images too much.
-     */
-    const targetWidth =
-      Math.max(
-        originalWidth,
-        3200
+    if (!fs.existsSync(filePath)) {
+      console.error(
+        "❌ Image file does not exist:",
+        filePath
       );
 
-    const processed =
-      await sharp(imageBuffer)
-        .resize({
-          width: targetWidth,
-          withoutEnlargement: false,
-          fit: "inside"
-        })
-        .grayscale()
-        .normalize()
-        .sharpen({
-          sigma: 1.2,
-          m1: 1,
-          m2: 2
+      return "";
+    }
+
+    const originalBuffer =
+      fs.readFileSync(filePath);
+
+    if (
+      !originalBuffer ||
+      originalBuffer.length === 0
+    ) {
+      console.error(
+        "❌ Image file is empty"
+      );
+
+      return "";
+    }
+
+    // =====================================================
+    // GET IMAGE DIMENSIONS
+    // =====================================================
+
+    const metadata =
+      await sharp(originalBuffer).metadata();
+
+    const originalWidth =
+      metadata.width || 1280;
+
+    const originalHeight =
+      metadata.height || 720;
+
+    console.log(
+      `📐 Original image dimensions: ${originalWidth} x ${originalHeight}`
+    );
+
+    // =====================================================
+    // PASS 1: FULL IMAGE
+    // =====================================================
+
+    console.log(
+      "================================================="
+    );
+
+    console.log(
+      "🔎 OCR PASS 1: Full image"
+    );
+
+    const fullImage =
+      await preprocessImage(
+        originalBuffer,
+        {
+          width: 3200,
+          threshold: false
+        }
+      );
+
+    const primaryText =
+      await runTesseract(
+        fullImage,
+        "image",
+        6
+      );
+
+    console.log(
+      `📝 Image primary OCR extracted ${primaryText.length} characters`
+    );
+
+    // =====================================================
+    // PASS 2: TABLE REGION
+    // =====================================================
+    //
+    // Many soil reports contain a large header followed by
+    // the actual soil table.
+    //
+    // We crop the middle/lower part where tables normally
+    // occur. This gives small table characters much more
+    // importance to OCR.
+    //
+    // =====================================================
+
+    console.log(
+      "================================================="
+    );
+
+    console.log(
+      "🔎 OCR PASS 2: Main table region"
+    );
+
+    const tableTop =
+      Math.floor(
+        originalHeight * 0.28
+      );
+
+    const tableBottom =
+      Math.floor(
+        originalHeight * 0.78
+      );
+
+    const tableHeight =
+      Math.max(
+        1,
+        tableBottom - tableTop
+      );
+
+    const tableBuffer =
+      await sharp(originalBuffer)
+        .rotate()
+        .extract({
+          left: 0,
+          top: tableTop,
+          width: originalWidth,
+          height: tableHeight
         })
         .png()
         .toBuffer();
 
+    const processedTable =
+      await preprocessImage(
+        tableBuffer,
+        {
+          width: 3600,
+          threshold: false
+        }
+      );
+
+    const tableText =
+      await runTesseract(
+        processedTable,
+        "table",
+        6
+      );
+
     console.log(
-      `✅ OCR image preprocessing complete. Width: ${targetWidth}px`
+      `📝 Table OCR extracted ${tableText.length} characters`
     );
 
-    return processed;
+    // =====================================================
+    // PASS 3: LEFT HALF OF TABLE
+    // =====================================================
+
+    console.log(
+      "================================================="
+    );
+
+    console.log(
+      "🔎 OCR PASS 3: Left table region"
+    );
+
+    const leftWidth =
+      Math.floor(
+        originalWidth / 2
+      );
+
+    const leftTableBuffer =
+      await sharp(originalBuffer)
+        .rotate()
+        .extract({
+          left: 0,
+          top: tableTop,
+          width: leftWidth,
+          height: tableHeight
+        })
+        .png()
+        .toBuffer();
+
+    const processedLeft =
+      await preprocessImage(
+        leftTableBuffer,
+        {
+          width: 3600,
+          threshold: false
+        }
+      );
+
+    const leftText =
+      await runTesseract(
+        processedLeft,
+        "left-table",
+        6
+      );
+
+    console.log(
+      `📝 Left table OCR extracted ${leftText.length} characters`
+    );
+
+    // =====================================================
+    // PASS 4: RIGHT HALF OF TABLE
+    // =====================================================
+
+    console.log(
+      "================================================="
+    );
+
+    console.log(
+      "🔎 OCR PASS 4: Right table region"
+    );
+
+    const rightWidth =
+      originalWidth -
+      leftWidth;
+
+    const rightTableBuffer =
+      await sharp(originalBuffer)
+        .rotate()
+        .extract({
+          left: leftWidth,
+          top: tableTop,
+          width: rightWidth,
+          height: tableHeight
+        })
+        .png()
+        .toBuffer();
+
+    const processedRight =
+      await preprocessImage(
+        rightTableBuffer,
+        {
+          width: 3600,
+          threshold: false
+        }
+      );
+
+    const rightText =
+      await runTesseract(
+        processedRight,
+        "right-table",
+        6
+      );
+
+    console.log(
+      `📝 Right table OCR extracted ${rightText.length} characters`
+    );
+
+    // =====================================================
+    // PASS 5: SPARSE TEXT OCR
+    // =====================================================
+    //
+    // This is particularly useful when the table contains
+    // separated cells rather than continuous paragraphs.
+    //
+    // =====================================================
+
+    console.log(
+      "================================================="
+    );
+
+    console.log(
+      "🔎 OCR PASS 5: Sparse table OCR"
+    );
+
+    const sparseText =
+      await runTesseract(
+        processedTable,
+        "sparse-table",
+        11
+      );
+
+    console.log(
+      `📝 Sparse OCR extracted ${sparseText.length} characters`
+    );
+
+    // =====================================================
+    // COMBINE OCR RESULTS
+    // =====================================================
+
+    const combinedText = [
+      "===== FULL IMAGE OCR =====",
+      primaryText,
+
+      "===== TABLE OCR =====",
+      tableText,
+
+      "===== LEFT TABLE OCR =====",
+      leftText,
+
+      "===== RIGHT TABLE OCR =====",
+      rightText,
+
+      "===== SPARSE TABLE OCR =====",
+      sparseText
+    ].join("\n\n");
+
+    console.log(
+      "================================================="
+    );
+
+    console.log(
+      `📊 OCR comparison → Full: ${primaryText.length}, Table: ${tableText.length}, Left: ${leftText.length}, Right: ${rightText.length}, Sparse: ${sparseText.length}`
+    );
+
+    console.log(
+      `📝 Combined image OCR characters: ${combinedText.length}`
+    );
+
+    console.log(
+      "================================================="
+    );
+
+    return combinedText.trim();
   } catch (error) {
-    console.warn(
-      "⚠️ Image preprocessing failed. Using original image.",
-      error.message
+    console.error(
+      "❌ Image OCR extraction error:",
+      error
     );
 
-    return imageBuffer;
+    return "";
   }
 }
 
 // =========================================================
 // PDF TEXT EXTRACTION
-// =========================================================
-//
-// First try native PDF text.
-//
-// If native PDF text is poor, render PDF pages as high
-// resolution images and OCR them.
 // =========================================================
 
 async function extractTextFromPDF(
@@ -315,10 +535,6 @@ async function extractTextFromPDF(
       `📊 Native PDF soil-text score: ${usefulTextScore}`
     );
 
-    /*
-     * Native extraction is accepted only if it contains
-     * enough actual soil-report content.
-     */
     if (
       nativeText.trim().length >= 100 &&
       usefulTextScore >= 2
@@ -365,7 +581,7 @@ async function extractTextFromPDF(
     }
 
     // =====================================================
-    // LAST OCR FALLBACK
+    // FINAL PDF OCR FALLBACK
     // =====================================================
 
     try {
@@ -391,7 +607,7 @@ async function extractTextFromPDF(
 }
 
 // =========================================================
-// PDF → HIGH RESOLUTION PNG → OCR
+// PDF → IMAGE → MULTI-PASS OCR
 // =========================================================
 
 async function extractTextFromPDFWithOCR(
@@ -409,31 +625,9 @@ async function extractTextFromPDFWithOCR(
         data: pdfBuffer
       });
 
-    /*
-     * IMPORTANT:
-     *
-     * Previous value:
-     * desiredWidth: 2000
-     *
-     * New value:
-     * desiredWidth: 3200
-     *
-     * Small laboratory result values such as:
-     *
-     * 5.29
-     * 542
-     * 144
-     * 5.46
-     * 2.02
-     * 1.31
-     * 4.46
-     *
-     * are much easier for OCR at this resolution.
-     */
-
     const screenshotResult =
       await parser.getScreenshot({
-        desiredWidth: 3200,
+        desiredWidth: 2400,
         imageBuffer: true,
         imageDataUrl: false
       });
@@ -467,136 +661,34 @@ async function extractTextFromPDFWithOCR(
       i < pages.length;
       i++
     ) {
-      const page =
-        pages[i];
+      const page = pages[i];
 
       if (!page?.data) {
-        console.warn(
-          `⚠️ Page ${i + 1} has no image data`
-        );
-
         continue;
       }
 
       console.log(
-        `🧠 OCR processing PDF page ${
-          i + 1
-        }/${pages.length}...`
+        "================================================="
+      );
+
+      console.log(
+        `🧠 OCR processing PDF page ${i + 1}/${pages.length}...`
       );
 
       try {
-        // -----------------------------------------------
-        // PREPROCESS PAGE
-        // -----------------------------------------------
+        const pageBuffer =
+          Buffer.isBuffer(page.data)
+            ? page.data
+            : Buffer.from(page.data);
 
-        const processedImage =
-          await preprocessImage(
-            page.data
+        const pageText =
+          await extractTextFromImageBuffer(
+            pageBuffer,
+            `PDF page ${i + 1}`
           );
-
-        // -----------------------------------------------
-        // PRIMARY OCR
-        // -----------------------------------------------
-
-        const primaryOCR =
-          await runOCR(
-            processedImage,
-            `Page ${i + 1}`
-          );
-
-        let pageText =
-          primaryOCR.text || "";
 
         console.log(
-          `📝 Page ${
-            i + 1
-          } primary OCR characters: ${
-            pageText.length
-          }`
-        );
-
-        // -----------------------------------------------
-        // SECOND OCR PASS
-        // -----------------------------------------------
-        //
-        // PSM 11 is useful when the first segmentation
-        // misses isolated table values.
-        //
-        // We only run this if the first OCR appears weak.
-        // -----------------------------------------------
-
-        const soilScore =
-          calculateSoilTextScore(
-            pageText
-          );
-
-        const hasImportantNumbers =
-          /\b\d+(?:\.\d+)?\s*(?:kg\s*\/\s*ha|mg\s*\/\s*kg|%|ppm)\b/i.test(
-            pageText
-          );
-
-        if (
-          soilScore < 4 ||
-          !hasImportantNumbers
-        ) {
-          console.log(
-            `🔁 Page ${
-              i + 1
-            } primary OCR appears incomplete. Running secondary OCR...`
-          );
-
-          const secondaryOCR =
-            await runOCRWithPSM(
-              processedImage,
-              `Page ${i + 1} secondary`,
-              "11"
-            );
-
-          const secondaryText =
-            secondaryOCR.text || "";
-
-          console.log(
-            `📝 Page ${
-              i + 1
-            } secondary OCR characters: ${
-              secondaryText.length
-            }`
-          );
-
-          /*
-           * Choose the OCR result containing more useful
-           * soil-report information.
-           */
-          pageText =
-            chooseBetterOCRText(
-              pageText,
-              secondaryText
-            );
-        }
-
-        // -----------------------------------------------
-        // SAVE PAGE TEXT
-        // -----------------------------------------------
-
-        console.log(
-          `📝 Page ${
-            i + 1
-          } final OCR characters: ${
-            pageText.length
-          }`
-        );
-
-        console.log(
-          `🔎 Page ${
-            i + 1
-          } OCR preview:`
-        );
-
-        console.log(
-          pageText.slice(
-            0,
-            4000
-          )
+          `📝 Page ${i + 1} final OCR characters: ${pageText.length}`
         );
 
         combinedText +=
@@ -615,6 +707,10 @@ async function extractTextFromPDFWithOCR(
 
     await parser.destroy();
     parser = null;
+
+    console.log(
+      "================================================="
+    );
 
     console.log(
       `✅ PDF OCR complete. Total extracted characters: ${combinedText.length}`
@@ -643,181 +739,233 @@ async function extractTextFromPDFWithOCR(
 }
 
 // =========================================================
-// OCR WITH CUSTOM PSM
+// OCR PDF PAGE BUFFER
 // =========================================================
 
-async function runOCRWithPSM(
-  imageBuffer,
-  label,
-  psm
+async function extractTextFromImageBuffer(
+  originalBuffer,
+  label
 ) {
   try {
-    const result =
-      await Tesseract.recognize(
-        imageBuffer,
-        OCR_LANGUAGE,
-        {
-          logger: (message) => {
-            if (
-              message.status ===
-                "recognizing text" &&
-              typeof message.progress ===
-                "number"
-            ) {
-              console.log(
-                `${label} OCR: ${Math.round(
-                  message.progress * 100
-                )}%`
-              );
-            }
-          },
+    const metadata =
+      await sharp(originalBuffer).metadata();
 
-          config: {
-            tessedit_pageseg_mode: psm,
-            preserve_interword_spaces: "1"
-          }
+    const originalWidth =
+      metadata.width || 2000;
+
+    const originalHeight =
+      metadata.height || 2800;
+
+    console.log(
+      `📐 ${label} dimensions: ${originalWidth} x ${originalHeight}`
+    );
+
+    // =====================================================
+    // FULL PAGE
+    // =====================================================
+
+    console.log(
+      "🛠️ Preprocessing image for OCR..."
+    );
+
+    const fullImage =
+      await preprocessImage(
+        originalBuffer,
+        {
+          width: 3200,
+          threshold: false
         }
       );
 
-    return {
-      text:
-        result?.data?.text || "",
-      data:
-        result?.data || {}
-    };
+    const primaryText =
+      await runTesseract(
+        fullImage,
+        `${label} primary`,
+        6
+      );
+
+    console.log(
+      `📝 ${label} primary OCR characters: ${primaryText.length}`
+    );
+
+    // =====================================================
+    // TABLE REGION
+    // =====================================================
+
+    console.log(
+      `🔎 ${label}: Running table-region OCR...`
+    );
+
+    const tableTop =
+      Math.floor(
+        originalHeight * 0.20
+      );
+
+    const tableBottom =
+      Math.floor(
+        originalHeight * 0.85
+      );
+
+    const tableHeight =
+      Math.max(
+        1,
+        tableBottom - tableTop
+      );
+
+    const tableBuffer =
+      await sharp(originalBuffer)
+        .rotate()
+        .extract({
+          left: 0,
+          top: tableTop,
+          width: originalWidth,
+          height: tableHeight
+        })
+        .png()
+        .toBuffer();
+
+    const processedTable =
+      await preprocessImage(
+        tableBuffer,
+        {
+          width: 3600,
+          threshold: false
+        }
+      );
+
+    const tableText =
+      await runTesseract(
+        processedTable,
+        `${label} table`,
+        6
+      );
+
+    // =====================================================
+    // LEFT TABLE
+    // =====================================================
+
+    const leftWidth =
+      Math.floor(
+        originalWidth / 2
+      );
+
+    const leftBuffer =
+      await sharp(originalBuffer)
+        .rotate()
+        .extract({
+          left: 0,
+          top: tableTop,
+          width: leftWidth,
+          height: tableHeight
+        })
+        .png()
+        .toBuffer();
+
+    const processedLeft =
+      await preprocessImage(
+        leftBuffer,
+        {
+          width: 3600,
+          threshold: false
+        }
+      );
+
+    const leftText =
+      await runTesseract(
+        processedLeft,
+        `${label} left`,
+        6
+      );
+
+    // =====================================================
+    // RIGHT TABLE
+    // =====================================================
+
+    const rightWidth =
+      originalWidth -
+      leftWidth;
+
+    const rightBuffer =
+      await sharp(originalBuffer)
+        .rotate()
+        .extract({
+          left: leftWidth,
+          top: tableTop,
+          width: rightWidth,
+          height: tableHeight
+        })
+        .png()
+        .toBuffer();
+
+    const processedRight =
+      await preprocessImage(
+        rightBuffer,
+        {
+          width: 3600,
+          threshold: false
+        }
+      );
+
+    const rightText =
+      await runTesseract(
+        processedRight,
+        `${label} right`,
+        6
+      );
+
+    // =====================================================
+    // SPARSE OCR
+    // =====================================================
+
+    const sparseText =
+      await runTesseract(
+        processedTable,
+        `${label} sparse`,
+        11
+      );
+
+    // =====================================================
+    // COMBINE
+    // =====================================================
+
+    const combinedText = [
+      "===== FULL PAGE OCR =====",
+      primaryText,
+
+      "===== TABLE OCR =====",
+      tableText,
+
+      "===== LEFT TABLE OCR =====",
+      leftText,
+
+      "===== RIGHT TABLE OCR =====",
+      rightText,
+
+      "===== SPARSE TABLE OCR =====",
+      sparseText
+    ].join("\n\n");
+
+    console.log(
+      `📊 ${label} OCR comparison → Primary: ${primaryText.length}, Table: ${tableText.length}, Left: ${leftText.length}, Right: ${rightText.length}, Sparse: ${sparseText.length}`
+    );
+
+    console.log(
+      `📝 ${label} combined OCR characters: ${combinedText.length}`
+    );
+
+    return combinedText;
   } catch (error) {
     console.error(
-      `❌ ${label} failed:`,
+      `❌ ${label} multi-pass OCR failed:`,
       error
     );
 
-    return {
-      text: "",
-      data: {}
-    };
+    return "";
   }
-}
-
-// =========================================================
-// CHOOSE BETTER OCR RESULT
-// =========================================================
-
-function chooseBetterOCRText(
-  firstText,
-  secondText
-) {
-  if (!firstText) {
-    return secondText || "";
-  }
-
-  if (!secondText) {
-    return firstText;
-  }
-
-  const firstScore =
-    calculateDetailedOCRScore(
-      firstText
-    );
-
-  const secondScore =
-    calculateDetailedOCRScore(
-      secondText
-    );
-
-  console.log(
-    `📊 OCR comparison → Primary: ${firstScore}, Secondary: ${secondScore}`
-  );
-
-  return secondScore > firstScore
-    ? secondText
-    : firstText;
-}
-
-// =========================================================
-// DETAILED OCR QUALITY SCORE
-// =========================================================
-
-function calculateDetailedOCRScore(
-  text
-) {
-  if (!text) {
-    return 0;
-  }
-
-  const lower =
-    text.toLowerCase();
-
-  let score = 0;
-
-  const importantWords = [
-    "soil",
-    "analysis",
-    "organic carbon",
-    "nitrogen",
-    "phosphorus",
-    "phosphorous",
-    "potassium",
-    "magnesium",
-    "calcium",
-    "manganese",
-    "iron",
-    "copper",
-    "zinc",
-    "boron"
-  ];
-
-  for (
-    const word of importantWords
-  ) {
-    if (
-      lower.includes(word)
-    ) {
-      score += 2;
-    }
-  }
-
-  /*
-   * Give strong weight to values with recognized units.
-   */
-  const unitMatches =
-    text.match(
-      /\d+(?:\.\d+)?\s*(?:kg\s*\/\s*ha|mg\s*\/\s*kg|%|ppm)/gi
-    );
-
-  if (unitMatches) {
-    score +=
-      unitMatches.length * 4;
-  }
-
-  /*
-   * Give extra weight to decimal values because soil
-   * reports commonly contain values such as:
-   *
-   * 5.29
-   * 5.46
-   * 2.02
-   * 1.31
-   * 0.487
-   * 4.46
-   */
-  const decimalMatches =
-    text.match(
-      /\b\d+\.\d+\b/g
-    );
-
-  if (decimalMatches) {
-    score +=
-      decimalMatches.length * 2;
-  }
-
-  return score;
 }
 
 // =========================================================
 // SOIL TEXT SCORE
-// =========================================================
-//
-// Used to decide whether native PDF text is useful.
 // =========================================================
 
 function calculateSoilTextScore(
