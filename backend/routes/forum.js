@@ -4,12 +4,19 @@ const express = require('express');
 const router = express.Router();
 const ForumPost = require('../models/Forum');
 const User = require('../models/User');
+const UserActivity = require('../models/UserActivity');
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { logActivity } = require('./activities');
-const { moderateContent } = require('../utils/contentModeration');
+
+const {
+  logActivity
+} = require('./activities');
+
+const {
+  moderateContent
+} = require('../utils/contentModeration');
 
 // =========================================================
 // NOTIFICATION SERVICE
@@ -31,21 +38,34 @@ const {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '../uploads/forum');
+    const dir = path.join(
+      __dirname,
+      '../uploads/forum'
+    );
 
     if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+      fs.mkdirSync(
+        dir,
+        {
+          recursive: true
+        }
+      );
     }
 
     cb(null, dir);
   },
 
   filename: (req, file, cb) => {
-    const extension = path.extname(file.originalname).toLowerCase();
+    const extension =
+      path.extname(
+        file.originalname
+      ).toLowerCase();
 
     cb(
       null,
-      `${Date.now()}-${Math.random().toString(36).substring(2, 10)}${extension}`
+      `${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 10)}${extension}`
     );
   }
 });
@@ -54,10 +74,15 @@ const upload = multer({
   storage,
 
   limits: {
-    fileSize: 5 * 1024 * 1024
+    fileSize:
+      5 * 1024 * 1024
   },
 
-  fileFilter: (req, file, cb) => {
+  fileFilter: (
+    req,
+    file,
+    cb
+  ) => {
     const allowedMimeTypes = [
       'image/jpeg',
       'image/jpg',
@@ -78,11 +103,18 @@ const upload = multer({
       '.heif'
     ];
 
-    const extension = path.extname(file.originalname).toLowerCase();
+    const extension =
+      path.extname(
+        file.originalname
+      ).toLowerCase();
 
     if (
-      allowedMimeTypes.includes(file.mimetype) ||
-      allowedExtensions.includes(extension)
+      allowedMimeTypes.includes(
+        file.mimetype
+      ) ||
+      allowedExtensions.includes(
+        extension
+      )
     ) {
       cb(null, true);
     } else {
@@ -99,42 +131,80 @@ const upload = multer({
 // HELPER: DELETE UPLOADED FILES
 // =========================================================
 
-function deleteUploadedFiles(files) {
-  if (!files || !Array.isArray(files)) {
+function deleteUploadedFiles(
+  files
+) {
+  if (
+    !files ||
+    !Array.isArray(files)
+  ) {
     return;
   }
 
-  files.forEach((file) => {
-    try {
-      if (file && file.path && fs.existsSync(file.path)) {
-        fs.unlinkSync(file.path);
+  files.forEach(
+    (file) => {
+      try {
+        if (
+          file &&
+          file.path &&
+          fs.existsSync(
+            file.path
+          )
+        ) {
+          fs.unlinkSync(
+            file.path
+          );
+        }
+      } catch (error) {
+        console.error(
+          'Error deleting uploaded file:',
+          error
+        );
       }
-    } catch (error) {
-      console.error('Error deleting uploaded file:', error);
     }
-  });
+  );
 }
 
 // =========================================================
 // HELPER: GET FORUM STATUS
 // =========================================================
 
-function getForumStatus(user) {
-  const now = new Date();
+function getForumStatus(
+  user
+) {
+  const now =
+    new Date();
 
   // -------------------------------------------------------
   // Backward compatibility with old permanent-block field
   // -------------------------------------------------------
 
-  if (user.isBlockedFromForum === true) {
+  if (
+    user.isBlockedFromForum ===
+    true
+  ) {
     return {
-      status: 'banned',
-      canParticipate: false,
-      blocked: true,
-      suspended: false,
-      banned: true,
-      warnings: user.forumWarnings || 0,
-      blockedUntil: null,
+      status:
+        'banned',
+
+      canParticipate:
+        false,
+
+      blocked:
+        true,
+
+      suspended:
+        false,
+
+      banned:
+        true,
+
+      warnings:
+        user.forumWarnings || 0,
+
+      blockedUntil:
+        null,
+
       message:
         'Your forum participation has been permanently blocked due to repeated violations of the community guidelines.'
     };
@@ -146,16 +216,32 @@ function getForumStatus(user) {
 
   if (
     user.forumBlockedUntil &&
-    new Date(user.forumBlockedUntil) > now
+    new Date(
+      user.forumBlockedUntil
+    ) > now
   ) {
     return {
-      status: 'suspended',
-      canParticipate: false,
-      blocked: true,
-      suspended: true,
-      banned: false,
-      warnings: user.forumWarnings || 0,
-      blockedUntil: user.forumBlockedUntil,
+      status:
+        'suspended',
+
+      canParticipate:
+        false,
+
+      blocked:
+        true,
+
+      suspended:
+        true,
+
+      banned:
+        false,
+
+      warnings:
+        user.forumWarnings || 0,
+
+      blockedUntil:
+        user.forumBlockedUntil,
+
       message:
         'Your forum participation is temporarily suspended due to repeated violations of the community guidelines.'
     };
@@ -167,17 +253,34 @@ function getForumStatus(user) {
 
   if (
     user.forumBlockedUntil &&
-    new Date(user.forumBlockedUntil) <= now
+    new Date(
+      user.forumBlockedUntil
+    ) <= now
   ) {
     return {
-      status: 'active',
-      canParticipate: true,
-      blocked: false,
-      suspended: false,
-      banned: false,
-      warnings: user.forumWarnings || 0,
-      blockedUntil: null,
-      message: 'Your forum access is active.'
+      status:
+        'active',
+
+      canParticipate:
+        true,
+
+      blocked:
+        false,
+
+      suspended:
+        false,
+
+      banned:
+        false,
+
+      warnings:
+        user.forumWarnings || 0,
+
+      blockedUntil:
+        null,
+
+      message:
+        'Your forum access is active.'
     };
   }
 
@@ -185,33 +288,67 @@ function getForumStatus(user) {
   // New forumStatus field
   // -------------------------------------------------------
 
-  if (user.forumStatus === 'banned') {
+  if (
+    user.forumStatus ===
+    'banned'
+  ) {
     return {
-      status: 'banned',
-      canParticipate: false,
-      blocked: true,
-      suspended: false,
-      banned: true,
-      warnings: user.forumWarnings || 0,
-      blockedUntil: null,
+      status:
+        'banned',
+
+      canParticipate:
+        false,
+
+      blocked:
+        true,
+
+      suspended:
+        false,
+
+      banned:
+        true,
+
+      warnings:
+        user.forumWarnings || 0,
+
+      blockedUntil:
+        null,
+
       message:
         'Your forum participation has been permanently blocked due to repeated violations of the community guidelines.'
     };
   }
 
   if (
-    user.forumStatus === 'suspended' &&
+    user.forumStatus ===
+      'suspended' &&
     user.forumBlockedUntil &&
-    new Date(user.forumBlockedUntil) > now
+    new Date(
+      user.forumBlockedUntil
+    ) > now
   ) {
     return {
-      status: 'suspended',
-      canParticipate: false,
-      blocked: true,
-      suspended: true,
-      banned: false,
-      warnings: user.forumWarnings || 0,
-      blockedUntil: user.forumBlockedUntil,
+      status:
+        'suspended',
+
+      canParticipate:
+        false,
+
+      blocked:
+        true,
+
+      suspended:
+        true,
+
+      banned:
+        false,
+
+      warnings:
+        user.forumWarnings || 0,
+
+      blockedUntil:
+        user.forumBlockedUntil,
+
       message:
         'Your forum participation is temporarily suspended due to repeated violations of the community guidelines.'
     };
@@ -222,14 +359,29 @@ function getForumStatus(user) {
   // -------------------------------------------------------
 
   return {
-    status: 'active',
-    canParticipate: true,
-    blocked: false,
-    suspended: false,
-    banned: false,
-    warnings: user.forumWarnings || 0,
-    blockedUntil: null,
-    message: 'Your forum access is active.'
+    status:
+      'active',
+
+    canParticipate:
+      true,
+
+    blocked:
+      false,
+
+    suspended:
+      false,
+
+    banned:
+      false,
+
+    warnings:
+      user.forumWarnings || 0,
+
+    blockedUntil:
+      null,
+
+    message:
+      'Your forum access is active.'
   };
 }
 
@@ -237,17 +389,28 @@ function getForumStatus(user) {
 // MIDDLEWARE: CHECK FORUM PARTICIPATION ACCESS
 // =========================================================
 
-async function checkForumAccess(req, res, next) {
+async function checkForumAccess(
+  req,
+  res,
+  next
+) {
   try {
-    const user = await User.findById(req.user._id);
+    const user =
+      await User.findById(
+        req.user._id
+      );
 
     if (!user) {
       return res.status(404).json({
-        error: 'User not found'
+        error:
+          'User not found'
       });
     }
 
-    const forumStatus = getForumStatus(user);
+    const forumStatus =
+      getForumStatus(
+        user
+      );
 
     // -------------------------------------------------------
     // Automatically restore an expired suspension
@@ -255,26 +418,45 @@ async function checkForumAccess(req, res, next) {
 
     if (
       user.forumBlockedUntil &&
-      new Date(user.forumBlockedUntil) <= new Date() &&
-      user.forumStatus === 'suspended'
+      new Date(
+        user.forumBlockedUntil
+      ) <= new Date() &&
+      user.forumStatus ===
+        'suspended'
     ) {
-      user.forumBlockedUntil = null;
-      user.forumStatus = 'active';
+      user.forumBlockedUntil =
+        null;
+
+      user.forumStatus =
+        'active';
 
       await user.save();
 
-      // Notify user that suspension has ended
       await notifyForumSuspensionEnded({
-        userId: user._id
+        userId:
+          user._id
       });
 
-      forumStatus.status = 'active';
-      forumStatus.canParticipate = true;
-      forumStatus.blocked = false;
-      forumStatus.suspended = false;
-      forumStatus.banned = false;
-      forumStatus.blockedUntil = null;
-      forumStatus.message = 'Your forum access is active.';
+      forumStatus.status =
+        'active';
+
+      forumStatus.canParticipate =
+        true;
+
+      forumStatus.blocked =
+        false;
+
+      forumStatus.suspended =
+        false;
+
+      forumStatus.banned =
+        false;
+
+      forumStatus.blockedUntil =
+        null;
+
+      forumStatus.message =
+        'Your forum access is active.';
     }
 
     // -------------------------------------------------------
@@ -282,20 +464,38 @@ async function checkForumAccess(req, res, next) {
     // -------------------------------------------------------
 
     if (
-      forumStatus.status === 'banned' ||
-      user.isBlockedFromForum === true
+      forumStatus.status ===
+        'banned' ||
+      user.isBlockedFromForum ===
+        true
     ) {
       return res.status(403).json({
-        success: false,
+        success:
+          false,
+
         error:
           'You have been permanently blocked from posting and commenting in the forum due to repeated inappropriate-language violations.',
-        blocked: true,
-        banned: true,
-        suspended: false,
-        forumStatus: 'banned',
-        warnings: user.forumWarnings || 0,
-        blockedUntil: null,
-        canParticipate: false
+
+        blocked:
+          true,
+
+        banned:
+          true,
+
+        suspended:
+          false,
+
+        forumStatus:
+          'banned',
+
+        warnings:
+          user.forumWarnings || 0,
+
+        blockedUntil:
+          null,
+
+        canParticipate:
+          false
       });
     }
 
@@ -304,45 +504,74 @@ async function checkForumAccess(req, res, next) {
     // -------------------------------------------------------
 
     if (
-      forumStatus.status === 'suspended' ||
+      forumStatus.status ===
+        'suspended' ||
       (
         user.forumBlockedUntil &&
-        new Date(user.forumBlockedUntil) > new Date()
+        new Date(
+          user.forumBlockedUntil
+        ) > new Date()
       )
     ) {
-      const blockedUntil = user.forumBlockedUntil;
+      const blockedUntil =
+        user.forumBlockedUntil;
 
       const remainingMs =
-        new Date(blockedUntil).getTime() - Date.now();
+        new Date(
+          blockedUntil
+        ).getTime() -
+        Date.now();
 
-      const daysRemaining = Math.max(
-        1,
-        Math.ceil(
-          remainingMs /
-          (1000 * 60 * 60 * 24)
-        )
-      );
+      const daysRemaining =
+        Math.max(
+          1,
+          Math.ceil(
+            remainingMs /
+            (
+              1000 *
+              60 *
+              60 *
+              24
+            )
+          )
+        );
 
       return res.status(403).json({
-        success: false,
+        success:
+          false,
+
         error:
           `Your forum participation is suspended. ` +
           `You can post and comment again after ${new Date(
             blockedUntil
           ).toLocaleString('en-IN')}.`,
-        blocked: true,
-        banned: false,
-        suspended: true,
-        forumStatus: 'suspended',
-        warnings: user.forumWarnings || 0,
+
+        blocked:
+          true,
+
+        banned:
+          false,
+
+        suspended:
+          true,
+
+        forumStatus:
+          'suspended',
+
+        warnings:
+          user.forumWarnings || 0,
+
         blockedUntil,
+
         daysRemaining,
-        canParticipate: false
+
+        canParticipate:
+          false
       });
     }
 
-    // Fresh user information
-    req.user = user;
+    req.user =
+      user;
 
     next();
   } catch (error) {
@@ -352,7 +581,8 @@ async function checkForumAccess(req, res, next) {
     );
 
     res.status(500).json({
-      error: 'Failed to verify forum access'
+      error:
+        'Failed to verify forum access'
     });
   }
 }
@@ -389,21 +619,35 @@ async function handleContentModeration(
   // Clean content
   // -------------------------------------------------------
 
-  if (!moderationResult.isAbusive) {
+  if (
+    !moderationResult.isAbusive
+  ) {
     return {
-      blocked: false,
-      warned: false,
-      suspended: false,
-      banned: false,
+      blocked:
+        false,
+
+      warned:
+        false,
+
+      suspended:
+        false,
+
+      banned:
+        false,
+
       warnings:
         user.forumWarnings || 0,
-      detectedWords: [],
-      severity: 'low'
+
+      detectedWords:
+        [],
+
+      severity:
+        'low'
     };
   }
 
   // -------------------------------------------------------
-  // Record the new violation
+  // Record new violation
   // -------------------------------------------------------
 
   const currentWarnings =
@@ -422,7 +666,8 @@ async function handleContentModeration(
       user.forumWarningHistory
     )
   ) {
-    user.forumWarningHistory = [];
+    user.forumWarningHistory =
+      [];
   }
 
   const combinedContent =
@@ -434,42 +679,75 @@ async function handleContentModeration(
   // 4TH VIOLATION = PERMANENT BAN
   // -------------------------------------------------------
 
-  if (violationNumber >= 4) {
-    user.forumWarnings = 4;
-    user.forumStatus = 'banned';
-    user.isBlockedFromForum = true;
-    user.forumBlockedUntil = null;
+  if (
+    violationNumber >= 4
+  ) {
+    user.forumWarnings =
+      4;
+
+    user.forumStatus =
+      'banned';
+
+    user.isBlockedFromForum =
+      true;
+
+    user.forumBlockedUntil =
+      null;
 
     user.forumWarningHistory.push({
-      date: new Date(),
+      date:
+        new Date(),
+
       reason:
         `Detected inappropriate language: ${moderationResult.detectedWords.join(
           ', '
         )}`,
-      content: combinedContent,
-      violationNumber: 4,
-      action: 'ban'
+
+      content:
+        combinedContent,
+
+      violationNumber:
+        4,
+
+      action:
+        'ban'
     });
 
     await user.save();
 
-    // Send ban notification
     await notifyForumBanned({
-      userId: user._id,
-      warnings: 4
+      userId:
+        user._id,
+
+      warnings:
+        4
     });
 
     return {
-      blocked: true,
-      warned: false,
-      suspended: false,
-      banned: true,
-      warnings: 4,
-      blockedUntil: null,
+      blocked:
+        true,
+
+      warned:
+        false,
+
+      suspended:
+        false,
+
+      banned:
+        true,
+
+      warnings:
+        4,
+
+      blockedUntil:
+        null,
+
       detectedWords:
         moderationResult.detectedWords,
+
       severity:
         moderationResult.severity,
+
       message:
         'Your forum participation has been permanently blocked after 4 inappropriate-language violations. You can still read posts and comments, but you cannot create posts or comments.'
     };
@@ -479,12 +757,15 @@ async function handleContentModeration(
   // 3RD VIOLATION = 7-DAY SUSPENSION
   // -------------------------------------------------------
 
-  if (violationNumber === 3) {
+  if (
+    violationNumber === 3
+  ) {
     const blockUntil =
       new Date();
 
     blockUntil.setDate(
-      blockUntil.getDate() + 7
+      blockUntil.getDate() +
+        7
     );
 
     user.forumStatus =
@@ -497,36 +778,62 @@ async function handleContentModeration(
       blockUntil;
 
     user.forumWarningHistory.push({
-      date: new Date(),
+      date:
+        new Date(),
+
       reason:
         `Detected inappropriate language: ${moderationResult.detectedWords.join(
           ', '
         )}`,
-      content: combinedContent,
-      violationNumber: 3,
-      action: 'suspension'
+
+      content:
+        combinedContent,
+
+      violationNumber:
+        3,
+
+      action:
+        'suspension'
     });
 
     await user.save();
 
-    // Send suspension notification
     await notifyForumSuspension({
-      userId: user._id,
-      blockedUntil: blockUntil,
-      warnings: 3
+      userId:
+        user._id,
+
+      blockedUntil:
+        blockUntil,
+
+      warnings:
+        3
     });
 
     return {
-      blocked: true,
-      warned: false,
-      suspended: true,
-      banned: false,
-      warnings: 3,
-      blockedUntil: blockUntil,
+      blocked:
+        true,
+
+      warned:
+        false,
+
+      suspended:
+        true,
+
+      banned:
+        false,
+
+      warnings:
+        3,
+
+      blockedUntil:
+        blockUntil,
+
       detectedWords:
         moderationResult.detectedWords,
+
       severity:
         moderationResult.severity,
+
       message:
         'You have received your 3rd forum violation. Your ability to post and comment has been suspended for 7 days due to repeated inappropriate-language violations.'
     };
@@ -546,21 +853,29 @@ async function handleContentModeration(
     null;
 
   user.forumWarningHistory.push({
-    date: new Date(),
+    date:
+      new Date(),
+
     reason:
       `Detected inappropriate language: ${moderationResult.detectedWords.join(
         ', '
       )}`,
-    content: combinedContent,
+
+    content:
+      combinedContent,
+
     violationNumber,
-    action: 'warning'
+
+    action:
+      'warning'
   });
 
   await user.save();
 
-  // Send warning notification
   await notifyForumWarning({
-    userId: user._id,
+    userId:
+      user._id,
+
     warningNumber:
       violationNumber
   });
@@ -568,26 +883,41 @@ async function handleContentModeration(
   const remainingWarningsUntilSuspension =
     Math.max(
       0,
-      3 - violationNumber
+      3 -
+        violationNumber
     );
 
   return {
-    blocked: false,
-    warned: true,
-    suspended: false,
-    banned: false,
+    blocked:
+      false,
+
+    warned:
+      true,
+
+    suspended:
+      false,
+
+    banned:
+      false,
+
     warnings:
       violationNumber,
-    blockedUntil: null,
+
+    blockedUntil:
+      null,
+
     detectedWords:
       moderationResult.detectedWords,
+
     severity:
       moderationResult.severity,
+
     message:
       `Warning ${violationNumber}: Your content contains inappropriate language. ` +
       `Please remove it before posting. ` +
       `${
-        remainingWarningsUntilSuspension === 1
+        remainingWarningsUntilSuspension ===
+        1
           ? 'One more violation will result in a 7-day forum suspension.'
           : `${remainingWarningsUntilSuspension} more violations will result in a 7-day forum suspension.`
       }`
@@ -601,7 +931,10 @@ async function handleContentModeration(
 router.get(
   '/status',
   auth,
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
     try {
       const user =
         await User.findById(
@@ -610,13 +943,18 @@ router.get(
 
       if (!user) {
         return res.status(404).json({
-          success: false,
-          error: 'User not found'
+          success:
+            false,
+
+          error:
+            'User not found'
         });
       }
 
       const currentStatus =
-        getForumStatus(user);
+        getForumStatus(
+          user
+        );
 
       // Automatically restore expired suspension
       if (
@@ -638,9 +976,9 @@ router.get(
 
         await user.save();
 
-        // Notify user
         await notifyForumSuspensionEnded({
-          userId: user._id
+          userId:
+            user._id
         });
 
         currentStatus.status =
@@ -665,7 +1003,8 @@ router.get(
           'Your forum access is active.';
       }
 
-      let remainingMs = 0;
+      let remainingMs =
+        0;
 
       if (
         currentStatus.status ===
@@ -678,12 +1017,13 @@ router.get(
             new Date(
               currentStatus.blockedUntil
             ).getTime() -
-            Date.now()
+              Date.now()
           );
       }
 
       res.json({
-        success: true,
+        success:
+          true,
 
         forumStatus:
           currentStatus.status,
@@ -718,7 +1058,9 @@ router.get(
       );
 
       res.status(500).json({
-        success: false,
+        success:
+          false,
+
         error:
           'Failed to fetch forum status'
       });
@@ -734,8 +1076,14 @@ router.post(
   '/posts',
   auth,
   checkForumAccess,
-  upload.array('images', 3),
-  async (req, res) => {
+  upload.array(
+    'images',
+    3
+  ),
+  async (
+    req,
+    res
+  ) => {
     try {
       console.log(
         '🔥 USER DATA:',
@@ -796,7 +1144,7 @@ router.post(
         );
 
       // -------------------------------------------------------
-      // 4th violation = permanent ban
+      // 4th violation
       // -------------------------------------------------------
 
       if (
@@ -807,24 +1155,40 @@ router.post(
         );
 
         return res.status(403).json({
-          success: false,
+          success:
+            false,
+
           error:
             moderationResult.message,
-          blocked: true,
-          banned: true,
-          suspended: false,
-          warned: false,
-          forumStatus: 'banned',
+
+          blocked:
+            true,
+
+          banned:
+            true,
+
+          suspended:
+            false,
+
+          warned:
+            false,
+
+          forumStatus:
+            'banned',
+
           warnings:
             moderationResult.warnings,
-          blockedUntil: null,
+
+          blockedUntil:
+            null,
+
           detectedWords:
             moderationResult.detectedWords
         });
       }
 
       // -------------------------------------------------------
-      // 3rd violation = 7-day suspension
+      // 3rd violation
       // -------------------------------------------------------
 
       if (
@@ -835,26 +1199,40 @@ router.post(
         );
 
         return res.status(403).json({
-          success: false,
+          success:
+            false,
+
           error:
             moderationResult.message,
-          blocked: true,
-          banned: false,
-          suspended: true,
-          warned: false,
+
+          blocked:
+            true,
+
+          banned:
+            false,
+
+          suspended:
+            true,
+
+          warned:
+            false,
+
           forumStatus:
             'suspended',
+
           warnings:
             moderationResult.warnings,
+
           blockedUntil:
             moderationResult.blockedUntil,
+
           detectedWords:
             moderationResult.detectedWords
         });
       }
 
       // -------------------------------------------------------
-      // 1st / 2nd violation = warning
+      // Warning
       // -------------------------------------------------------
 
       if (
@@ -865,17 +1243,33 @@ router.post(
         );
 
         return res.status(400).json({
-          success: false,
+          success:
+            false,
+
           error:
             moderationResult.message,
-          blocked: false,
-          banned: false,
-          suspended: false,
-          warned: true,
-          forumStatus: 'active',
+
+          blocked:
+            false,
+
+          banned:
+            false,
+
+          suspended:
+            false,
+
+          warned:
+            true,
+
+          forumStatus:
+            'active',
+
           warnings:
             moderationResult.warnings,
-          blockedUntil: null,
+
+          blockedUntil:
+            null,
+
           detectedWords:
             moderationResult.detectedWords
         });
@@ -897,19 +1291,23 @@ router.post(
       // Parse tags safely
       // -------------------------------------------------------
 
-      let parsedTags = [];
+      let parsedTags =
+        [];
 
       if (tags) {
         try {
           parsedTags =
-            JSON.parse(tags);
+            JSON.parse(
+              tags
+            );
 
           if (
             !Array.isArray(
               parsedTags
             )
           ) {
-            parsedTags = [];
+            parsedTags =
+              [];
           }
         } catch (error) {
           deleteUploadedFiles(
@@ -937,7 +1335,8 @@ router.post(
             'Anonymous Farmer',
 
           userLocation:
-            req.user.state || '',
+            req.user.state ||
+            '',
 
           title:
             title.trim(),
@@ -961,7 +1360,7 @@ router.post(
       await forumPost.save();
 
       // -------------------------------------------------------
-      // Log activity
+      // GAMIFICATION: FORUM POST
       // -------------------------------------------------------
 
       await logActivity(
@@ -989,8 +1388,13 @@ router.post(
             'ForumPost',
 
           metadata: {
+            action:
+              'post_created',
+
             category,
+
             crop,
+
             hasImages:
               images.length > 0
           }
@@ -998,7 +1402,8 @@ router.post(
       );
 
       res.json({
-        success: true,
+        success:
+          true,
 
         message:
           'Post created successfully',
@@ -1030,7 +1435,10 @@ router.post(
 
 router.get(
   '/posts',
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
     try {
       const {
         category,
@@ -1042,7 +1450,8 @@ router.get(
         sort = 'recent'
       } = req.query;
 
-      const query = {};
+      const query =
+        {};
 
       if (category) {
         query.category =
@@ -1050,7 +1459,8 @@ router.get(
       }
 
       if (crop) {
-        query.crop = crop;
+        query.crop =
+          crop;
       }
 
       if (status) {
@@ -1064,22 +1474,27 @@ router.get(
             title: {
               $regex:
                 search,
+
               $options:
                 'i'
             }
           },
+
           {
             content: {
               $regex:
                 search,
+
               $options:
                 'i'
             }
           },
+
           {
             tags: {
               $regex:
                 search,
+
               $options:
                 'i'
             }
@@ -1087,29 +1502,35 @@ router.get(
         ];
       }
 
-      let sortOption = {};
+      let sortOption =
+        {};
 
       if (
         sort ===
         'recent'
       ) {
         sortOption = {
-          createdAt: -1
+          createdAt:
+            -1
         };
       } else if (
         sort ===
         'popular'
       ) {
         sortOption = {
-          views: -1,
-          upvotes: -1
+          views:
+            -1,
+
+          upvotes:
+            -1
         };
       } else if (
         sort ===
         'answered'
       ) {
         sortOption = {
-          replies: -1
+          replies:
+            -1
         };
       }
 
@@ -1145,20 +1566,26 @@ router.get(
             parsedLimit
           )
           .skip(
-            (parsedPage - 1) *
+            (
+              parsedPage -
+              1
+            ) *
               parsedLimit
           );
 
-      // Add replyCount and remove full replies from list response
       const postsWithCount =
         posts.map(
-          (post) => {
+          (
+            post
+          ) => {
             const postObj =
               post.toObject();
 
             const replyCount =
               postObj.replies
-                ? postObj.replies.length
+                ? postObj
+                    .replies
+                    .length
                 : 0;
 
             postObj.replyCount =
@@ -1176,7 +1603,8 @@ router.get(
         );
 
       res.json({
-        success: true,
+        success:
+          true,
 
         posts:
           postsWithCount,
@@ -1213,7 +1641,10 @@ router.get(
 
 router.get(
   '/posts/:postId',
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
     try {
       const post =
         await ForumPost.findById(
@@ -1229,12 +1660,15 @@ router.get(
 
       // Increment views
       post.views =
-        (post.views || 0) + 1;
+        (post.views || 0) +
+        1;
 
       await post.save();
 
       res.json({
-        success: true,
+        success:
+          true,
+
         post
       });
     } catch (error) {
@@ -1259,8 +1693,14 @@ router.post(
   '/posts/:postId/replies',
   auth,
   checkForumAccess,
-  upload.array('images', 2),
-  async (req, res) => {
+  upload.array(
+    'images',
+    2
+  ),
+  async (
+    req,
+    res
+  ) => {
     try {
       const {
         content
@@ -1302,18 +1742,33 @@ router.post(
         );
 
         return res.status(403).json({
-          success: false,
+          success:
+            false,
+
           error:
             moderationResult.message,
-          blocked: true,
-          banned: true,
-          suspended: false,
-          warned: false,
+
+          blocked:
+            true,
+
+          banned:
+            true,
+
+          suspended:
+            false,
+
+          warned:
+            false,
+
           forumStatus:
             'banned',
+
           warnings:
             moderationResult.warnings,
-          blockedUntil: null,
+
+          blockedUntil:
+            null,
+
           detectedWords:
             moderationResult.detectedWords
         });
@@ -1331,19 +1786,33 @@ router.post(
         );
 
         return res.status(403).json({
-          success: false,
+          success:
+            false,
+
           error:
             moderationResult.message,
-          blocked: true,
-          banned: false,
-          suspended: true,
-          warned: false,
+
+          blocked:
+            true,
+
+          banned:
+            false,
+
+          suspended:
+            true,
+
+          warned:
+            false,
+
           forumStatus:
             'suspended',
+
           warnings:
             moderationResult.warnings,
+
           blockedUntil:
             moderationResult.blockedUntil,
+
           detectedWords:
             moderationResult.detectedWords
         });
@@ -1361,18 +1830,33 @@ router.post(
         );
 
         return res.status(400).json({
-          success: false,
+          success:
+            false,
+
           error:
             moderationResult.message,
-          blocked: false,
-          banned: false,
-          suspended: false,
-          warned: true,
+
+          blocked:
+            false,
+
+          banned:
+            false,
+
+          suspended:
+            false,
+
+          warned:
+            true,
+
           forumStatus:
             'active',
+
           warnings:
             moderationResult.warnings,
-          blockedUntil: null,
+
+          blockedUntil:
+            null,
+
           detectedWords:
             moderationResult.detectedWords
         });
@@ -1441,6 +1925,12 @@ router.post(
 
       await post.save();
 
+      const savedReply =
+        post.replies[
+          post.replies.length -
+            1
+        ];
+
       // -------------------------------------------------------
       // NOTIFICATION: POST OWNER
       // -------------------------------------------------------
@@ -1464,7 +1954,7 @@ router.post(
       });
 
       // -------------------------------------------------------
-      // Log activity
+      // GAMIFICATION: FORUM REPLY
       // -------------------------------------------------------
 
       await logActivity(
@@ -1492,6 +1982,12 @@ router.post(
             'ForumPost',
 
           metadata: {
+            action:
+              'reply_created',
+
+            replyId:
+              savedReply._id,
+
             postTitle:
               post.title,
 
@@ -1505,15 +2001,14 @@ router.post(
       );
 
       res.json({
-        success: true,
+        success:
+          true,
 
         message:
           'Reply added successfully',
 
         reply:
-          post.replies[
-            post.replies.length - 1
-          ]
+          savedReply
       });
     } catch (error) {
       console.error(
@@ -1540,7 +2035,10 @@ router.post(
 router.post(
   '/posts/:postId/upvote',
   auth,
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
     try {
       const post =
         await ForumPost.findById(
@@ -1579,8 +2077,6 @@ router.post(
 
       // -------------------------------------------------------
       // NOTIFICATION: POST LIKE
-      // Only notify when a like is added.
-      // Do not notify when the user removes their like.
       // -------------------------------------------------------
 
       if (
@@ -1603,9 +2099,13 @@ router.post(
       }
 
       res.json({
-        success: true,
+        success:
+          true,
+
         upvoted:
-          upvoteIndex === -1,
+          upvoteIndex ===
+          -1,
+
         upvoteCount:
           post.upvotes.length
       });
@@ -1630,7 +2130,10 @@ router.post(
 router.post(
   '/posts/:postId/replies/:replyId/upvote',
   auth,
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
     try {
       const post =
         await ForumPost.findById(
@@ -1664,6 +2167,12 @@ router.post(
           userId
         );
 
+      /*
+      |--------------------------------------------------------------------------
+      | Toggle reply upvote
+      |--------------------------------------------------------------------------
+      */
+
       if (
         upvoteIndex > -1
       ) {
@@ -1679,9 +2188,15 @@ router.post(
 
       await post.save();
 
-      // -------------------------------------------------------
-      // NOTIFICATION: REPLY LIKE
-      // -------------------------------------------------------
+      /*
+      |--------------------------------------------------------------------------
+      | NOTIFICATION: REPLY LIKE
+      |--------------------------------------------------------------------------
+      |
+      | Only notify when a like is added.
+      |
+      |--------------------------------------------------------------------------
+      */
 
       if (
         upvoteIndex === -1
@@ -1705,12 +2220,154 @@ router.post(
         });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | GAMIFICATION: HELPFUL REPLY
+      |--------------------------------------------------------------------------
+      |
+      | Conditions:
+      |
+      | 1. The upvote must be newly added.
+      | 2. The voter cannot be the reply author.
+      | 3. The same voter cannot earn XP repeatedly for the same reply.
+      |
+      | We use UserActivity history to make the reward idempotent.
+      |
+      |--------------------------------------------------------------------------
+      */
+
+      let helpfulReplyAwarded =
+        false;
+
+      if (
+        upvoteIndex === -1
+      ) {
+        const voterId =
+          String(
+            req.user._id
+          );
+
+        const replyOwnerId =
+          String(
+            reply.userId
+          );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Do not count self-upvotes.
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+          voterId !==
+          replyOwnerId
+        ) {
+          /*
+          |--------------------------------------------------------------------------
+          | Check whether this exact user already received a helpful-reply
+          | reward for this exact reply.
+          |--------------------------------------------------------------------------
+          */
+
+          const previousHelpfulActivity =
+  await UserActivity.findOne({
+    userId:
+      reply.userId,
+
+    activityType:
+      'helpful_reply',
+
+    'metadata.action':
+      'reply_upvoted',
+
+    'metadata.replyId':
+      String(
+        reply._id
+      ),
+
+    'metadata.replyOwnerId':
+      replyOwnerId,
+
+    'metadata.voterId':
+      voterId
+  }).lean();
+          /*
+          |--------------------------------------------------------------------------
+          | Award only once per voter/reply pair.
+          |--------------------------------------------------------------------------
+          */
+
+          if (
+            !previousHelpfulActivity
+          ) {
+            const helpfulActivity =
+              await logActivity(
+                reply.userId,
+                {
+                  activityType:
+                    'helpful_reply',
+
+                  title:
+                    `Helpful Reply - ${post.title}`,
+
+                  description:
+                    `Your reply to "${post.title}" received a helpful upvote.`,
+
+                  status:
+                    'completed',
+
+                  result:
+                    'Reply received a helpful community upvote',
+
+                  relatedId:
+                    post._id,
+
+                  relatedModel:
+                    'ForumPost',
+
+                  metadata: {
+                    action:
+                      'reply_upvoted',
+
+                    replyId:
+                      String(
+                        reply._id
+                      ),
+
+                    replyOwnerId:
+                      replyOwnerId,
+
+                    voterId:
+                      voterId,
+
+                    postTitle:
+                      post.title
+                  }
+                }
+              );
+
+            if (
+              helpfulActivity
+            ) {
+              helpfulReplyAwarded =
+                true;
+            }
+          }
+        }
+      }
+
       res.json({
-        success: true,
+        success:
+          true,
+
         upvoted:
-          upvoteIndex === -1,
+          upvoteIndex ===
+          -1,
+
         upvoteCount:
-          reply.upvotes.length
+          reply.upvotes.length,
+
+        helpfulReplyAwarded
       });
     } catch (error) {
       console.error(
@@ -1733,7 +2390,10 @@ router.post(
 router.get(
   '/my-posts',
   auth,
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
     try {
       const posts =
         await ForumPost.find({
@@ -1741,12 +2401,17 @@ router.get(
             req.user._id
         })
           .sort({
-            createdAt: -1
+            createdAt:
+              -1
           })
-          .select('-replies');
+          .select(
+            '-replies'
+          );
 
       res.json({
-        success: true,
+        success:
+          true,
+
         posts
       });
     } catch (error) {
@@ -1770,7 +2435,10 @@ router.get(
 router.post(
   '/posts/:postId/flag',
   auth,
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
     try {
       const {
         reason
@@ -1788,7 +2456,8 @@ router.post(
         });
       }
 
-      post.flagged = true;
+      post.flagged =
+        true;
 
       post.flagReason =
         reason ||
@@ -1797,7 +2466,8 @@ router.post(
       await post.save();
 
       res.json({
-        success: true,
+        success:
+          true,
 
         message:
           'Post flagged for review'
@@ -1822,7 +2492,10 @@ router.post(
 
 router.get(
   '/tags',
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
     try {
       const posts =
         await ForumPost.find(
@@ -1830,15 +2503,18 @@ router.get(
           'tags'
         );
 
-      const tagCounts = {};
+      const tagCounts =
+        {};
 
       posts.forEach(
         (post) => {
           post.tags.forEach(
             (tag) => {
               tagCounts[tag] =
-                (tagCounts[tag] || 0) +
-                1;
+                (
+                  tagCounts[tag] ||
+                  0
+                ) + 1;
             }
           );
         }
@@ -1850,19 +2526,28 @@ router.get(
         )
           .sort(
             (a, b) =>
-              b[1] - a[1]
+              b[1] -
+              a[1]
           )
-          .slice(0, 20)
+          .slice(
+            0,
+            20
+          )
           .map(
-            ([tag, count]) => ({
+            (
+              [tag, count]
+            ) => ({
               tag,
               count
             })
           );
 
       res.json({
-        success: true,
-        tags: sortedTags
+        success:
+          true,
+
+        tags:
+          sortedTags
       });
     } catch (error) {
       console.error(
@@ -1883,7 +2568,12 @@ router.get(
 // =========================================================
 
 router.use(
-  (error, req, res, next) => {
+  (
+    error,
+    req,
+    res,
+    next
+  ) => {
     if (
       error instanceof
       multer.MulterError
@@ -1893,14 +2583,18 @@ router.use(
         'LIMIT_FILE_SIZE'
       ) {
         return res.status(400).json({
-          success: false,
+          success:
+            false,
+
           error:
             'Image size must be 5MB or smaller.'
         });
       }
 
       return res.status(400).json({
-        success: false,
+        success:
+          false,
+
         error:
           error.message ||
           'Image upload failed.'
@@ -1915,7 +2609,9 @@ router.use(
         )
       ) {
         return res.status(400).json({
-          success: false,
+          success:
+            false,
+
           error:
             error.message
         });
@@ -1927,7 +2623,9 @@ router.use(
       );
 
       return res.status(500).json({
-        success: false,
+        success:
+          false,
+
         error:
           'Forum request failed.'
       });
@@ -1937,4 +2635,9 @@ router.use(
   }
 );
 
-module.exports = router;
+// =========================================================
+// EXPORT
+// =========================================================
+
+module.exports =
+  router;

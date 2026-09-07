@@ -7,6 +7,8 @@ const bcrypt = require("bcrypt");
 const router = express.Router();
 const User = require("../models/User");
 
+const { logActivity } = require("./activities");
+
 // =========================================================
 // HELPER: GENERATE JWT
 // =========================================================
@@ -611,12 +613,49 @@ router.post("/mpin/login", async (req, res) => {
     }
 
     const token =
-      generateToken(user);
+  generateToken(user);
 
-    const userResponse =
-      getUserResponse(user);
+const userResponse =
+  getUserResponse(user);
 
-    return res.json({
+/*
+ * Gamification login activity.
+ *
+ * This is intentionally non-blocking.
+ * A gamification failure must never prevent
+ * a valid user from logging in.
+ */
+try {
+  await logActivity(
+    user._id,
+    {
+      activityType: "login",
+
+      title:
+        "FarmAI Login",
+
+      description:
+        "Logged in successfully to FarmAI.",
+
+      status:
+        "completed",
+
+      result:
+        "Login successful",
+
+      metadata: {
+        method: "mpin"
+      }
+    }
+  );
+} catch (activityError) {
+  console.error(
+    "Login gamification error:",
+    activityError
+  );
+}
+
+return res.json({
       success: true,
       code: "LOGIN_SUCCESS",
       message:
@@ -716,6 +755,42 @@ router.post(
 
       const userResponse =
         getUserResponse(user);
+
+      /*
+ * Gamification login activity.
+ *
+ * Non-blocking so authentication remains
+ * independent of gamification.
+ */
+try {
+  await logActivity(
+    user._id,
+    {
+      activityType: "login",
+
+      title:
+        "FarmAI Login",
+
+      description:
+        "Logged in successfully to FarmAI.",
+
+      status:
+        "completed",
+
+      result:
+        "Login successful",
+
+      metadata: {
+        method: "password"
+      }
+    }
+  );
+} catch (activityError) {
+  console.error(
+    "Login gamification error:",
+    activityError
+  );
+}
 
       return res.json({
         success: true,

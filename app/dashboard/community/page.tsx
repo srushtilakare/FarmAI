@@ -1191,54 +1191,12 @@ export default function CommunityForumPage() {
         }
 
         if (response.ok) {
-          await fetch(
-            `${API_BASE_URL}/api/gamification/log-activity`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type':
-                  'application/json',
-                Authorization:
-                  `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                activityType:
-                  'forum_reply',
-                description:
-                  'Replied to a forum post'
-              })
-            }
-          );
-
-          toast({
-            title:
-              'Reply posted!',
-            description:
-              'Your reply has been added to the discussion.'
-          });
-
-          setReplyContent(
-            ''
-          );
-
-          setReplyImages([]);
-
-          setReplyModeration({
-            isAbusive:
-              false,
-            detectedWords:
-              [],
-            severity:
-              'low'
-          });
-
-          await fetchPostDetail(
-            postId
-          );
-
-          await fetchPosts();
-
-          return;
+           
+            // The backend forum route already logs the forum reply
+            // through logActivity(). Do NOT log it again here,
+            // otherwise one reply can receive duplicate XP.
+          
+            // Keep the rest of the existing success logic below unchanged.
         }
 
         if (data.warned) {

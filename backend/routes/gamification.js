@@ -33,6 +33,19 @@ const ACTIVITY_POINTS = {
 };
 
 // =========================================================
+// ACHIEVEMENT TARGETS
+// =========================================================
+
+const ACHIEVEMENT_TARGETS = {
+  expertAdviser: 50,
+  activeFarmer: 30,
+  diseaseDetector: 20,
+  soilMaster: 5,
+  weatherWatcher: 100,
+  communityHelper: 25
+};
+
+// =========================================================
 // BADGE DEFINITIONS
 // =========================================================
 
@@ -40,7 +53,7 @@ const BADGES = {
   ACTIVE_FARMER: {
     badgeId: 'active_farmer',
     badgeName: 'Active Farmer',
-    badgeDescription: '30 day login streak',
+    badgeDescription: 'Maintained a 30 day login streak',
     badgeIcon: '🌟',
     category: 'activity'
   },
@@ -101,42 +114,42 @@ const BADGES = {
 const LEVELS = [
   {
     level: 1,
-    name: 'Beginner Farmer',
+    name: 'Seedling',
     minPoints: 0
   },
   {
     level: 2,
-    name: 'Learning Farmer',
+    name: 'Growing Farmer',
     minPoints: 100
   },
   {
     level: 3,
-    name: 'Practicing Farmer',
+    name: 'Skilled Farmer',
     minPoints: 300
   },
   {
     level: 4,
-    name: 'Skilled Farmer',
+    name: 'Expert Farmer',
     minPoints: 600
   },
   {
     level: 5,
-    name: 'Expert Farmer',
+    name: 'Master Farmer',
     minPoints: 1000
   },
   {
     level: 6,
-    name: 'Master Farmer',
+    name: 'Agriculture Expert',
     minPoints: 1500
   },
   {
     level: 7,
-    name: 'Agricultural Expert',
+    name: 'Agriculture Champion',
     minPoints: 2500
   },
   {
     level: 8,
-    name: 'Farming Legend',
+    name: 'Agriculture Legend',
     minPoints: 5000
   }
 ];
@@ -144,10 +157,6 @@ const LEVELS = [
 // =========================================================
 // STREAK MILESTONES
 // =========================================================
-//
-// Notifications are generated only for these milestones.
-// This avoids creating unnecessary notifications every day.
-//
 
 const STREAK_MILESTONES = [
   3,
@@ -157,6 +166,78 @@ const STREAK_MILESTONES = [
   60,
   100
 ];
+
+// =========================================================
+// ENSURE ACHIEVEMENT STRUCTURE
+// =========================================================
+
+function ensureAchievementStructure(userScore) {
+  if (!userScore.achievements) {
+    userScore.achievements = {};
+  }
+
+  const defaults = {
+    expertAdviser: {
+      current: 0,
+      target: 50,
+      completed: false
+    },
+
+    activeFarmer: {
+      current: 0,
+      target: 30,
+      completed: false
+    },
+
+    diseaseDetector: {
+      current: 0,
+      target: 20,
+      completed: false
+    },
+
+    soilMaster: {
+      current: 0,
+      target: 5,
+      completed: false
+    },
+
+    weatherWatcher: {
+      current: 0,
+      target: 100,
+      completed: false
+    },
+
+    communityHelper: {
+      current: 0,
+      target: 25,
+      completed: false
+    }
+  };
+
+  Object.keys(defaults).forEach((key) => {
+    if (!userScore.achievements[key]) {
+      userScore.achievements[key] = {
+        ...defaults[key]
+      };
+
+      return;
+    }
+
+    if (
+      typeof userScore.achievements[key].current !==
+      'number'
+    ) {
+      userScore.achievements[key].current = 0;
+    }
+
+    userScore.achievements[key].target =
+      ACHIEVEMENT_TARGETS[key];
+
+    userScore.achievements[key].completed =
+      userScore.achievements[key].current >=
+      ACHIEVEMENT_TARGETS[key];
+  });
+}
 
 // =========================================================
 // GET OR CREATE USER SCORE
@@ -170,6 +251,36 @@ async function getUserScore(userId) {
   if (!userScore) {
     userScore = new UserScore({
       userId,
+
+      totalPoints: 0,
+
+      level: 1,
+
+      levelName: 'Seedling',
+
+      stats: {
+        totalLogins: 0,
+        consecutiveLogins: 0,
+        lastLoginDate: null,
+        tasksCompleted: 0,
+        diseaseUploads: 0,
+        soilReportsUploaded: 0,
+        weatherChecks: 0,
+        forumPosts: 0,
+        forumReplies: 0,
+        helpfulReplies: 0
+      },
+
+      badges: [],
+
+      recentActivities: [],
+
+      streaks: {
+        currentLoginStreak: 0,
+        longestLoginStreak: 0,
+        currentTaskStreak: 0,
+        longestTaskStreak: 0
+      },
 
       achievements: {
         expertAdviser: {
@@ -213,6 +324,37 @@ async function getUserScore(userId) {
     await userScore.save();
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Important for existing users
+  |--------------------------------------------------------------------------
+  |
+  | Existing UserScore documents may have been created before all
+  | achievement fields existed.
+  |
+  |--------------------------------------------------------------------------
+  */
+
+  ensureAchievementStructure(userScore);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Keep Active Farmer synchronized with current login streak
+  |--------------------------------------------------------------------------
+  */
+
+  userScore.achievements.activeFarmer.current =
+    Number(
+      userScore.streaks?.currentLoginStreak || 0
+    );
+
+  userScore.achievements.activeFarmer.target =
+    ACHIEVEMENT_TARGETS.activeFarmer;
+
+  userScore.achievements.activeFarmer.completed =
+    userScore.achievements.activeFarmer.current >=
+    ACHIEVEMENT_TARGETS.activeFarmer;
+
   return userScore;
 }
 
@@ -238,8 +380,143 @@ function calculateLevel(points) {
 
   return {
     level: 1,
-    levelName: 'Beginner Farmer'
+    levelName: 'Seedling'
   };
+}
+
+// =========================================================
+// UPDATE ACHIEVEMENT PROGRESS
+// =========================================================
+
+function updateAchievement(
+  userScore,
+  achievementKey,
+  currentValue
+) {
+  if (
+    !userScore.achievements ||
+    !userScore.achievements[achievementKey]
+  ) {
+    return;
+  }
+
+  const target =
+    ACHIEVEMENT_TARGETS[
+      achievementKey
+    ];
+
+  userScore.achievements[
+    achievementKey
+  ].current = Math.max(
+    0,
+    Number(currentValue) || 0
+  );
+
+  userScore.achievements[
+    achievementKey
+  ].target = target;
+
+  userScore.achievements[
+    achievementKey
+  ].completed =
+    userScore.achievements[
+      achievementKey
+    ].current >= target;
+}
+
+// =========================================================
+// SYNCHRONIZE ALL ACHIEVEMENTS
+// =========================================================
+//
+// This is intentionally based on the actual UserScore statistics.
+// It prevents achievement values from becoming inconsistent with
+// the underlying counters.
+//
+
+function synchronizeAchievements(
+  userScore
+) {
+  ensureAchievementStructure(
+    userScore
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Active Farmer
+  |--------------------------------------------------------------------------
+  */
+
+  updateAchievement(
+    userScore,
+    'activeFarmer',
+    userScore.streaks
+      ?.currentLoginStreak || 0
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Disease Detector
+  |--------------------------------------------------------------------------
+  */
+
+  updateAchievement(
+    userScore,
+    'diseaseDetector',
+    userScore.stats
+      ?.diseaseUploads || 0
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Soil Master
+  |--------------------------------------------------------------------------
+  */
+
+  updateAchievement(
+    userScore,
+    'soilMaster',
+    userScore.stats
+      ?.soilReportsUploaded || 0
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Weather Watcher
+  |--------------------------------------------------------------------------
+  */
+
+  updateAchievement(
+    userScore,
+    'weatherWatcher',
+    userScore.stats
+      ?.weatherChecks || 0
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Community Helper
+  |--------------------------------------------------------------------------
+  */
+
+  updateAchievement(
+    userScore,
+    'communityHelper',
+    userScore.stats
+      ?.forumReplies || 0
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Expert Adviser
+  |--------------------------------------------------------------------------
+  */
+
+  updateAchievement(
+    userScore,
+    'expertAdviser',
+    userScore.stats
+      ?.helpfulReplies || 0
+  );
 }
 
 // =========================================================
@@ -251,12 +528,18 @@ async function checkAndAwardBadges(
 ) {
   const newBadges = [];
 
-  // -------------------------------------------------------
-  // Active Farmer
-  // -------------------------------------------------------
+  synchronizeAchievements(
+    userScore
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Active Farmer
+  |--------------------------------------------------------------------------
+  */
 
   if (
-    userScore.streaks.currentLoginStreak >= 30 &&
+    userScore.achievements.activeFarmer.completed &&
     !userScore.badges.find(
       (b) =>
         b.badgeId === 'active_farmer'
@@ -267,12 +550,14 @@ async function checkAndAwardBadges(
     );
   }
 
-  // -------------------------------------------------------
-  // Soil Master
-  // -------------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Soil Master
+  |--------------------------------------------------------------------------
+  */
 
   if (
-    userScore.stats.soilReportsUploaded >= 5 &&
+    userScore.achievements.soilMaster.completed &&
     !userScore.badges.find(
       (b) =>
         b.badgeId === 'soil_master'
@@ -283,12 +568,14 @@ async function checkAndAwardBadges(
     );
   }
 
-  // -------------------------------------------------------
-  // Disease Free
-  // -------------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Disease Free
+  |--------------------------------------------------------------------------
+  */
 
   if (
-    userScore.stats.diseaseUploads >= 20 &&
+    userScore.achievements.diseaseDetector.completed &&
     !userScore.badges.find(
       (b) =>
         b.badgeId === 'disease_free'
@@ -299,12 +586,14 @@ async function checkAndAwardBadges(
     );
   }
 
-  // -------------------------------------------------------
-  // Community Helper
-  // -------------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Community Helper
+  |--------------------------------------------------------------------------
+  */
 
   if (
-    userScore.stats.forumReplies >= 25 &&
+    userScore.achievements.communityHelper.completed &&
     !userScore.badges.find(
       (b) =>
         b.badgeId === 'community_helper'
@@ -315,12 +604,14 @@ async function checkAndAwardBadges(
     );
   }
 
-  // -------------------------------------------------------
-  // Expert Adviser
-  // -------------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Expert Adviser
+  |--------------------------------------------------------------------------
+  */
 
   if (
-    userScore.stats.helpfulReplies >= 50 &&
+    userScore.achievements.expertAdviser.completed &&
     !userScore.badges.find(
       (b) =>
         b.badgeId === 'expert_adviser'
@@ -331,12 +622,14 @@ async function checkAndAwardBadges(
     );
   }
 
-  // -------------------------------------------------------
-  // Weather Watcher
-  // -------------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Weather Watcher
+  |--------------------------------------------------------------------------
+  */
 
   if (
-    userScore.stats.weatherChecks >= 100 &&
+    userScore.achievements.weatherWatcher.completed &&
     !userScore.badges.find(
       (b) =>
         b.badgeId === 'weather_watcher'
@@ -347,16 +640,51 @@ async function checkAndAwardBadges(
     );
   }
 
-  // -------------------------------------------------------
-  // Add new badges
-  // -------------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Irrigation Pro
+  |--------------------------------------------------------------------------
+  |
+  | This badge will be activated when the task system provides an
+  | irrigation on-time counter.
+  |
+  | We intentionally do NOT use total tasks here because that would
+  | incorrectly award an irrigation-specific badge for non-irrigation
+  | tasks.
+  |
+  |--------------------------------------------------------------------------
+  */
 
-  if (newBadges.length > 0) {
+  const irrigationTasksOnTime =
+    Number(
+      userScore.stats
+        ?.irrigationTasksOnTime || 0
+    );
+
+  if (
+    irrigationTasksOnTime >= 50 &&
+    !userScore.badges.find(
+      (b) =>
+        b.badgeId === 'irrigation_pro'
+    )
+  ) {
+    newBadges.push(
+      BADGES.IRRIGATION_PRO
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Add new badges
+  |--------------------------------------------------------------------------
+  */
+
+  if (
+    newBadges.length > 0
+  ) {
     userScore.badges.push(
       ...newBadges
     );
-
-    await userScore.save();
   }
 
   return newBadges;
@@ -365,12 +693,6 @@ async function checkAndAwardBadges(
 // =========================================================
 // SEND GAMIFICATION NOTIFICATIONS
 // =========================================================
-//
-// IMPORTANT:
-// Notification failures are intentionally isolated.
-// If a notification fails, the gamification operation
-// itself will continue working.
-//
 
 async function sendGamificationNotifications({
   userId,
@@ -383,56 +705,74 @@ async function sendGamificationNotifications({
   newBadges
 }) {
   try {
-    // -------------------------------------------------------
-    // XP NOTIFICATION
-    // -------------------------------------------------------
+    /*
+    |--------------------------------------------------------------------------
+    | XP NOTIFICATION
+    |--------------------------------------------------------------------------
+    */
 
-    if (points > 0) {
-      let reason = 'FarmAI activity';
+    if (
+      points > 0
+    ) {
+      let reason =
+        'FarmAI activity';
 
-      switch (activityType) {
+      switch (
+        activityType
+      ) {
         case 'login':
-          reason = 'logging in to FarmAI';
+          reason =
+            'logging in to FarmAI';
           break;
 
         case 'task_completed':
-          reason = 'completing a farming task';
+          reason =
+            'completing a farming task';
           break;
 
         case 'disease_upload':
-          reason = 'using crop disease detection';
+          reason =
+            'using crop disease detection';
           break;
 
         case 'soil_upload':
-          reason = 'uploading a soil report';
+          reason =
+            'uploading a soil report';
           break;
 
         case 'weather_check':
-          reason = 'checking the weather';
+          reason =
+            'checking the weather';
           break;
 
         case 'forum_post':
-          reason = 'creating a community post';
+          reason =
+            'creating a community post';
           break;
 
         case 'forum_reply':
-          reason = 'helping the farming community';
+          reason =
+            'helping the farming community';
           break;
 
         case 'helpful_reply':
-          reason = 'providing a helpful community reply';
+          reason =
+            'providing a helpful community reply';
           break;
 
         case 'news_read':
-          reason = 'reading agriculture news';
+          reason =
+            'reading agriculture news';
           break;
 
         case 'consecutive_login':
-          reason = 'maintaining your login streak';
+          reason =
+            'maintaining your login streak';
           break;
 
         default:
-          reason = 'FarmAI activity';
+          reason =
+            'FarmAI activity';
       }
 
       await notifyXpEarned({
@@ -442,28 +782,33 @@ async function sendGamificationNotifications({
       });
     }
 
-    // -------------------------------------------------------
-    // LEVEL UP NOTIFICATION
-    // -------------------------------------------------------
+    /*
+    |--------------------------------------------------------------------------
+    | LEVEL UP NOTIFICATION
+    |--------------------------------------------------------------------------
+    */
 
     if (
-      currentLevel > previousLevel
+      currentLevel >
+      previousLevel
     ) {
       await notifyLevelUp({
         userId,
-        level: currentLevel
+        level:
+          currentLevel
       });
     }
 
-    // -------------------------------------------------------
-    // STREAK NOTIFICATIONS
-    // -------------------------------------------------------
+    /*
+    |--------------------------------------------------------------------------
+    | STREAK NOTIFICATIONS
+    |--------------------------------------------------------------------------
+    */
 
     if (
       activityType === 'login' &&
       currentStreak > 1
     ) {
-      // Milestone notification
       if (
         STREAK_MILESTONES.includes(
           currentStreak
@@ -471,23 +816,28 @@ async function sendGamificationNotifications({
       ) {
         await notifyStreakMilestone({
           userId,
-          streakDays: currentStreak
+          streakDays:
+            currentStreak
         });
       } else {
-        // Normal streak notification
         await notifyStreak({
           userId,
-          streakDays: currentStreak
+          streakDays:
+            currentStreak
         });
       }
     }
 
-    // -------------------------------------------------------
-    // BADGE NOTIFICATIONS
-    // -------------------------------------------------------
+    /*
+    |--------------------------------------------------------------------------
+    | BADGE NOTIFICATIONS
+    |--------------------------------------------------------------------------
+    */
 
     if (
-      Array.isArray(newBadges) &&
+      Array.isArray(
+        newBadges
+      ) &&
       newBadges.length > 0
     ) {
       for (
@@ -495,22 +845,26 @@ async function sendGamificationNotifications({
       ) {
         await notifyBadgeEarned({
           userId,
+
           badgeName:
             badge.badgeName,
+
           badgeId:
-            null
+            badge.badgeId
         });
       }
     }
   } catch (error) {
+    /*
+    |--------------------------------------------------------------------------
+    | Notification errors must never break gamification.
+    |--------------------------------------------------------------------------
+    */
+
     console.error(
       'Error sending gamification notifications:',
       error
     );
-
-    // Do NOT throw.
-    // Gamification functionality must continue
-    // even if notification creation fails.
   }
 }
 
@@ -528,14 +882,18 @@ router.post(
         description
       } = req.body;
 
-      // -------------------------------------------------------
-      // Validate activity
-      // -------------------------------------------------------
+      /*
+      |--------------------------------------------------------------------------
+      | Validate activity
+      |--------------------------------------------------------------------------
+      */
 
       if (
-        !ACTIVITY_POINTS[
+        !activityType ||
+        !Object.prototype.hasOwnProperty.call(
+          ACTIVITY_POINTS,
           activityType
-        ]
+        )
       ) {
         return res.status(400).json({
           error:
@@ -543,55 +901,60 @@ router.post(
         });
       }
 
-      // -------------------------------------------------------
-      // Get user score
-      // -------------------------------------------------------
+      /*
+      |--------------------------------------------------------------------------
+      | Get UserScore
+      |--------------------------------------------------------------------------
+      */
 
       const userScore =
         await getUserScore(
           req.user._id
         );
 
-      const points =
-        ACTIVITY_POINTS[
-          activityType
-        ];
-
-      // -------------------------------------------------------
-      // Store previous level BEFORE adding points
-      // -------------------------------------------------------
+      /*
+      |--------------------------------------------------------------------------
+      | Previous state
+      |--------------------------------------------------------------------------
+      */
 
       const previousLevel =
         userScore.level || 1;
 
-      // Store previous streak
       const previousStreak =
-        userScore.streaks
-          .currentLoginStreak || 0;
+        Number(
+          userScore.streaks
+            ?.currentLoginStreak || 0
+        );
 
-      // -------------------------------------------------------
-      // Add points
-      // -------------------------------------------------------
+      /*
+      |--------------------------------------------------------------------------
+      | POINTS
+      |--------------------------------------------------------------------------
+      */
 
-      userScore.totalPoints +=
-        points;
+      let points =
+        ACTIVITY_POINTS[
+          activityType
+        ];
 
-      // -------------------------------------------------------
-      // Update stats
-      // -------------------------------------------------------
+      /*
+      |--------------------------------------------------------------------------
+      | LOGIN
+      |--------------------------------------------------------------------------
+      |
+      | A user can log in multiple times on the same day, but that should
+      | not repeatedly award login XP or increase the login streak.
+      |
+      |--------------------------------------------------------------------------
+      */
+
+      let loginWasCounted =
+        true;
 
       if (
-        activityType ===
-        'login'
+        activityType === 'login'
       ) {
-        userScore.stats.totalLogins +=
-          1;
-
-        // Check consecutive logins
-        const lastLogin =
-          userScore.stats
-            .lastLoginDate;
-
         const today =
           new Date();
 
@@ -602,13 +965,17 @@ router.post(
           0
         );
 
-        if (lastLogin) {
-          const lastLoginDate =
-            new Date(
-              lastLogin
-            );
+        const lastLogin =
+          userScore.stats
+            .lastLoginDate
+            ? new Date(
+                userScore.stats
+                  .lastLoginDate
+              )
+            : null;
 
-          lastLoginDate.setHours(
+        if (lastLogin) {
+          lastLogin.setHours(
             0,
             0,
             0,
@@ -616,22 +983,61 @@ router.post(
           );
 
           const daysDiff =
-            (
-              today -
-              lastLoginDate
-            ) /
-            (1000 *
-              60 *
-              60 *
-              24);
+            Math.round(
+              (
+                today.getTime() -
+                lastLogin.getTime()
+              ) /
+              (
+                1000 *
+                60 *
+                60 *
+                24
+              )
+            );
+
+          /*
+          |--------------------------------------------------------------------------
+          | Same day
+          |--------------------------------------------------------------------------
+          */
 
           if (
+            daysDiff === 0
+          ) {
+            loginWasCounted =
+              false;
+
+            points = 0;
+          }
+
+          /*
+          |--------------------------------------------------------------------------
+          | Consecutive day
+          |--------------------------------------------------------------------------
+          */
+
+          else if (
             daysDiff === 1
           ) {
-            // Consecutive day
+            userScore.streaks
+              .currentLoginStreak =
+              Number(
+                userScore.streaks
+                  .currentLoginStreak || 0
+              ) + 1;
 
-            userScore.streaks.currentLoginStreak +=
-              1;
+            userScore.stats
+              .consecutiveLogins =
+              userScore.streaks
+                .currentLoginStreak;
+
+            userScore.stats
+              .totalLogins += 1;
+
+            userScore.stats
+              .lastLoginDate =
+              new Date();
 
             if (
               userScore.streaks
@@ -639,113 +1045,300 @@ router.post(
               userScore.streaks
                 .longestLoginStreak
             ) {
-              userScore.streaks.longestLoginStreak =
+              userScore.streaks
+                .longestLoginStreak =
                 userScore.streaks
                   .currentLoginStreak;
             }
-          } else if (
-            daysDiff > 1
-          ) {
-            // Streak broken
-
-            userScore.streaks.currentLoginStreak =
-              1;
           }
-        } else {
-          userScore.streaks.currentLoginStreak =
-            1;
+
+          /*
+          |--------------------------------------------------------------------------
+          | Streak broken
+          |--------------------------------------------------------------------------
+          */
+
+          else {
+            userScore.streaks
+              .currentLoginStreak =
+              1;
+
+            userScore.stats
+              .consecutiveLogins =
+              1;
+
+            userScore.stats
+              .totalLogins += 1;
+
+            userScore.stats
+              .lastLoginDate =
+              new Date();
+          }
         }
 
-        userScore.stats.lastLoginDate =
-          new Date();
+        /*
+        |--------------------------------------------------------------------------
+        | First-ever login
+        |--------------------------------------------------------------------------
+        */
 
-      } else if (
-        activityType ===
-        'task_completed'
-      ) {
-        userScore.stats.tasksCompleted +=
-          1;
+        else {
+          userScore.streaks
+            .currentLoginStreak =
+            1;
 
-      } else if (
+          userScore.streaks
+            .longestLoginStreak =
+            Math.max(
+              1,
+              Number(
+                userScore.streaks
+                  .longestLoginStreak || 0
+              )
+            );
+
+          userScore.stats
+            .totalLogins += 1;
+
+          userScore.stats
+            .consecutiveLogins =
+            1;
+
+          userScore.stats
+            .lastLoginDate =
+            new Date();
+        }
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | ADD POINTS
+      |--------------------------------------------------------------------------
+      */
+
+      userScore.totalPoints =
+        Number(
+          userScore.totalPoints || 0
+        ) + points;
+
+      /*
+      |--------------------------------------------------------------------------
+      | UPDATE ACTIVITY STATISTICS
+      |--------------------------------------------------------------------------
+      */
+
+    if (
+      activityType ===
+      'task_completed'
+    ) {
+      /*
+       * ---------------------------------------------------------
+       * TASK COMPLETION
+       * ---------------------------------------------------------
+       *
+       * Every completed task earns XP and increases the total
+       * task counter.
+       *
+       * BUT:
+       * Task Streak counts ACTIVE DAYS, not number of tasks.
+       *
+       * Example:
+       *   4 tasks today = 1 streak day
+       *   1 task tomorrow = 2 streak days
+       *   3 tasks tomorrow = still 2 streak days
+       *
+       * ---------------------------------------------------------
+       */
+    
+      userScore.stats.tasksCompleted += 1;
+    
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+    
+      /*
+       * UserScore has lastTaskCompletionDate in the updated
+       * streak schema.
+       */
+      const lastTaskDate =
+        userScore.streaks.lastTaskCompletionDate
+          ? new Date(
+              userScore.streaks.lastTaskCompletionDate
+            )
+          : null;
+    
+      if (lastTaskDate) {
+        lastTaskDate.setHours(0, 0, 0, 0);
+    
+        const daysDiff =
+          Math.round(
+            (
+              today.getTime() -
+              lastTaskDate.getTime()
+            ) /
+            (
+              1000 *
+              60 *
+              60 *
+              24
+            )
+          );
+    
+        /*
+         * Same calendar day:
+         * Do NOT increase the streak.
+         */
+        if (daysDiff === 0) {
+          // Keep currentTaskStreak unchanged.
+        }
+    
+        /*
+         * Exactly the next calendar day:
+         * Continue the streak by one day.
+         */
+        else if (daysDiff === 1) {
+          userScore.streaks.currentTaskStreak =
+            Number(
+              userScore.streaks.currentTaskStreak || 0
+            ) + 1;
+        }
+    
+        /*
+         * More than one day has passed:
+         * The task streak is broken.
+         */
+        else if (daysDiff > 1) {
+          userScore.streaks.currentTaskStreak = 1;
+        }
+    
+        /*
+         * Defensive handling for an unexpected future date.
+         */
+        else {
+          userScore.streaks.currentTaskStreak = 1;
+        }
+      }
+    
+      /*
+       * First task ever.
+       */
+      else {
+        userScore.streaks.currentTaskStreak = 1;
+      }
+    
+      /*
+       * Store the calendar day of the latest task.
+       */
+      userScore.streaks.lastTaskCompletionDate =
+        new Date();
+    
+      /*
+       * Update longest task streak.
+       */
+      userScore.streaks.longestTaskStreak =
+        Math.max(
+          Number(
+            userScore.streaks.longestTaskStreak || 0
+          ),
+          Number(
+            userScore.streaks.currentTaskStreak || 0
+          )
+        );
+    }
+
+      else if (
         activityType ===
         'disease_upload'
       ) {
-        userScore.stats.diseaseUploads +=
-          1;
+        userScore.stats
+          .diseaseUploads += 1;
+      }
 
-        userScore.achievements
-          .diseaseDetector.current +=
-          1;
-
-      } else if (
+      else if (
         activityType ===
         'soil_upload'
       ) {
-        userScore.stats.soilReportsUploaded +=
-          1;
+        userScore.stats
+          .soilReportsUploaded += 1;
+      }
 
-        userScore.achievements
-          .soilMaster.current +=
-          1;
-
-      } else if (
+      else if (
         activityType ===
         'weather_check'
       ) {
-        userScore.stats.weatherChecks +=
-          1;
+        userScore.stats
+          .weatherChecks += 1;
+      }
 
-        userScore.achievements
-          .weatherWatcher.current +=
-          1;
-
-      } else if (
+      else if (
         activityType ===
         'forum_post'
       ) {
-        userScore.stats.forumPosts +=
-          1;
+        userScore.stats
+          .forumPosts += 1;
+      }
 
-      } else if (
+      else if (
         activityType ===
         'forum_reply'
       ) {
-        userScore.stats.forumReplies +=
-          1;
+        userScore.stats
+          .forumReplies += 1;
+      }
 
-        userScore.achievements
-          .communityHelper.current +=
-          1;
-
-      } else if (
+      else if (
         activityType ===
         'helpful_reply'
       ) {
-        userScore.stats.helpfulReplies +=
-          1;
-
-        userScore.achievements
-          .expertAdviser.current +=
-          1;
+        userScore.stats
+          .helpfulReplies += 1;
       }
 
-      // -------------------------------------------------------
-      // Log activity
-      // -------------------------------------------------------
+      /*
+      |--------------------------------------------------------------------------
+      | SYNCHRONIZE ACHIEVEMENTS
+      |--------------------------------------------------------------------------
+      */
 
-      userScore.recentActivities.unshift({
-        activityType,
-        points,
-        description:
-          description ||
-          activityType.replace(
-            '_',
-            ' '
-          ),
-        date: new Date()
-      });
+      synchronizeAchievements(
+        userScore
+      );
 
-      // Keep only last 50 activities
+      /*
+      |--------------------------------------------------------------------------
+      | ADD RECENT GAMIFICATION ACTIVITY
+      |--------------------------------------------------------------------------
+      |
+      | Do not add a duplicate same-day login activity when the user has
+      | already logged in today.
+      |
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        loginWasCounted
+      ) {
+        userScore.recentActivities.unshift({
+          activityType,
+          points,
+          description:
+            description ||
+            activityType
+              .replace(
+                /_/g,
+                ' '
+              ),
+
+          date:
+            new Date()
+        });
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Keep last 50 activities
+      |--------------------------------------------------------------------------
+      */
+
       if (
         userScore
           .recentActivities
@@ -760,9 +1353,11 @@ router.post(
             );
       }
 
-      // -------------------------------------------------------
-      // Update level
-      // -------------------------------------------------------
+      /*
+      |--------------------------------------------------------------------------
+      | UPDATE LEVEL
+      |--------------------------------------------------------------------------
+      */
 
       const levelInfo =
         calculateLevel(
@@ -775,31 +1370,30 @@ router.post(
       userScore.levelName =
         levelInfo.levelName;
 
-      // -------------------------------------------------------
-      // SAVE SCORE
-      // -------------------------------------------------------
-
-      await userScore.save();
-
-      // -------------------------------------------------------
-      // CHECK FOR NEW BADGES
-      // -------------------------------------------------------
+      /*
+      |--------------------------------------------------------------------------
+      | CHECK BADGES
+      |--------------------------------------------------------------------------
+      */
 
       const newBadges =
         await checkAndAwardBadges(
           userScore
         );
 
-      // -------------------------------------------------------
-      // SEND NOTIFICATIONS
-      // -------------------------------------------------------
-      //
-      // This happens AFTER the existing gamification
-      // functionality has successfully completed.
-      //
-      // Therefore a notification problem cannot break
-      // the scoring system.
-      //
+      /*
+      |--------------------------------------------------------------------------
+      | SAVE EVERYTHING
+      |--------------------------------------------------------------------------
+      */
+
+      await userScore.save();
+
+      /*
+      |--------------------------------------------------------------------------
+      | NOTIFICATIONS
+      |--------------------------------------------------------------------------
+      */
 
       await sendGamificationNotifications({
         userId:
@@ -824,9 +1418,11 @@ router.post(
         newBadges
       });
 
-      // -------------------------------------------------------
-      // RESPONSE
-      // -------------------------------------------------------
+      /*
+      |--------------------------------------------------------------------------
+      | RESPONSE
+      |--------------------------------------------------------------------------
+      */
 
       res.json({
         success: true,
@@ -842,6 +1438,13 @@ router.post(
 
         levelName:
           userScore.levelName,
+
+        currentStreak:
+          userScore.streaks
+            .currentLoginStreak,
+
+        achievements:
+          userScore.achievements,
 
         newBadges
       });
@@ -874,9 +1477,33 @@ router.get(
           req.user._id
         );
 
+      /*
+      |--------------------------------------------------------------------------
+      | Synchronize old/incomplete records before returning them.
+      |--------------------------------------------------------------------------
+      */
+
+      synchronizeAchievements(
+        userScore
+      );
+
+      const levelInfo =
+        calculateLevel(
+          userScore.totalPoints
+        );
+
+      userScore.level =
+        levelInfo.level;
+
+      userScore.levelName =
+        levelInfo.levelName;
+
+      await userScore.save();
+
       res.json({
         success: true,
-        score: userScore
+        score:
+          userScore
       });
 
     } catch (error) {
@@ -908,7 +1535,12 @@ router.get(
 
       let query = {};
 
-      // Filter by period if needed
+      /*
+      |--------------------------------------------------------------------------
+      | Period support remains compatible with existing implementation.
+      |--------------------------------------------------------------------------
+      */
+
       if (
         period === 'week'
       ) {
@@ -920,9 +1552,27 @@ router.get(
             7
         );
 
-        // This would require tracking
-        // points by date - simplified for now
+        /*
+        |--------------------------------------------------------------------------
+        | UserScore currently stores lifetime points only.
+        |
+        | Therefore a true weekly leaderboard requires a separate
+        | point-history collection and is intentionally not fabricated here.
+        |--------------------------------------------------------------------------
+        */
       }
+
+      const parsedLimit =
+        Math.min(
+          Math.max(
+            parseInt(
+              limit,
+              10
+            ) || 50,
+            1
+          ),
+          100
+        );
 
       const topUsers =
         await UserScore.find(
@@ -932,16 +1582,19 @@ router.get(
             totalPoints: -1
           })
           .limit(
-            parseInt(
-              limit
-            )
+            parsedLimit
           )
           .populate(
             'userId',
-            'name state'
+            'name fullName state'
           );
 
-      // Add rank
+      /*
+      |--------------------------------------------------------------------------
+      | Add rank
+      |--------------------------------------------------------------------------
+      */
+
       const leaderboard =
         topUsers.map(
           (
@@ -952,6 +1605,7 @@ router.get(
               index + 1,
 
             userName:
+              user.userId?.fullName ||
               user.userId?.name ||
               'Anonymous',
 
@@ -969,7 +1623,11 @@ router.get(
               user.levelName,
 
             badgeCount:
-              user.badges.length
+              Array.isArray(
+                user.badges
+              )
+                ? user.badges.length
+                : 0
           })
         );
 
@@ -1023,7 +1681,10 @@ router.get(
           userScore.totalPoints,
 
         level:
-          userScore.level
+          userScore.level,
+
+        levelName:
+          userScore.levelName
       });
 
     } catch (error) {
@@ -1050,6 +1711,7 @@ router.get(
     try {
       res.json({
         success: true,
+
         badges:
           Object.values(
             BADGES
@@ -1080,7 +1742,9 @@ router.get(
     try {
       res.json({
         success: true,
-        levels: LEVELS
+
+        levels:
+          LEVELS
       });
 
     } catch (error) {

@@ -541,6 +541,7 @@ router.get(
                 `${advisories.length} advisories generated`,
 
               metadata: {
+                action: "weather_check",
                 location:
                   locationName,
 
@@ -551,6 +552,8 @@ router.get(
 
                 notificationsCreated:
                   createdNotifications.length,
+
+                source: "open-meteo",
               },
             }
           );
