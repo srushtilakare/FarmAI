@@ -14,6 +14,7 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:3000",
+  "https://farm-ai-tan.vercel.app",
   "https://farm-7r3dr43me-srushti1924-gmailcoms-projects.vercel.app",
 ];
 
