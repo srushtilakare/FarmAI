@@ -95,8 +95,8 @@ cd ..
 npm run dev
 ```
 
-Frontend: [http://localhost:3000](http://localhost:3000)
-Backend: [http://localhost:5000](http://localhost:5000)
+Frontend: [https://farm-ai-tan.vercel.app/](https://farm-ai-tan.vercel.app/)
+Backend:  [https://farmai-vyvz.onrender.com](https://farmai-vyvz.onrender.com)
 
 ---
 
