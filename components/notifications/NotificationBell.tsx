@@ -42,7 +42,7 @@ interface NotificationResponse {
   total?: number;
 }
 
-const API_URL = "http://localhost:5000/api/notifications";
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/notifications`;
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);

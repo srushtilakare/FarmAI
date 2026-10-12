@@ -54,6 +54,8 @@ import { useToast } from '@/hooks/use-toast';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 interface Task {
   _id: string;
   taskType: string;
@@ -168,7 +170,7 @@ export default function CropCalendarPage() {
       const token = localStorage.getItem('token');
 
       const response = await fetch(
-        'http://localhost:5000/api/crop-calendar/my-calendars',
+        `${API_BASE}/api/crop-calendar/my-calendars`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -196,7 +198,7 @@ export default function CropCalendarPage() {
       const token = localStorage.getItem('token');
 
       const response = await fetch(
-        'http://localhost:5000/api/crop-calendar/upcoming-tasks?days=14',
+        `${API_BASE}/api/crop-calendar/upcoming-tasks?days=14`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -230,7 +232,7 @@ export default function CropCalendarPage() {
       const token = localStorage.getItem('token');
 
       const response = await fetch(
-        'http://localhost:5000/api/crop-calendar/validate-season',
+        `${API_BASE}/api/crop-calendar/validate-season`,
         {
           method: 'POST',
           headers: {
@@ -268,7 +270,7 @@ export default function CropCalendarPage() {
       const token = localStorage.getItem('token');
 
       const response = await fetch(
-        `http://localhost:5000/api/crop-calendar/recommended-crops?date=${date}`,
+        `${API_BASE}/api/crop-calendar/recommended-crops?date=${date}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -373,7 +375,7 @@ export default function CropCalendarPage() {
       const token = localStorage.getItem('token');
 
       const response = await fetch(
-        'http://localhost:5000/api/crop-calendar/create',
+        `${API_BASE}/api/crop-calendar/create`,
         {
           method: 'POST',
           headers: {
@@ -469,7 +471,7 @@ export default function CropCalendarPage() {
         localStorage.getItem('token');
 
       const response = await fetch(
-        `http://localhost:5000/api/crop-calendar/task/${calendarId}/${taskId}/complete`,
+        `${API_BASE}/api/crop-calendar/task/${calendarId}/${taskId}/complete`,
         {
           method: 'PUT',
           headers: {
@@ -486,7 +488,7 @@ export default function CropCalendarPage() {
       if (response.ok) {
         // Gamification
         await fetch(
-          'http://localhost:5000/api/gamification/log-activity',
+          `${API_BASE}/api/gamification/log-activity`,
           {
             method: 'POST',
             headers: {

@@ -22,7 +22,8 @@ export default function LoginPage() {
   const { t } = useLanguage();
   const { toast } = useToast();
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   const [number, setNumber] = useState("");
   const [otp, setOtp] = useState("");

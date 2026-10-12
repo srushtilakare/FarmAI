@@ -57,10 +57,11 @@ export default function HistoryPage() {
         return
       }
       
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
       const typeParam = filterType !== 'all' ? `&type=${filterType}` : ''
-      console.log('📡 Fetching activities from:', `http://localhost:5000/api/activities?limit=100${typeParam}`)
+      console.log('📡 Fetching activities from:', `${apiBase}/api/activities?limit=100${typeParam}`)
       
-      const response = await fetch(`http://localhost:5000/api/activities?limit=100${typeParam}`, {
+      const response = await fetch(`${apiBase}/api/activities?limit=100${typeParam}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -76,7 +77,7 @@ export default function HistoryPage() {
         setHistoryData(data.activities || [])
         
         // Fetch stats
-        const statsResponse = await fetch('http://localhost:5000/api/activities/stats', {
+        const statsResponse = await fetch(`${apiBase}/api/activities/stats`, {
           headers: {
             Authorization: `Bearer ${token}`
           }

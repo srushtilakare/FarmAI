@@ -45,6 +45,8 @@ const categoryIcons: { [key: string]: any } = {
   general: '📰'
 };
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 const categoryColors: { [key: string]: string } = {
   weather: 'bg-blue-100 text-blue-800',
   market: 'bg-green-100 text-green-800',
@@ -77,7 +79,7 @@ export default function AgriNewsPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      let url = 'http://localhost:5000/api/news/feed?';
+      let url = `${API_BASE}/api/news/feed?`;
       if (selectedCategory !== 'all') url += `category=${selectedCategory}`;
       
       console.log('📰 Fetching news from:', url);
@@ -96,7 +98,7 @@ export default function AgriNewsPage() {
       } else if (response.status === 401) {
         // Token expired - try public endpoint
         console.log('🔄 Token expired, trying public endpoint...');
-        const publicUrl = `http://localhost:5000/api/news/all?${selectedCategory !== 'all' ? `category=${selectedCategory}` : ''}`;
+        const publicUrl = `${API_BASE}/api/news/all?${selectedCategory !== 'all' ? `category=${selectedCategory}` : ''}`;
         const publicResponse = await fetch(publicUrl);
         if (publicResponse.ok) {
           const publicData = await publicResponse.json();
@@ -128,7 +130,7 @@ export default function AgriNewsPage() {
 
   const fetchTrendingNews = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/news/trending');
+      const response = await fetch(`${API_BASE}/api/news/trending`);
       
       if (response.ok) {
         const data = await response.json();
@@ -147,7 +149,7 @@ export default function AgriNewsPage() {
     // Log activity for gamification
     try {
       const token = localStorage.getItem('token');
-      await fetch('http://localhost:5000/api/gamification/log-activity', {
+      await fetch(`${API_BASE}/api/gamification/log-activity`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -166,7 +168,7 @@ export default function AgriNewsPage() {
   const likeNews = async (newsId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/news/${newsId}/like`, {
+      const response = await fetch(`${API_BASE}/api/news/${newsId}/like`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`
@@ -182,7 +184,7 @@ export default function AgriNewsPage() {
         }
         
         if (selectedNews && selectedNews._id === newsId) {
-          const updatedNews = await fetch(`http://localhost:5000/api/news/${newsId}`);
+          const updatedNews = await fetch(`${API_BASE}/api/news/${newsId}`);
           const data = await updatedNews.json();
           setSelectedNews(data.news);
         }
@@ -228,7 +230,7 @@ export default function AgriNewsPage() {
       }
       
       console.log('🔄 Refreshing news from external sources...');
-      const response = await fetch('http://localhost:5000/api/news/admin/refresh-all');
+      const response = await fetch(`${API_BASE}/api/news/admin/refresh-all`);
       
       if (response.ok) {
         const data = await response.json();
