@@ -766,9 +766,12 @@ export default function DiseaseDetectionPage() {
       }
 
 
+      const apiBase =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
       const res =
         await fetch(
-          `http://localhost:5000/api/predict/${selectedCrop}?lang=${selectedLanguage}`,
+          `${apiBase}/api/predict/${selectedCrop}?lang=${selectedLanguage}`,
           {
             method: "POST",
             headers,

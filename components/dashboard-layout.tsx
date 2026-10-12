@@ -69,7 +69,8 @@ interface NotificationItem {
   createdAt: string;
 }
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);

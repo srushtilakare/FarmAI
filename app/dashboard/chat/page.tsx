@@ -61,7 +61,8 @@ export default function ChatPage() {
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      const res = await fetch("http://localhost:5000/api/chatbot", {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const res = await fetch(`${apiBase}/api/chatbot`, {
         method: "POST",
         headers,
         body: JSON.stringify({ message: inputMessage, location }),

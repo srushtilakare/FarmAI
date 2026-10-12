@@ -34,7 +34,8 @@ const FarmiiChat: React.FC = () => {
     setInput("");
 
     try {
-      const res = await axios.post("http://localhost:5000/farmii/chat", { message });
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const res = await axios.post(`${apiBase}/farmii/chat`, { message });
       const reply = res.data.reply || "Sorry, I didn’t get that.";
 
       setMessages((prev) => [...prev, { sender: "farmii", text: reply }]);

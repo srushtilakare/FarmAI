@@ -12,7 +12,47 @@ const app = express();
 // MIDDLEWARE
 // =========================================================
 
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "https://farm-ai-tan.vercel.app",
+  "https://farm-7r3dr43me-srushti1924-gmailcoms-projects.vercel.app",
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (Postman, mobile apps, server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Allow known origins
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow any Vercel preview deployment for this project
+    if (/^https:\/\/.*\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow optional custom frontend origin from environment variable
+    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
+      return callback(null, true);
+    }
+
+    // Reject disallowed origin gracefully without crashing Express with an unhandled Error
+    return callback(null, false);
+  },
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+// app.options("*", cors(corsOptions));
+
 app.use(express.json());
 
 // =========================================================
@@ -67,6 +107,11 @@ app.use(
 
 app.use(
   "/api/chatbot",
+  require("./routes/chatbot")
+);
+
+app.use(
+  "/farmii/chat",
   require("./routes/chatbot")
 );
 
@@ -218,8 +263,8 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(
-    `🚀 Server running on port ${PORT}`
+    `🚀 Server running on 0.0.0.0:${PORT}`
   );
 });

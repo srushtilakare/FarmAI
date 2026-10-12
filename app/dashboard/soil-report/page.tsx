@@ -40,6 +40,8 @@ import { useToast } from '@/hooks/use-toast';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 // =========================================================
 // TYPES
 // =========================================================
@@ -288,7 +290,7 @@ export default function SoilReportPage() {
         localStorage.getItem('token');
 
       const response = await fetch(
-        'http://localhost:5000/api/soil-report/my-reports',
+        `${API_BASE}/api/soil-report/my-reports`,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -389,7 +391,7 @@ export default function SoilReportPage() {
       );
 
       const response = await fetch(
-        'http://localhost:5000/api/soil-report/upload',
+        `${API_BASE}/api/soil-report/upload`,
         {
           method: 'POST',
 
@@ -426,7 +428,7 @@ export default function SoilReportPage() {
 
       try {
         await fetch(
-          'http://localhost:5000/api/gamification/log-activity',
+          `${API_BASE}/api/gamification/log-activity`,
           {
             method: 'POST',
 

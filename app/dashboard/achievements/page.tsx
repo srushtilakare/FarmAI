@@ -68,15 +68,16 @@ export default function AchievementsPage() {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       
       const [scoreRes, rankRes, leaderboardRes] = await Promise.all([
-        fetch('http://localhost:5000/api/gamification/my-score', {
+        fetch(`${apiBase}/api/gamification/my-score`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch('http://localhost:5000/api/gamification/my-rank', {
+        fetch(`${apiBase}/api/gamification/my-rank`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch('http://localhost:5000/api/gamification/leaderboard?limit=10')
+        fetch(`${apiBase}/api/gamification/leaderboard?limit=10`)
       ]);
 
       if (scoreRes.ok) {
