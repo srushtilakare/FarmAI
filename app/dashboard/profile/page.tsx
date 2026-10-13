@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, ChangeEvent } from "react"
+import { useState, useEffect, ChangeEvent, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,6 +27,12 @@ import {
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@/components/ui/tabs"
 
 import {
 	MapPin,
@@ -43,6 +49,21 @@ import {
 	Tractor,
 	FileCheck2,
 	CircleAlert,
+	Trash2,
+	Upload,
+	Sprout,
+	Droplets,
+	Navigation,
+	Award,
+	Phone,
+	Mail,
+	Layers,
+	Wheat,
+	IndianRupee,
+	RefreshCw,
+	Sparkles,
+	HelpCircle,
+	Check,
 } from "lucide-react"
 
 import { DashboardLayout } from "@/components/dashboard-layout"
@@ -53,7 +74,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext"
 // USER PROFILE INTERFACE
 // =========================================================
 
-interface UserProfile {
+export interface UserProfile {
 	_id?: string
 
 	// Basic information
@@ -61,19 +82,27 @@ interface UserProfile {
 	email?: string
 	phone?: string
 
-	// Farm information
+	// Farm & Location details
 	farmName?: string
 	farmLocation?: string
 	state?: string
 	district?: string
+	taluka?: string
 	pincode?: string
 	village?: string
 	latitude?: number
 	longitude?: number
 
-	// Farming
+	// Cultivation & Soil
 	crops?: string[]
 	farmingType?: string
+	experienceYears?: number | null
+	soilType?: string
+	soilHealthCard?: boolean | null
+	irrigationType?: string
+	irrigationSource?: string[]
+	livestock?: string[]
+	machinery?: string[]
 
 	// Language
 	preferredLanguage?: string
@@ -81,10 +110,7 @@ interface UserProfile {
 	// Profile photo
 	profilePhoto?: string
 
-	// =====================================================
-	// GOVERNMENT SCHEME ELIGIBILITY INFORMATION
-	// =====================================================
-
+	// Government Scheme Eligibility & Banking
 	dateOfBirth?: string | null
 	gender?: string
 	socialCategory?: string
@@ -93,20 +119,20 @@ interface UserProfile {
 	landHolding?: number | null
 	landUnit?: string
 	landOwnership?: string
-	irrigationType?: string
 	aadhaarLinked?: boolean | null
 	bankAccountAvailable?: boolean | null
 	pmKisanRegistered?: boolean | null
+	kccHolder?: boolean | null
+	cropInsuranceActive?: boolean | null
 
 	// Account
 	createdAt?: string
 
-	// Allow existing/unknown fields
 	[key: string]: any
 }
 
 // =========================================================
-// ELIGIBILITY FIELDS
+// ELIGIBILITY & ESSENTIAL FIELDS
 // =========================================================
 
 const eligibilityFields = [
@@ -124,48 +150,6 @@ const eligibilityFields = [
 	"pmKisanRegistered",
 ]
 
-// =========================================================
-// CHECK WHETHER A FIELD IS COMPLETE
-// =========================================================
-
-const isEligibilityFieldComplete = (
-	profile: UserProfile,
-	field: string
-): boolean => {
-	const value = profile[field]
-
-	if (value === null || value === undefined || value === "") {
-		return false
-	}
-
-	// Boolean false is a valid answer
-	if (typeof value === "boolean") {
-		return true
-	}
-
-	if (typeof value === "number") {
-		return !isNaN(value)
-	}
-
-	return true
-}
-
-// =========================================================
-// PROFILE COMPLETION
-// =========================================================
-
-const calculateEligibilityCompletion = (profile: UserProfile) => {
-	const completed = eligibilityFields.filter((field) =>
-		isEligibilityFieldComplete(profile, field)
-	).length
-
-	return Math.round((completed / eligibilityFields.length) * 100)
-}
-
-// =========================================================
-// FIELD LABELS
-// =========================================================
-
 const eligibilityFieldLabels: Record<string, string> = {
 	dateOfBirth: "Date of Birth",
 	gender: "Gender",
@@ -181,40 +165,146 @@ const eligibilityFieldLabels: Record<string, string> = {
 	pmKisanRegistered: "PM-KISAN Registration",
 }
 
+// Soil Types common in Indian Agriculture
+const SOIL_TYPES = [
+	{ value: "black_cotton", label: "Black Cotton Soil (काळी सुपीक माती / Regur)" },
+	{ value: "red_loam", label: "Red Loamy Soil (तांबडी माती)" },
+	{ value: "alluvial", label: "Alluvial Soil (गाळाची माती)" },
+	{ value: "sandy_loam", label: "Sandy Loam Soil (वालुकामय माती)" },
+	{ value: "clay_loam", label: "Clay Loam Soil (चिकनमाती)" },
+	{ value: "laterite", label: "Laterite Soil (जांभा दगडी माती)" },
+]
+
+// Water / Irrigation Sources
+const IRRIGATION_SOURCES = [
+	{ id: "open_well", label: "Open Well (विहीर / कुआं)" },
+	{ id: "borewell", label: "Borewell (बोअरवेल / नलकूप)" },
+	{ id: "canal", label: "Canal (कालवा / नहर)" },
+	{ id: "farm_pond", label: "Farm Pond (शेततळे / तालाब)" },
+	{ id: "river_stream", label: "River / Stream (नदी / नाला)" },
+	{ id: "rainfed", label: "Rainfed Only (केवळ पावसाचे पाणी)" },
+]
+
+// Livestock & Allied Agriculture
+const LIVESTOCK_OPTIONS = [
+	{ id: "cows", label: "Dairy Cows (गायी)" },
+	{ id: "buffaloes", label: "Buffaloes (म्हशी)" },
+	{ id: "goats_sheep", label: "Goats / Sheep (शेळी-मेंढी)" },
+	{ id: "poultry", label: "Poultry (कुक्कुटपालन)" },
+	{ id: "fishery", label: "Fishery (मत्स्यपालन)" },
+]
+
+// Farm Machinery & Implements
+const MACHINERY_OPTIONS = [
+	{ id: "tractor", label: "Tractor (ट्रॅक्टर)" },
+	{ id: "power_tiller", label: "Power Tiller / Rotavator" },
+	{ id: "battery_sprayer", label: "Battery Sprayer (बॅटरी फवारणी पंप)" },
+	{ id: "drip_system", label: "Drip System (ठिबक सिंचन संच)" },
+	{ id: "solar_pump", label: "Solar Water Pump (कुसुम योजना पंप)" },
+	{ id: "harvester", label: "Harvester / Thresher" },
+]
+
 // =========================================================
-// COMPONENT
+// HELPER: CLIENT-SIDE IMAGE COMPRESSION (Canvas to WebP/JPEG)
+// =========================================================
+
+const compressImage = (file: File): Promise<string> => {
+	return new Promise((resolve, reject) => {
+		if (!file.type.startsWith("image/")) {
+			return reject(new Error("Please upload a valid image file."))
+		}
+
+		const reader = new FileReader()
+		reader.readAsDataURL(file)
+		reader.onload = (event) => {
+			const img = new Image()
+			img.src = event.target?.result as string
+			img.onload = () => {
+				const canvas = document.createElement("canvas")
+				const maxDim = 480 // 480px is ideal for crisp avatar and fast <40KB payload
+				let width = img.width
+				let height = img.height
+
+				if (width > height) {
+					if (width > maxDim) {
+						height = Math.round((height * maxDim) / width)
+						width = maxDim
+					}
+				} else {
+					if (height > maxDim) {
+						width = Math.round((width * maxDim) / height)
+						height = maxDim
+					}
+				}
+
+				canvas.width = width
+				canvas.height = height
+				const ctx = canvas.getContext("2d")
+				if (!ctx) {
+					return resolve(event.target?.result as string)
+				}
+
+				ctx.drawImage(img, 0, 0, width, height)
+				// Convert to high efficiency JPEG
+				const compressed = canvas.toDataURL("image/jpeg", 0.85)
+				resolve(compressed)
+			}
+			img.onerror = () => reject(new Error("Could not decode image file."))
+		}
+		reader.onerror = () => reject(new Error("Could not read image file."))
+	})
+}
+
+// =========================================================
+// CHECK WHETHER A FIELD IS COMPLETE
+// =========================================================
+
+const isEligibilityFieldComplete = (
+	profile: UserProfile,
+	field: string
+): boolean => {
+	const value = profile[field]
+	if (value === null || value === undefined || value === "") {
+		return false
+	}
+	if (typeof value === "boolean") return true
+	if (typeof value === "number") return !isNaN(value)
+	return true
+}
+
+const calculateEligibilityCompletion = (profile: UserProfile) => {
+	const completed = eligibilityFields.filter((field) =>
+		isEligibilityFieldComplete(profile, field)
+	).length
+	return Math.round((completed / eligibilityFields.length) * 100)
+}
+
+// =========================================================
+// MAIN PROFILE PAGE COMPONENT
 // =========================================================
 
 export default function ProfilePage() {
 	const { t } = useLanguage()
 	const router = useRouter()
+	const fileInputRef = useRef<HTMLInputElement>(null)
 
-	// =====================================================
-	// STATE
-	// =====================================================
-
+	// State
 	const [isEditing, setIsEditing] = useState(false)
-
-	const [profileData, setProfileData] =
-		useState<UserProfile | null>(null)
-
-	const [originalData, setOriginalData] =
-		useState<UserProfile | null>(null)
+	const [profileData, setProfileData] = useState<UserProfile | null>(null)
+	const [originalData, setOriginalData] = useState<UserProfile | null>(null)
 
 	const [loading, setLoading] = useState(true)
 	const [saving, setSaving] = useState(false)
+	const [detectingLocation, setDetectingLocation] = useState(false)
+	const [activeTab, setActiveTab] = useState("overview")
 
 	const [error, setError] = useState<string | null>(null)
 	const [success, setSuccess] = useState<string | null>(null)
-
-	const [selectedFile, setSelectedFile] =
-		useState<File | null>(null)
-
-	const [showSensitiveWarning, setShowSensitiveWarning] =
-		useState(false)
+	const [showSensitiveWarning, setShowSensitiveWarning] = useState(false)
+	const [customCropInput, setCustomCropInput] = useState("")
 
 	// =====================================================
-	// FETCH USER
+	// FETCH USER PROFILE
 	// =====================================================
 
 	useEffect(() => {
@@ -239,50 +329,29 @@ export default function ProfilePage() {
 				if (res.status === 401) {
 					localStorage.removeItem("token")
 					localStorage.removeItem("user")
-
 					router.push("/login")
 					return
 				}
 
 				if (!res.ok) {
 					const errorText = await res.text()
-
 					throw new Error(
 						`Failed to fetch user: ${res.status} ${errorText}`
 					)
 				}
 
 				const data = await res.json()
-
-				/*
-				 * The updated backend profile route returns
-				 * the user object directly.
-				 *
-				 * This small compatibility check also supports
-				 * the older { user: ... } response format.
-				 */
 				const userData: UserProfile =
 					data?.user && data?.user?._id
 						? data.user
 						: data
 
 				setProfileData(userData)
-
-				setOriginalData(
-					JSON.parse(JSON.stringify(userData))
-				)
-
-				localStorage.setItem(
-					"user",
-					JSON.stringify(userData)
-				)
+				setOriginalData(JSON.parse(JSON.stringify(userData)))
+				localStorage.setItem("user", JSON.stringify(userData))
 			} catch (err: any) {
 				console.error("Error fetching user:", err)
-
-				setError(
-					err.message ||
-						"Could not load profile data."
-				)
+				setError(err.message || "Could not load profile data.")
 			} finally {
 				setLoading(false)
 			}
@@ -292,23 +361,14 @@ export default function ProfilePage() {
 	}, [router])
 
 	// =====================================================
-	// HANDLE NORMAL INPUT CHANGE
+	// INPUT HANDLERS
 	// =====================================================
 
-	const handleInputChange = (
-		field: keyof UserProfile,
-		value: any
-	) => {
+	const handleInputChange = (field: keyof UserProfile, value: any) => {
 		setProfileData((prev) =>
-			prev
-				? {
-						...prev,
-						[field]: value,
-					}
-				: null
+			prev ? { ...prev, [field]: value } : null
 		)
 
-		// Sensitive fields
 		if (
 			(field === "phone" || field === "email") &&
 			value !== originalData?.[field]
@@ -317,112 +377,136 @@ export default function ProfilePage() {
 		}
 	}
 
-	// =====================================================
-	// PROFILE PHOTO
-	// =====================================================
-
-	const handleFileChange = (
-		e: ChangeEvent<HTMLInputElement>
-	) => {
-		if (
-			e.target.files &&
-			e.target.files.length > 0
-		) {
-			const file = e.target.files[0]
-
-			setSelectedFile(file)
-
-			const reader = new FileReader()
-
-			reader.onload = () => {
-				setProfileData((prev) =>
-					prev
-						? {
-								...prev,
-								profilePhoto:
-									reader.result as string,
-							}
-						: null
-				)
-			}
-
-			reader.readAsDataURL(file)
-		}
+	// Toggle multi-select items (irrigation sources, livestock, machinery)
+	const toggleArrayItem = (field: "irrigationSource" | "livestock" | "machinery", item: string) => {
+		if (!profileData) return
+		const current = profileData[field] || []
+		const updated = current.includes(item)
+			? current.filter((x) => x !== item)
+			: [...current, item]
+		handleInputChange(field, updated)
 	}
 
 	// =====================================================
-	// CROP SELECTOR
+	// PROFILE PHOTO UPLOAD & REMOVAL
 	// =====================================================
 
-	const toggleCrop = (crop: string) => {
-		if (!profileData) return
+	const handlePhotoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+		if (e.target.files && e.target.files.length > 0) {
+			const file = e.target.files[0]
+			try {
+				const compressed = await compressImage(file)
+				setProfileData((prev) =>
+					prev ? { ...prev, profilePhoto: compressed } : null
+				)
+				setSuccess("Photo selected! Click 'Save Changes' to permanently apply.")
+				setTimeout(() => setSuccess(null), 3000)
+			} catch (err: any) {
+				setError(err.message || "Failed to process photo.")
+				setTimeout(() => setError(null), 3500)
+			}
+		}
+	}
 
-		const currentCrops =
-			profileData.crops || []
+	const handleRemovePhoto = () => {
+		if (!window.confirm("Are you sure you want to remove your profile photo?")) {
+			return
+		}
+		setProfileData((prev) =>
+			prev ? { ...prev, profilePhoto: "" } : null
+		)
+		if (fileInputRef.current) {
+			fileInputRef.current.value = ""
+		}
+		setSuccess("Photo removed from preview. Click 'Save Changes' to confirm.")
+		setTimeout(() => setSuccess(null), 3000)
+	}
 
-		const newCrops =
-			currentCrops.includes(crop)
-				? currentCrops.filter(
-						(c) => c !== crop
-					)
-				: [...currentCrops, crop]
+	// =====================================================
+	// GPS LOCATION DETECTION
+	// =====================================================
 
-		handleInputChange(
-			"crops",
-			newCrops
+	const handleDetectLocation = () => {
+		if (!navigator.geolocation) {
+			alert("Geolocation is not supported by your browser.")
+			return
+		}
+		setDetectingLocation(true)
+		navigator.geolocation.getCurrentPosition(
+			(pos) => {
+				setDetectingLocation(false)
+				const lat = Number(pos.coords.latitude.toFixed(6))
+				const lon = Number(pos.coords.longitude.toFixed(6))
+				handleInputChange("latitude", lat)
+				handleInputChange("longitude", lon)
+				setSuccess(`GPS coordinates updated (${lat}, ${lon})!`)
+				setTimeout(() => setSuccess(null), 3000)
+			},
+			(err) => {
+				setDetectingLocation(false)
+				alert("Could not detect location: " + err.message)
+			},
+			{ enableHighAccuracy: true, timeout: 10000 }
 		)
 	}
 
 	// =====================================================
-	// CANCEL EDIT
+	// CROP MANAGEMENT
+	// =====================================================
+
+	const toggleCrop = (crop: string) => {
+		if (!profileData) return
+		const currentCrops = profileData.crops || []
+		const newCrops = currentCrops.includes(crop)
+			? currentCrops.filter((c) => c !== crop)
+			: [...currentCrops, crop]
+		handleInputChange("crops", newCrops)
+	}
+
+	const handleAddCustomCrop = () => {
+		if (!customCropInput.trim() || !profileData) return
+		const trimmed = customCropInput.trim()
+		const currentCrops = profileData.crops || []
+		if (!currentCrops.includes(trimmed)) {
+			handleInputChange("crops", [...currentCrops, trimmed])
+		}
+		setCustomCropInput("")
+	}
+
+	// =====================================================
+	// CANCEL & RESET
 	// =====================================================
 
 	const handleCancel = () => {
 		if (originalData) {
-			setProfileData(
-				JSON.parse(
-					JSON.stringify(originalData)
-				)
-			)
+			setProfileData(JSON.parse(JSON.stringify(originalData)))
 		}
-
 		setIsEditing(false)
-		setSelectedFile(null)
 		setShowSensitiveWarning(false)
 		setError(null)
 		setSuccess(null)
+		if (fileInputRef.current) fileInputRef.current.value = ""
 	}
 
 	// =====================================================
-	// SAVE PROFILE
+	// SAVE PROFILE TO DATABASE
 	// =====================================================
 
 	const handleSave = async () => {
 		if (!profileData) return
 
-		// ---------------------------------------------------
-		// Sensitive information check
-		// ---------------------------------------------------
-
-		const phoneChanged =
-			profileData.phone !==
-			originalData?.phone
-
-		const emailChanged =
-			profileData.email !==
-			originalData?.email
+		const phoneChanged = profileData.phone !== originalData?.phone
+		const emailChanged = profileData.email !== originalData?.email
 
 		if (phoneChanged || emailChanged) {
 			const confirmMessage =
 				phoneChanged && emailChanged
-					? "You're changing both phone number and email. This will require re-verification. Continue?"
+					? "You're updating both phone number and email. Continue?"
 					: phoneChanged
-						? "Changing phone number will require OTP verification. Continue?"
-						: "Changing email will require verification. Continue?"
+						? "Changing your registered phone number requires verification. Continue?"
+						: "Changing your email address. Continue?"
 
-			if (!window.confirm(confirmMessage)) {
-				return
-			}
+			if (!window.confirm(confirmMessage)) return
 		}
 
 		setSaving(true)
@@ -430,258 +514,165 @@ export default function ProfilePage() {
 		setSuccess(null)
 
 		try {
-			const token =
-				localStorage.getItem("token")
-
+			const token = localStorage.getItem("token")
 			if (!token) {
 				router.push("/login")
 				return
 			}
 
-			// =================================================
-			// UPDATE PAYLOAD
-			// =================================================
-
 			const updatePayload = {
-				// Existing fields
 				fullName: profileData.fullName,
 				email: profileData.email || "",
 				phone: profileData.phone || "",
 				farmName: profileData.farmName || "",
 				farmLocation:
-					profileData.farmLocation || "",
+					profileData.farmLocation ||
+					[profileData.village, profileData.district, profileData.state]
+						.filter(Boolean)
+						.join(", "),
 				state: profileData.state || "",
-				district:
-					profileData.district || "",
-				pincode:
-					profileData.pincode || "",
-				village:
-					profileData.village || "",
-				crops:
-					profileData.crops || [],
-				farmingType:
-					profileData.farmingType ||
-					"traditional",
-				preferredLanguage:
-					profileData.preferredLanguage ||
-					"en-US",
+				district: profileData.district || "",
+				taluka: profileData.taluka || "",
+				pincode: profileData.pincode || "",
+				village: profileData.village || "",
+				latitude: profileData.latitude || 0,
+				longitude: profileData.longitude || 0,
+				crops: profileData.crops || [],
+				farmingType: profileData.farmingType || "traditional",
+				experienceYears: profileData.experienceYears ?? null,
+				soilType: profileData.soilType || "",
+				soilHealthCard: profileData.soilHealthCard ?? null,
+				irrigationType: profileData.irrigationType || "",
+				irrigationSource: profileData.irrigationSource || [],
+				livestock: profileData.livestock || [],
+				machinery: profileData.machinery || [],
+				preferredLanguage: profileData.preferredLanguage || "en-US",
 
-				// =================================================
-				// GOVERNMENT SCHEME ELIGIBILITY FIELDS
-				// =================================================
+				// Profile photo: sends data URL or empty string
+				profilePhoto: profileData.profilePhoto || "",
+				removePhoto: !profileData.profilePhoto,
 
-				dateOfBirth:
-					profileData.dateOfBirth ||
-					null,
-
-				gender:
-					profileData.gender || "",
-
-				socialCategory:
-					profileData.socialCategory ||
-					"",
-
-				farmerCategory:
-					profileData.farmerCategory ||
-					"",
-
-					annualFamilyIncome:
-					profileData.annualFamilyIncome ??
-					null,
-				
-				landHolding:
-					profileData.landHolding ??
-					null,
-
-				landUnit:
-					profileData.landUnit || "",
-
-				landOwnership:
-					profileData.landOwnership || "",
-
-				irrigationType:
-					profileData.irrigationType ||
-					"",
-
-				aadhaarLinked:
-					profileData.aadhaarLinked ??
-					null,
-
-				bankAccountAvailable:
-					profileData.bankAccountAvailable ??
-					null,
-
-				pmKisanRegistered:
-					profileData.pmKisanRegistered ??
-					null,
+				// Schemes & Eligibility
+				dateOfBirth: profileData.dateOfBirth || null,
+				gender: profileData.gender || "",
+				socialCategory: profileData.socialCategory || "",
+				farmerCategory: profileData.farmerCategory || "",
+				annualFamilyIncome: profileData.annualFamilyIncome ?? null,
+				landHolding: profileData.landHolding ?? null,
+				landUnit: profileData.landUnit || "",
+				landOwnership: profileData.landOwnership || "",
+				aadhaarLinked: profileData.aadhaarLinked ?? null,
+				bankAccountAvailable: profileData.bankAccountAvailable ?? null,
+				pmKisanRegistered: profileData.pmKisanRegistered ?? null,
+				kccHolder: profileData.kccHolder ?? null,
+				cropInsuranceActive: profileData.cropInsuranceActive ?? null,
 			}
 
-			// =================================================
-			// SEND TO BACKEND
-			// =================================================
-
-			const res = await fetch(
-				"/api/user",
-				{
-					method: "PUT",
-
-					headers: {
-						Authorization: `Bearer ${token}`,
-						"Content-Type":
-							"application/json",
-					},
-
-					body: JSON.stringify(
-						updatePayload
-					),
-				}
-			)
+			const res = await fetch("/api/user", {
+				method: "PUT",
+				headers: {
+					Authorization: `Bearer ${token}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(updatePayload),
+			})
 
 			if (res.status === 401) {
-				localStorage.removeItem(
-					"token"
-				)
-
-				localStorage.removeItem(
-					"user"
-				)
-
+				localStorage.removeItem("token")
+				localStorage.removeItem("user")
 				router.push("/login")
 				return
 			}
 
 			if (!res.ok) {
-				const errorText =
-					await res.text()
-
-				throw new Error(
-					`Failed to save profile: ${res.status} ${errorText}`
-				)
+				const errorText = await res.text()
+				throw new Error(`Failed to save profile: ${res.status} ${errorText}`)
 			}
 
-			const responseData =
-				await res.json()
-
-			/*
-			 * Compatibility with both:
-			 *
-			 * 1. New backend:
-			 *    returns user directly
-			 *
-			 * 2. Old backend:
-			 *    returns { user: ... }
-			 */
+			const responseData = await res.json()
 			const updated: UserProfile =
-				responseData?.user &&
-				responseData?.user?._id
+				responseData?.user && responseData?.user?._id
 					? responseData.user
 					: responseData
 
 			setProfileData(updated)
-
-			setOriginalData(
-				JSON.parse(
-					JSON.stringify(updated)
-				)
-			)
-
+			setOriginalData(JSON.parse(JSON.stringify(updated)))
 			setIsEditing(false)
-			setSelectedFile(null)
 			setShowSensitiveWarning(false)
 
-			setSuccess(
-				t("profileUpdatedSuccessfully")
-			)
+			// Sync with localStorage for sidebar and top nav avatars
+			localStorage.setItem("user", JSON.stringify(updated))
+			window.dispatchEvent(new Event("storage"))
 
-			// Keep local user data synchronized
-			localStorage.setItem(
-				"user",
-				JSON.stringify(updated)
-			)
-
-			setTimeout(() => {
-				setSuccess(null)
-			}, 3000)
+			setSuccess("Farmer profile successfully updated in database!")
+			setTimeout(() => setSuccess(null), 3500)
 		} catch (err: any) {
-			console.error(
-				"Error saving profile:",
-				err
-			)
-
-			setError(
-				err.message ||
-					"Failed to save profile."
-			)
+			console.error("Error saving profile:", err)
+			setError(err.message || "Failed to save profile.")
 		} finally {
 			setSaving(false)
 		}
 	}
 
 	// =====================================================
-	// PROFILE COMPLETION
+	// COMPUTED METRICS
 	// =====================================================
 
-	const eligibilityCompletion =
-		profileData
-			? calculateEligibilityCompletion(
-					profileData
-				)
-			: 0
+	const eligibilityCompletion = profileData
+		? calculateEligibilityCompletion(profileData)
+		: 0
 
-	const missingEligibilityFields =
-		profileData
-			? eligibilityFields.filter(
-					(field) =>
-						!isEligibilityFieldComplete(
-							profileData,
-							field
-						)
-				)
-			: []
+	const missingEligibilityFields = profileData
+		? eligibilityFields.filter((f) => !isEligibilityFieldComplete(profileData, f))
+		: []
 
-	const eligibilityProfileComplete =
-		eligibilityCompletion === 100
+	const farmerKisanId = profileData?._id
+		? `FARMAI-IN-${profileData._id.slice(-6).toUpperCase()}`
+		: "FARMAI-IN-78291"
+
+	// Resolve photo URL (data URL or relative path)
+	const resolvedPhotoUrl = profileData?.profilePhoto
+		? profileData.profilePhoto.startsWith("data:") ||
+		  profileData.profilePhoto.startsWith("http")
+			? profileData.profilePhoto
+			: `${process.env.NEXT_PUBLIC_API_URL || ""}${profileData.profilePhoto}`
+		: ""
 
 	// =====================================================
-	// LOADING
+	// RENDER GUARDS
 	// =====================================================
 
 	if (loading) {
 		return (
 			<DashboardLayout>
-				<div className="flex justify-center items-center h-[50vh]">
-					<p className="text-xl font-medium">
-						{t(
-							"loadingProfileData"
-						)}
+				<div className="flex flex-col justify-center items-center h-[50vh] gap-3">
+					<RefreshCw className="h-8 w-8 text-primary animate-spin" />
+					<p className="text-lg font-medium text-muted-foreground">
+						Loading farmer profile records...
 					</p>
 				</div>
 			</DashboardLayout>
 		)
 	}
 
-	// =====================================================
-	// ERROR
-	// =====================================================
-
 	if (error && !profileData) {
 		return (
 			<DashboardLayout>
-				<Card className="border-red-500/50 bg-red-500/10">
+				<Card className="border-red-500/50 bg-red-500/10 max-w-2xl mx-auto my-12">
 					<CardHeader>
-						<CardTitle className="text-red-600">
-							{t(
-								"profileLoadError"
-							)}
+						<CardTitle className="text-red-600 flex items-center gap-2">
+							<AlertTriangle className="h-5 w-5" />
+							Failed to Load Profile
 						</CardTitle>
-
 						<CardDescription className="text-red-700">
-							{error ||
-								t(
-									"noProfileDataFound"
-								)}
+							{error}
 						</CardDescription>
 					</CardHeader>
+					<CardContent>
+						<Button onClick={() => window.location.reload()} variant="outline">
+							Retry
+						</Button>
+					</CardContent>
 				</Card>
 			</DashboardLayout>
 		)
@@ -690,1845 +681,1313 @@ export default function ProfilePage() {
 	if (!profileData) return null
 
 	// =====================================================
-	// RENDER
+	// MAIN UI RENDER
 	// =====================================================
 
 	return (
 		<DashboardLayout>
-			<div className="space-y-6">
+			<div className="space-y-6 pb-12 max-w-7xl mx-auto">
 
-				{/* =================================================
-				    HEADER
-				================================================= */}
-
-				<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+				{/* -------------------------------------------------
+				    PAGE TITLE & ACTION BAR
+				------------------------------------------------- */}
+				<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-card p-5 rounded-2xl border shadow-sm">
 					<div>
-						<h1 className="text-3xl font-bold text-foreground">
-							{t("myProfile")}
-						</h1>
-
-						<p className="text-muted-foreground mt-2">
-							{t(
-								"managePersonalInfo"
-							)}
-						</p>
+						<div className="flex items-center gap-2.5">
+							<div className="p-2 bg-emerald-100 text-emerald-800 rounded-lg">
+								<Sprout className="h-6 w-6" />
+							</div>
+							<div>
+								<h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
+									Farmer Profile & Identity
+								</h1>
+								<p className="text-sm text-muted-foreground">
+									शेतकरी प्रोफाईल व कृषी ओळखपत्र • Verified agricultural credentials
+								</p>
+							</div>
+						</div>
 					</div>
 
-					<div className="flex gap-2">
-						{isEditing && (
+					<div className="flex items-center gap-2">
+						{isEditing ? (
+							<>
+								<Button
+									variant="outline"
+									onClick={handleCancel}
+									disabled={saving}
+									className="border-gray-300"
+								>
+									Cancel
+								</Button>
+								<Button
+									onClick={handleSave}
+									disabled={saving || !profileData.fullName}
+									className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-2"
+								>
+									{saving ? (
+										<>
+											<RefreshCw className="h-4 w-4 animate-spin" />
+											Saving to Database...
+										</>
+									) : (
+										<>
+											<Save className="h-4 w-4" />
+											Save Changes
+										</>
+									)}
+								</Button>
+							</>
+						) : (
 							<Button
-								variant="outline"
-								onClick={
-									handleCancel
-								}
-								disabled={saving}
+								onClick={() => setIsEditing(true)}
+								className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-2"
 							>
-								{t("cancel")}
+								<Edit className="h-4 w-4" />
+								Edit Profile Details
 							</Button>
 						)}
-
-						<Button
-							onClick={() =>
-								isEditing
-									? handleSave()
-									: setIsEditing(
-											true
-										)
-							}
-							className="bg-primary text-primary-foreground hover:bg-primary/90"
-							disabled={
-								saving ||
-								(isEditing &&
-									!profileData.fullName)
-							}
-						>
-							{saving ? (
-								<>
-									{t(
-										"saving"
-									)}
-								</>
-							) : isEditing ? (
-								<>
-									<Save className="h-4 w-4 mr-2" />
-									{t(
-										"saveChanges"
-									)}
-								</>
-							) : (
-								<>
-									<Edit className="h-4 w-4 mr-2" />
-									{t(
-										"editProfile"
-									)}
-								</>
-							)}
-						</Button>
 					</div>
 				</div>
 
-				{/* =================================================
-				    SUCCESS MESSAGE
-				================================================= */}
-
+				{/* -------------------------------------------------
+				    FEEDBACK ALERTS
+				------------------------------------------------- */}
 				{success && (
-					<Alert className="border-green-500 bg-green-50">
-						<CheckCircle2 className="h-4 w-4 text-green-600" />
-
-						<AlertDescription className="text-green-700">
+					<Alert className="border-emerald-500 bg-emerald-50 text-emerald-900 shadow-sm animate-in fade-in duration-300">
+						<CheckCircle2 className="h-5 w-5 text-emerald-600" />
+						<AlertDescription className="font-medium">
 							{success}
 						</AlertDescription>
 					</Alert>
 				)}
 
-				{/* =================================================
-				    ERROR MESSAGE
-				================================================= */}
-
 				{error && (
-					<Alert variant="destructive">
-						<AlertTriangle className="h-4 w-4" />
-
-						<AlertDescription>
+					<Alert variant="destructive" className="shadow-sm animate-in fade-in duration-300">
+						<AlertTriangle className="h-5 w-5" />
+						<AlertDescription className="font-medium">
 							{error}
 						</AlertDescription>
 					</Alert>
 				)}
 
-				{/* =================================================
-				    SENSITIVE WARNING
-				================================================= */}
+				{showSensitiveWarning && isEditing && (
+					<Alert className="border-amber-400 bg-amber-50 text-amber-900 shadow-sm">
+						<Lock className="h-5 w-5 text-amber-600" />
+						<AlertDescription className="text-xs sm:text-sm">
+							<strong>Security Note:</strong> Changing your primary phone number or email will require mobile SMS / OTP re-verification on your next sign-in.
+						</AlertDescription>
+					</Alert>
+				)}
 
-				{showSensitiveWarning &&
-					isEditing && (
-						<Alert className="border-orange-500 bg-orange-50">
-							<Lock className="h-4 w-4 text-orange-600" />
+				{/* -------------------------------------------------
+				    DIGITAL FARMER PASSBOOK / IDENTITY HEADER CARD
+				------------------------------------------------- */}
+				<div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 text-white shadow-xl border border-emerald-700/50 p-6 md:p-8">
+					{/* Decorative background watermark */}
+					<div className="absolute right-0 bottom-0 opacity-10 pointer-events-none translate-x-8 translate-y-8">
+						<Tractor className="w-80 h-80 text-white" />
+					</div>
 
-							<AlertDescription className="text-orange-700">
-								⚠️ You're changing
-								sensitive information
-								(phone/email). This
-								may require additional
-								verification.
-							</AlertDescription>
-						</Alert>
-					)}
+					<div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-8">
+						
+						{/* Photo Avatar with Upload & Delete controls */}
+						<div className="flex flex-col items-center gap-3">
+							<div className="relative group">
+								<Avatar className="h-32 w-32 md:h-36 md:w-36 rounded-full border-4 border-emerald-300/80 shadow-2xl bg-emerald-950 ring-4 ring-emerald-500/20">
+									{resolvedPhotoUrl ? (
+										<AvatarImage
+											src={resolvedPhotoUrl}
+											alt={`${profileData.fullName}'s profile`}
+											className="object-cover"
+										/>
+									) : (
+										<AvatarFallback className="bg-emerald-700 text-white text-3xl font-bold tracking-wider">
+											{profileData.fullName
+												? profileData.fullName
+														.split(" ")
+														.map((n: string) => n[0])
+														.join("")
+														.toUpperCase()
+												: "FR"}
+										</AvatarFallback>
+									)}
+								</Avatar>
 
-				{/* =================================================
-				    PROFILE CARD
-				================================================= */}
-
-				<Card className="border-border">
-					<CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
-
-						<div className="relative">
-							<Avatar className="h-28 w-28 border-4 border-primary/10">
-
-								{profileData.profilePhoto ? (
-									<AvatarImage
-										src={
-											profileData.profilePhoto
-										}
-										alt={`${profileData.fullName}'s profile`}
-									/>
-								) : (
-									<AvatarFallback className="bg-primary text-primary-foreground text-3xl">
-										{profileData.fullName
-											.split(" ")
-											.map(
-												(
-													n: string
-												) =>
-													n[0]
-											)
-											.join("")
-											.toUpperCase()}
-									</AvatarFallback>
+								{/* Camera Overlay when Editing */}
+								{isEditing && (
+									<label
+										htmlFor="profile-photo-upload"
+										className="absolute bottom-1 right-1 p-2.5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full cursor-pointer shadow-lg border-2 border-white transition-all transform hover:scale-110"
+										title="Upload new profile picture"
+									>
+										<Camera className="h-4 w-4" />
+										<input
+											id="profile-photo-upload"
+											ref={fileInputRef}
+											type="file"
+											accept="image/*"
+											className="hidden"
+											onChange={handlePhotoUpload}
+										/>
+									</label>
 								)}
-							</Avatar>
-
-							{isEditing && (
-								<label className="absolute bottom-0 right-0 cursor-pointer p-2 bg-primary rounded-full border-2 border-white hover:bg-primary/90 transition-colors shadow-lg">
-									<Camera className="h-4 w-4 text-white" />
-
-									<input
-										type="file"
-										accept="image/*"
-										className="hidden"
-										onChange={
-											handleFileChange
-										}
-									/>
-								</label>
-							)}
-						</div>
-
-						<div className="flex-1 text-center md:text-left">
-
-							<h2 className="text-3xl font-bold">
-								{profileData.fullName}
-							</h2>
-
-							<p className="text-muted-foreground text-lg mt-1">
-								{profileData.farmName ||
-									"Farmer"}
-							</p>
-
-							<div className="flex flex-wrap gap-2 mt-3 justify-center md:justify-start items-center">
-								<MapPin className="h-4 w-4 text-muted-foreground" />
-
-								<span className="text-sm text-muted-foreground">
-									{[
-										profileData.village,
-										profileData.district,
-										profileData.state,
-									]
-										.filter(
-											Boolean
-										)
-										.join(
-											", "
-										) ||
-										t(
-											"locationNotSet"
-										)}
-								</span>
 							</div>
 
-							<div className="flex flex-wrap gap-2 mt-3 justify-center md:justify-start">
+							{/* Photo Action Buttons when in Edit mode */}
+							{isEditing && (
+								<div className="flex items-center gap-2 mt-1">
+									<label
+										htmlFor="profile-photo-upload"
+										className="text-xs bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-full cursor-pointer transition flex items-center gap-1"
+									>
+										<Upload className="h-3 w-3" />
+										Upload Photo
+									</label>
 
-								<Badge
-									variant="secondary"
-									className="bg-green-100 text-green-700"
-								>
-									{t(
-										"verifiedFarmer"
+									{resolvedPhotoUrl && (
+										<button
+											type="button"
+											onClick={handleRemovePhoto}
+											className="text-xs bg-red-600/80 hover:bg-red-600 text-white px-2.5 py-1 rounded-full transition flex items-center gap-1"
+											title="Remove current photo"
+										>
+											<Trash2 className="h-3 w-3" />
+											Remove
+										</button>
 									)}
-								</Badge>
+								</div>
+							)}
 
-								<Badge variant="outline">
-									{profileData.farmingType ||
-										t(
-											"traditionalFarming"
-										)}{" "}
-									{t(
-										"farming"
-									)}
+							<div className="text-center">
+								<Badge className="bg-emerald-500/30 text-emerald-200 border-emerald-400/40 text-[11px] font-mono tracking-wider">
+									{farmerKisanId}
 								</Badge>
+							</div>
+						</div>
 
-								{profileData.crops &&
-									profileData
-										.crops
-										.length >
-										0 && (
-										<Badge variant="outline">
-											{
-												profileData
-													.crops
-													.length
-											}{" "}
-											{t(
-												"crops"
-											)}
+						{/* Identity & Farm Info Details */}
+						<div className="flex-1 text-center lg:text-left space-y-3">
+							<div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5">
+								<h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+									{profileData.fullName || "Farmer"}
+								</h2>
+
+								<Badge className="bg-emerald-400 text-emerald-950 font-semibold px-2.5 py-0.5 flex items-center gap-1 shadow-sm">
+									<Award className="h-3.5 w-3.5" />
+									Verified Farmer
+								</Badge>
+							</div>
+
+							<p className="text-emerald-100/90 text-lg font-medium">
+								{profileData.farmName || "Primary Krishi Holding"}
+							</p>
+
+							{/* Location & Contact row */}
+							<div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-sm text-emerald-100/80">
+								<div className="flex items-center gap-1.5">
+									<MapPin className="h-4 w-4 text-emerald-300" />
+									<span>
+										{[
+											profileData.village,
+											profileData.taluka,
+											profileData.district,
+											profileData.state,
+										]
+											.filter(Boolean)
+											.join(", ") || "Location not set"}
+									</span>
+								</div>
+
+								{profileData.phone && (
+									<div className="flex items-center gap-1.5">
+										<Phone className="h-4 w-4 text-emerald-300" />
+										<span>+91 {profileData.phone}</span>
+									</div>
+								)}
+
+								{profileData.email && (
+									<div className="flex items-center gap-1.5">
+										<Mail className="h-4 w-4 text-emerald-300" />
+										<span>{profileData.email}</span>
+									</div>
+								)}
+							</div>
+
+							{/* Key Crop Badges */}
+							<div className="flex flex-wrap items-center justify-center lg:justify-start gap-1.5 pt-1">
+								<span className="text-xs text-emerald-200/80 mr-1 font-medium">
+									Cultivating:
+								</span>
+								{profileData.crops && profileData.crops.length > 0 ? (
+									profileData.crops.slice(0, 5).map((crop) => (
+										<Badge
+											key={crop}
+											variant="secondary"
+											className="bg-emerald-700/60 text-white border border-emerald-500/30 text-xs capitalize"
+										>
+											🌿 {crop}
 										</Badge>
-									)}
+									))
+								) : (
+									<span className="text-xs text-emerald-300/70 italic">
+										No crops registered
+									</span>
+								)}
+								{profileData.crops && profileData.crops.length > 5 && (
+									<Badge
+										variant="secondary"
+										className="bg-emerald-700/60 text-white text-xs"
+									>
+										+{profileData.crops.length - 5} more
+									</Badge>
+								)}
+							</div>
+
+							{/* Micro KPI Cards */}
+							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3">
+								<div className="bg-emerald-950/50 backdrop-blur-sm border border-emerald-600/30 p-2.5 rounded-xl text-center">
+									<p className="text-[11px] text-emerald-300 font-medium">Land Holding</p>
+									<p className="text-base font-bold text-white">
+										{profileData.landHolding
+											? `${profileData.landHolding} ${profileData.landUnit || "Acre"}`
+											: "Not Set"}
+									</p>
+								</div>
+
+								<div className="bg-emerald-950/50 backdrop-blur-sm border border-emerald-600/30 p-2.5 rounded-xl text-center">
+									<p className="text-[11px] text-emerald-300 font-medium">Practice</p>
+									<p className="text-base font-bold text-white capitalize">
+										{profileData.farmingType || "Traditional"}
+									</p>
+								</div>
+
+								<div className="bg-emerald-950/50 backdrop-blur-sm border border-emerald-600/30 p-2.5 rounded-xl text-center">
+									<p className="text-[11px] text-emerald-300 font-medium">PM-KISAN</p>
+									<p className="text-base font-bold text-white">
+										{profileData.pmKisanRegistered ? "Registered" : "Pending"}
+									</p>
+								</div>
+
+								<div className="bg-emerald-950/50 backdrop-blur-sm border border-emerald-600/30 p-2.5 rounded-xl text-center">
+									<p className="text-[11px] text-emerald-300 font-medium">Profile Score</p>
+									<p className="text-base font-bold text-white">
+										{eligibilityCompletion}%
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{/* -------------------------------------------------
+				    PROFILE COMPLETENESS PROGRESS CARD
+				------------------------------------------------- */}
+				<Card className="border-emerald-200/80 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/50">
+					<CardContent className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+						<div className="flex items-center gap-3.5">
+							<div className="p-3 bg-emerald-100 text-emerald-700 rounded-2xl">
+								<ShieldCheck className="h-6 w-6" />
+							</div>
+							<div>
+								<div className="flex items-center gap-2">
+									<h3 className="font-bold text-base text-gray-900">
+										FarmAI Agriculture Profile Completion
+									</h3>
+									<Badge
+										className={
+											eligibilityCompletion === 100
+												? "bg-emerald-600 text-white"
+												: "bg-amber-100 text-amber-800 border-amber-300"
+										}
+									>
+										{eligibilityCompletion}% Complete
+									</Badge>
+								</div>
+								<p className="text-xs text-muted-foreground mt-0.5">
+									A complete profile enables automated eligibility checking for PM-Kisan, Fasal Bima, and state drip irrigation subsidies.
+								</p>
+							</div>
+						</div>
+
+						<div className="w-full md:w-64 space-y-1.5">
+							<div className="flex justify-between text-xs text-muted-foreground">
+								<span>Status</span>
+								<span className="font-semibold text-foreground">
+									{eligibilityFields.length - missingEligibilityFields.length} of {eligibilityFields.length} fields filled
+								</span>
+							</div>
+							<div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
+								<div
+									className="h-full bg-emerald-600 rounded-full transition-all duration-500"
+									style={{ width: `${eligibilityCompletion}%` }}
+								/>
 							</div>
 						</div>
 					</CardContent>
 				</Card>
 
-				{/* =================================================
-				    GOVERNMENT SCHEME PROFILE COMPLETION
-				================================================= */}
+				{/* -------------------------------------------------
+				    TABBED SECTIONS: REAL-WORLD AGRI APP STRUCTURE
+				------------------------------------------------- */}
+				<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+					
+					{/* Responsive Tabs Navigation */}
+					<TabsList className="bg-muted/80 p-1 rounded-xl h-auto flex flex-wrap gap-1 border">
+						<TabsTrigger
+							value="overview"
+							className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-3"
+						>
+							<UserRound className="h-4 w-4 mr-1.5" />
+							Personal Details
+						</TabsTrigger>
 
-				<Card className="border-green-200 bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-background">
+						<TabsTrigger
+							value="land"
+							className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-3"
+						>
+							<Tractor className="h-4 w-4 mr-1.5" />
+							Farm & Land Records
+						</TabsTrigger>
 
-					<CardHeader>
+						<TabsTrigger
+							value="cultivation"
+							className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-3"
+						>
+							<Wheat className="h-4 w-4 mr-1.5" />
+							Crops & Irrigation
+						</TabsTrigger>
 
-						<div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+						<TabsTrigger
+							value="schemes"
+							className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-3"
+						>
+							<Landmark className="h-4 w-4 mr-1.5" />
+							Government Schemes & Banking
+						</TabsTrigger>
+					</TabsList>
 
-							<div className="flex gap-3">
+					{/* -------------------------------------------------
+					    TAB 1: PERSONAL & CONTACT INFORMATION
+					------------------------------------------------- */}
+					<TabsContent value="overview" className="space-y-6">
+						<Card>
+							<CardHeader>
+								<CardTitle className="text-xl flex items-center gap-2">
+									<UserRound className="h-5 w-5 text-emerald-600" />
+									Farmer Identification & Contact Records
+								</CardTitle>
+								<CardDescription>
+									Personal demographics required for official agricultural certificates and communication.
+								</CardDescription>
+							</CardHeader>
 
-								<div className="p-2.5 rounded-xl bg-green-100 text-green-700 h-fit">
-									<ShieldCheck className="h-6 w-6" />
+							<CardContent className="space-y-6">
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+									{/* Full Name */}
+									<div className="space-y-2">
+										<Label htmlFor="fullName" className="font-semibold">
+											Full Name (संपूर्ण नाव) <span className="text-red-500">*</span>
+										</Label>
+										<Input
+											id="fullName"
+											value={profileData.fullName || ""}
+											onChange={(e) => handleInputChange("fullName", e.target.value)}
+											disabled={!isEditing}
+											placeholder="e.g. Ramesh Shankar Patil"
+											required
+											className="border-gray-300"
+										/>
+									</div>
+
+									{/* Mobile Phone */}
+									<div className="space-y-2">
+										<Label htmlFor="phone" className="font-semibold flex items-center justify-between">
+											<span>Mobile Number (मोबाईल नंबर) <span className="text-red-500">*</span></span>
+											{isEditing && (
+												<span className="text-xs text-amber-600 flex items-center gap-1">
+													<Lock className="h-3 w-3" /> OTP Protected
+												</span>
+											)}
+										</Label>
+										<Input
+											id="phone"
+											value={profileData.phone || ""}
+											onChange={(e) => handleInputChange("phone", e.target.value)}
+											disabled={!isEditing}
+											type="tel"
+											placeholder="10-digit mobile number"
+											maxLength={10}
+											className="border-gray-300 font-mono"
+										/>
+									</div>
+
+									{/* Email Address */}
+									<div className="space-y-2">
+										<Label htmlFor="email" className="font-semibold">
+											Email Address (ईमेल पत्ता - पर्यायी)
+										</Label>
+										<Input
+											id="email"
+											value={profileData.email || ""}
+											onChange={(e) => handleInputChange("email", e.target.value)}
+											disabled={!isEditing}
+											type="email"
+											placeholder="farmer@example.com"
+											className="border-gray-300"
+										/>
+									</div>
+
+									{/* Preferred App Language */}
+									<div className="space-y-2">
+										<Label htmlFor="preferredLanguage" className="font-semibold">
+											Preferred Language (पसंतीची भाषा)
+										</Label>
+										<Select
+											value={profileData.preferredLanguage || "en-US"}
+											onValueChange={(val) => handleInputChange("preferredLanguage", val)}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Select language" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="en-US">English (English)</SelectItem>
+												<SelectItem value="hi-IN">हिंदी (Hindi)</SelectItem>
+												<SelectItem value="mr-IN">मराठी (Marathi)</SelectItem>
+											</SelectContent></Select>
+									</div>
+
+									{/* Date of Birth */}
+									<div className="space-y-2">
+										<Label htmlFor="dateOfBirth" className="font-semibold">
+											Date of Birth (जन्मतारीख)
+										</Label>
+										<Input
+											id="dateOfBirth"
+											type="date"
+											value={
+												profileData.dateOfBirth
+													? new Date(profileData.dateOfBirth).toISOString().split("T")[0]
+													: ""
+											}
+											onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+											disabled={!isEditing}
+											className="border-gray-300"
+										/>
+									</div>
+
+									{/* Gender */}
+									<div className="space-y-2">
+										<Label className="font-semibold">Gender (लिंग)</Label>
+										<Select
+											value={profileData.gender || ""}
+											onValueChange={(val) => handleInputChange("gender", val)}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Select gender" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="male">Male (पुरुष)</SelectItem>
+												<SelectItem value="female">Female (महिला शेतकरी)</SelectItem>
+												<SelectItem value="other">Other (इतर)</SelectItem>
+											</SelectContent></Select>
+									</div>
+
+									{/* Social Category */}
+									<div className="space-y-2">
+										<Label className="font-semibold">
+											Social Category (सामाजिक प्रवर्ग - For Govt Subsidies)
+										</Label>
+										<Select
+											value={profileData.socialCategory || ""}
+											onValueChange={(val) => handleInputChange("socialCategory", val)}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Select social category" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="general">General (खुला प्रवर्ग)</SelectItem>
+												<SelectItem value="obc">OBC (इतर मागासवर्गीय)</SelectItem>
+												<SelectItem value="sc">SC (अनुसूचित जाती)</SelectItem>
+												<SelectItem value="st">ST (अनुसूचित जमाती)</SelectItem>
+												<SelectItem value="other">Other</SelectItem>
+											</SelectContent></Select>
+									</div>
+
+									{/* Farming Experience */}
+									<div className="space-y-2">
+										<Label htmlFor="experienceYears" className="font-semibold">
+											Farming Experience (शेती अनुभव - वर्षे)
+										</Label>
+										<Input
+											id="experienceYears"
+											type="number"
+											min="0"
+											max="70"
+											value={profileData.experienceYears ?? ""}
+											onChange={(e) =>
+												handleInputChange(
+													"experienceYears",
+													e.target.value === "" ? null : Number(e.target.value)
+												)
+											}
+											disabled={!isEditing}
+											placeholder="e.g. 15 Years"
+											className="border-gray-300"
+										/>
+									</div>
+								</div>
+							</CardContent>
+						</Card>
+					</TabsContent>
+
+					{/* -------------------------------------------------
+					    TAB 2: FARM & LAND RECORDS
+					------------------------------------------------- */}
+					<TabsContent value="land" className="space-y-6">
+						<Card>
+							<CardHeader>
+								<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+									<div>
+										<CardTitle className="text-xl flex items-center gap-2">
+											<Tractor className="h-5 w-5 text-emerald-600" />
+											Farm Holding & Land Particulars (जमीन तपशील)
+										</CardTitle>
+										<CardDescription>
+											7/12 land records, farm geographic address, and soil profile details.
+										</CardDescription>
+									</div>
+
+									{isEditing && (
+										<Button
+											type="button"
+											variant="outline"
+											onClick={handleDetectLocation}
+											disabled={detectingLocation}
+											className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-xs sm:text-sm self-start flex items-center gap-1.5"
+										>
+											{detectingLocation ? (
+												<>
+													<RefreshCw className="h-3.5 w-3.5 animate-spin" />
+													Detecting GPS...
+												</>
+											) : (
+												<>
+													<Navigation className="h-3.5 w-3.5" />
+													📍 Auto-Detect Farm GPS
+												</>
+											)}
+										</Button>
+									)}
+								</div>
+							</CardHeader>
+
+							<CardContent className="space-y-6">
+								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+									{/* Farm Name */}
+									<div className="space-y-2">
+										<Label htmlFor="farmName" className="font-semibold">
+											Farm / Holding Name (शेताचे नाव)
+										</Label>
+										<Input
+											id="farmName"
+											value={profileData.farmName || ""}
+											onChange={(e) => handleInputChange("farmName", e.target.value)}
+											disabled={!isEditing}
+											placeholder="e.g. Shinde Agro Farms"
+											className="border-gray-300"
+										/>
+									</div>
+
+									{/* State */}
+									<div className="space-y-2">
+										<Label htmlFor="state" className="font-semibold">
+											State (राज्य) <span className="text-red-500">*</span>
+										</Label>
+										<Input
+											id="state"
+											value={profileData.state || ""}
+											onChange={(e) => handleInputChange("state", e.target.value)}
+											disabled={!isEditing}
+											placeholder="e.g. Maharashtra"
+											required
+											className="border-gray-300"
+										/>
+									</div>
+
+									{/* District */}
+									<div className="space-y-2">
+										<Label htmlFor="district" className="font-semibold">
+											District (जिल्हा) <span className="text-red-500">*</span>
+										</Label>
+										<Input
+											id="district"
+											value={profileData.district || ""}
+											onChange={(e) => handleInputChange("district", e.target.value)}
+											disabled={!isEditing}
+											placeholder="e.g. Jalna, Latur, Pune"
+											required
+											className="border-gray-300"
+										/>
+									</div>
+
+									{/* Taluka / Tehsil */}
+									<div className="space-y-2">
+										<Label htmlFor="taluka" className="font-semibold">
+											Taluka / Tehsil (तालुका)
+										</Label>
+										<Input
+											id="taluka"
+											value={profileData.taluka || ""}
+											onChange={(e) => handleInputChange("taluka", e.target.value)}
+											disabled={!isEditing}
+											placeholder="e.g. Ambad, Ausa, Baramati"
+											className="border-gray-300"
+										/>
+									</div>
+
+									{/* Village / Town */}
+									<div className="space-y-2">
+										<Label htmlFor="village" className="font-semibold">
+											Village (गाव / ग्राम)
+										</Label>
+										<Input
+											id="village"
+											value={profileData.village || ""}
+											onChange={(e) => handleInputChange("village", e.target.value)}
+											disabled={!isEditing}
+											placeholder="e.g. Rohilgad, Killari"
+											className="border-gray-300"
+										/>
+									</div>
+
+									{/* PIN Code */}
+									<div className="space-y-2">
+										<Label htmlFor="pincode" className="font-semibold">
+											PIN Code (पिन कोड)
+										</Label>
+										<Input
+											id="pincode"
+											value={profileData.pincode || ""}
+											onChange={(e) => handleInputChange("pincode", e.target.value)}
+											disabled={!isEditing}
+											placeholder="e.g. 431205"
+											maxLength={6}
+											className="border-gray-300 font-mono"
+										/>
+									</div>
+
+									{/* Land Holding Size */}
+									<div className="space-y-2">
+										<Label htmlFor="landHolding" className="font-semibold">
+											Total Land Area (एकूण जमीन क्षेत्र)
+										</Label>
+										<Input
+											id="landHolding"
+											type="number"
+											min="0"
+											step="0.1"
+											value={profileData.landHolding ?? ""}
+											onChange={(e) =>
+												handleInputChange(
+													"landHolding",
+													e.target.value === "" ? null : Number(e.target.value)
+												)
+											}
+											disabled={!isEditing}
+											placeholder="e.g. 4.5"
+											className="border-gray-300 font-mono"
+										/>
+									</div>
+
+									{/* Land Unit */}
+									<div className="space-y-2">
+										<Label className="font-semibold">Land Unit (क्षेत्र एकक)</Label>
+										<Select
+											value={profileData.landUnit || "acre"}
+											onValueChange={(val) => handleInputChange("landUnit", val)}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Select unit" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="acre">Acre (एकर)</SelectItem>
+												<SelectItem value="hectare">Hectare (हेक्टर)</SelectItem>
+												<SelectItem value="guntha">Guntha (गुंठा)</SelectItem>
+												<SelectItem value="bigha">Bigha (बीघा)</SelectItem>
+											</SelectContent></Select>
+									</div>
+
+									{/* Land Ownership */}
+									<div className="space-y-2">
+										<Label className="font-semibold">Land Ownership (मालकी हक्क)</Label>
+										<Select
+											value={profileData.landOwnership || ""}
+											onValueChange={(val) => handleInputChange("landOwnership", val)}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Select ownership" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="owned">Self Owned (स्वतःची मालकी / वडिलोपार्जित)</SelectItem>
+												<SelectItem value="leased">Leased (भाडेतत्त्वावर / खंड)</SelectItem>
+												<SelectItem value="shared">Sharecropper (बटाईदार)</SelectItem>
+												<SelectItem value="government">Government Allotted (शासकीय पट्टा)</SelectItem>
+											</SelectContent></Select>
+									</div>
+
+									{/* Soil Type */}
+									<div className="space-y-2">
+										<Label className="font-semibold">Soil Type (मातीचा प्रकार)</Label>
+										<Select
+											value={profileData.soilType || ""}
+											onValueChange={(val) => handleInputChange("soilType", val)}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Select soil type" />
+											</SelectTrigger>
+											<SelectContent>
+												{SOIL_TYPES.map((st) => (
+													<SelectItem key={st.value} value={st.value}>
+														{st.label}
+													</SelectItem>
+												))}
+											</SelectContent></Select>
+									</div>
+
+									{/* Soil Health Card */}
+									<div className="space-y-2">
+										<Label className="font-semibold">
+											Soil Health Card (मृदा आरोग्य पत्रिका)
+										</Label>
+										<Select
+											value={
+												profileData.soilHealthCard === true
+													? "yes"
+													: profileData.soilHealthCard === false
+														? "no"
+														: ""
+											}
+											onValueChange={(val) =>
+												handleInputChange(
+													"soilHealthCard",
+													val === "yes" ? true : val === "no" ? false : null
+												)
+											}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Soil tested & card issued?" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="yes">Yes - Tested & Card Issued (होय, पत्रिका उपलब्ध)</SelectItem>
+												<SelectItem value="no">No - Not Tested (नाही)</SelectItem>
+											</SelectContent></Select>
+									</div>
+
+									{/* GPS Coordinates preview */}
+									<div className="space-y-2">
+										<Label className="font-semibold">GPS Farm Coordinates</Label>
+										<div className="p-2.5 bg-muted rounded-lg font-mono text-xs flex items-center justify-between">
+											<span>
+												Lat: {profileData.latitude || "0.000000"}, Lon: {profileData.longitude || "0.000000"}
+											</span>
+											<MapPin className="h-4 w-4 text-emerald-600" />
+										</div>
+									</div>
+								</div>
+							</CardContent>
+						</Card>
+					</TabsContent>
+
+					{/* -------------------------------------------------
+					    TAB 3: CROPS, IRRIGATION & LIVESTOCK
+					------------------------------------------------- */}
+					<TabsContent value="cultivation" className="space-y-6">
+						<Card>
+							<CardHeader>
+								<CardTitle className="text-xl flex items-center gap-2">
+									<Wheat className="h-5 w-5 text-emerald-600" />
+									Cultivation, Irrigation & Farm Machinery
+								</CardTitle>
+								<CardDescription>
+									Registered crops, water management, agricultural implements, and dairy livestock.
+								</CardDescription>
+							</CardHeader>
+
+							<CardContent className="space-y-6">
+								{/* Farming Style / Practice */}
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+									<div className="space-y-2">
+										<Label className="font-semibold">
+											Farming Practice (शेती पद्धती)
+										</Label>
+										<Select
+											value={profileData.farmingType || "traditional"}
+											onValueChange={(val) => handleInputChange("farmingType", val)}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Select farming type" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="traditional">Traditional / Conventional (पारंपारिक रासायनिक शेती)</SelectItem>
+												<SelectItem value="organic">Organic Certified (सेंद्रिय शेती)</SelectItem>
+												<SelectItem value="natural">Natural Farming - ZBNF (नैसर्गिक शेती - झिरो बजेट)</SelectItem>
+												<SelectItem value="modern">Modern Precision / Polyhouse (आधुनिक हरितगृह)</SelectItem>
+											</SelectContent></Select>
+									</div>
+
+									{/* Irrigation System */}
+									<div className="space-y-2">
+										<Label className="font-semibold">
+											Primary Irrigation System (मुख्य सिंचन पद्धत)
+										</Label>
+										<Select
+											value={profileData.irrigationType || ""}
+											onValueChange={(val) => handleInputChange("irrigationType", val)}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Select primary irrigation" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="drip">Drip Irrigation (ठिबक सिंचन - Water Saving)</SelectItem>
+												<SelectItem value="sprinkler">Sprinkler (तुषार सिंचन)</SelectItem>
+												<SelectItem value="canal">Canal / Flood (पाटपाणी / पूर पद्धत)</SelectItem>
+												<SelectItem value="well">Well / Borewell Flood</SelectItem>
+												<SelectItem value="rainfed">Rainfed / Dryland (केवळ पावसावर आधारित - जिरायती)</SelectItem>
+												<SelectItem value="mixed">Mixed System (मिश्र पद्धत)</SelectItem>
+											</SelectContent></Select>
+									</div>
 								</div>
 
-								<div>
-									<CardTitle className="text-xl">
-										FarmAI Profile Completion Status
-									</CardTitle>
+								<Separator />
 
-									<CardDescription className="mt-1">
-										Complete these details to get accurate eligibility results.
-									</CardDescription>
-								</div>
-
-							</div>
-
-							<Badge
-								variant="outline"
-								className={
-									eligibilityProfileComplete
-										? "border-green-500 text-green-700 bg-green-50"
-										: "border-orange-400 text-orange-700 bg-orange-50"
-								}
-							>
-								{eligibilityCompletion}% Complete
-							</Badge>
-
-						</div>
-					</CardHeader>
-
-					<CardContent className="space-y-5">
-
-						{/* Progress */}
-
-						<div>
-							<div className="flex justify-between text-sm mb-2">
-								<span className="font-medium">
-									Eligibility profile completion
-								</span>
-
-								<span className="text-muted-foreground">
-									{
-										eligibilityFields.length -
-										missingEligibilityFields.length
-									}{" "}
-									/{" "}
-									{
-										eligibilityFields.length
-									} fields
-								</span>
-							</div>
-
-							<div className="h-2.5 w-full rounded-full bg-green-100 overflow-hidden">
-								<div
-									className="h-full bg-green-600 rounded-full transition-all duration-500"
-									style={{
-										width: `${eligibilityCompletion}%`,
-									}}
-								/>
-							</div>
-						</div>
-
-						{/* Explanation */}
-
-						{eligibilityProfileComplete ? (
-							<Alert className="border-green-300 bg-green-50">
-								<CheckCircle2 className="h-4 w-4 text-green-600" />
-
-								<AlertDescription className="text-green-800">
-									Your eligibility profile is complete. FarmAI can now use your profile information to check scheme eligibility.
-								</AlertDescription>
-							</Alert>
-						) : (
-							<Alert className="border-orange-300 bg-orange-50">
-								<CircleAlert className="h-4 w-4 text-orange-600" />
-
-								<AlertDescription className="text-orange-800">
-									<strong>
-										Complete your profile
-									</strong>{" "}
-									to enable accurate government scheme eligibility checking.
-									You can still browse available schemes while your profile is incomplete.
-								</AlertDescription>
-							</Alert>
-						)}
-
-						{/* Missing fields */}
-
-						{missingEligibilityFields.length >
-							0 && (
-								<div className="p-4 rounded-lg border bg-white/70 dark:bg-background/50">
-
-									<p className="text-sm font-medium mb-3">
-										Information still needed:
-									</p>
-
-									<div className="flex flex-wrap gap-2">
-										{missingEligibilityFields.map(
-											(field) => (
-												<Badge
-													key={
-														field
-													}
-													variant="outline"
-													className="text-orange-700 border-orange-300"
+								{/* Water & Irrigation Sources Multi-Select */}
+								<div className="space-y-2.5">
+									<Label className="font-semibold flex items-center gap-1.5">
+										<Droplets className="h-4 w-4 text-blue-600" />
+										Water & Irrigation Sources (पाण्याचे स्रोत)
+									</Label>
+									<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+										{IRRIGATION_SOURCES.map((src) => {
+											const selected = (profileData.irrigationSource || []).includes(src.id)
+											return (
+												<button
+													key={src.id}
+													type="button"
+													disabled={!isEditing}
+													onClick={() => toggleArrayItem("irrigationSource", src.id)}
+													className={`p-3 rounded-xl border text-left text-xs sm:text-sm font-medium flex items-center justify-between transition-all ${
+														selected
+															? "bg-blue-50 border-blue-500 text-blue-900 shadow-sm"
+															: "bg-card border-gray-200 text-muted-foreground hover:border-gray-300"
+													} ${!isEditing ? "cursor-default" : "cursor-pointer"}`}
 												>
-													{
-														eligibilityFieldLabels[
-															field
-														]
-													}
-												</Badge>
+													<span>{src.label}</span>
+													{selected && <Check className="h-4 w-4 text-blue-600 shrink-0" />}
+												</button>
 											)
+										})}
+									</div>
+								</div>
+
+								<Separator />
+
+								{/* Registered Crops with Visual Selector */}
+								<div className="space-y-3">
+									<div className="flex items-center justify-between">
+										<Label className="font-semibold text-base">
+											Registered Crops (नोंदवलेली मुख्य पिके)
+										</Label>
+										<Badge variant="outline" className="text-emerald-700 bg-emerald-50">
+											{profileData.crops?.length || 0} Crops Added
+										</Badge>
+									</div>
+
+									{/* Active Crop Pills */}
+									<div className="flex flex-wrap gap-2 p-3 bg-muted/40 rounded-xl border">
+										{profileData.crops && profileData.crops.length > 0 ? (
+											profileData.crops.map((crop) => (
+												<Badge
+													key={crop}
+													variant="secondary"
+													className="bg-emerald-100 text-emerald-800 border-emerald-300 px-3 py-1 text-sm flex items-center gap-1.5"
+												>
+													🌾 {crop}
+													{isEditing && (
+														<button
+															type="button"
+															onClick={() => toggleCrop(crop)}
+															className="hover:text-red-600 ml-1"
+														>
+															×
+														</button>
+													)}
+												</Badge>
+											))
+										) : (
+											<p className="text-sm text-muted-foreground py-1">
+												No crops selected yet. Choose from below or type custom crop.
+											</p>
 										)}
 									</div>
 
-								</div>
-							)}
-
-					</CardContent>
-				</Card>
-
-				{/* =================================================
-				    PERSONAL INFORMATION
-				================================================= */}
-
-				<Card className="border-border">
-
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<span>
-								{t(
-									"personalInformation"
-								)}
-							</span>
-
-							{isEditing && (
-								<Lock className="h-4 w-4 text-orange-500" />
-							)}
-						</CardTitle>
-
-						<CardDescription>
-							{t(
-								"basicContactDetails"
-							)}
-						</CardDescription>
-					</CardHeader>
-
-					<CardContent className="space-y-4">
-
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-							{/* Full Name */}
-
-							<div className="space-y-2">
-								<Label htmlFor="fullName">
-									{t(
-										"fullName"
-									)}
-								</Label>
-
-								<Input
-									id="fullName"
-									value={
-										profileData.fullName
-									}
-									onChange={(e) =>
-										handleInputChange(
-											"fullName",
-											e.target
-												.value
-										)
-									}
-									disabled={
-										!isEditing
-									}
-									required
-								/>
-							</div>
-
-							{/* Phone */}
-
-							<div className="space-y-2">
-
-								<Label
-									htmlFor="phone"
-									className="flex items-center gap-2"
-								>
-									{t(
-										"phoneNumber"
-									)}
-
+									{/* Custom Crop Input when Editing */}
 									{isEditing && (
-										<Lock className="h-3 w-3 text-orange-500" />
-									)}
-								</Label>
-
-								<Input
-									id="phone"
-									value={
-										profileData.phone ||
-										""
-									}
-									onChange={(e) =>
-										handleInputChange(
-											"phone",
-											e.target
-												.value
-										)
-									}
-									disabled={
-										!isEditing
-									}
-									type="tel"
-									placeholder="10-digit mobile number"
-								/>
-
-								{isEditing && (
-									<p className="text-xs text-orange-600">
-										{t(
-											"changingPhoneRequiresVerification"
-										)}
-									</p>
-								)}
-							</div>
-
-							{/* Email */}
-
-							<div className="space-y-2">
-
-								<Label
-									htmlFor="email"
-									className="flex items-center gap-2"
-								>
-									{t(
-										"emailOptional"
-									)}
-
-									{isEditing && (
-										<Lock className="h-3 w-3 text-orange-500" />
-									)}
-								</Label>
-
-								<Input
-									id="email"
-									value={
-										profileData.email ||
-										""
-									}
-									onChange={(e) =>
-										handleInputChange(
-											"email",
-											e.target
-												.value
-										)
-									}
-									disabled={
-										!isEditing
-									}
-									type="email"
-									placeholder="your@email.com"
-								/>
-
-								{isEditing &&
-									profileData.email && (
-										<p className="text-xs text-orange-600">
-											{t(
-												"changingEmailRequiresVerification"
-											)}
-										</p>
-									)}
-							</div>
-
-							{/* Farm Name */}
-
-							<div className="space-y-2">
-
-								<Label htmlFor="farmName">
-									{t(
-										"farmNameOptional"
-									)}
-								</Label>
-
-								<Input
-									id="farmName"
-									value={
-										profileData.farmName ||
-										""
-									}
-									onChange={(e) =>
-										handleInputChange(
-											"farmName",
-											e.target
-												.value
-										)
-									}
-									disabled={
-										!isEditing
-									}
-									placeholder={t(
-										"farmNamePlaceholder"
-									)}
-								/>
-							</div>
-
-						</div>
-					</CardContent>
-				</Card>
-
-				<Separator />
-
-				{/* =================================================
-				    FARMER ELIGIBILITY INFORMATION
-				================================================= */}
-
-				<Card className="border-border">
-
-					<CardHeader>
-
-						<CardTitle className="flex items-center gap-2">
-							<UserRound className="h-5 w-5 text-green-600" />
-
-							<span>
-								Farmer Eligibility Information
-							</span>
-
-							{isEditing && (
-								<Lock className="h-4 w-4 text-orange-500" />
-							)}
-						</CardTitle>
-
-						<CardDescription>
-							These details help FarmAI determine which government schemes may apply to you.
-						</CardDescription>
-
-					</CardHeader>
-
-					<CardContent className="space-y-6">
-
-						{/* =================================================
-						    PERSONAL ELIGIBILITY
-						================================================= */}
-
-						<div>
-
-							<div className="flex items-center gap-2 mb-4">
-								<UserRound className="h-4 w-4 text-muted-foreground" />
-
-								<h3 className="font-semibold">
-									Personal Details
-								</h3>
-							</div>
-
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-								{/* DOB */}
-
-								<div className="space-y-2">
-
-									<Label htmlFor="dateOfBirth">
-										Date of Birth
-									</Label>
-
-									<Input
-										id="dateOfBirth"
-										type="date"
-										value={
-											profileData.dateOfBirth
-												? new Date(
-														profileData.dateOfBirth
-													)
-														.toISOString()
-														.split(
-															"T"
-														)[0]
-												: ""
-										}
-										onChange={(e) =>
-											handleInputChange(
-												"dateOfBirth",
-												e.target
-													.value
-											)
-										}
-										disabled={
-											!isEditing
-										}
-									/>
-
-									<p className="text-xs text-muted-foreground">
-										Used for age-based scheme eligibility.
-									</p>
-
-								</div>
-
-								{/* Gender */}
-
-								<div className="space-y-2">
-
-									<Label>
-										Gender
-									</Label>
-
-									<Select
-										value={
-											profileData.gender ||
-											""
-										}
-										onValueChange={(
-											value
-										) =>
-											handleInputChange(
-												"gender",
-												value
-											)
-										}
-										disabled={
-											!isEditing
-										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Select gender" />
-										</SelectTrigger>
-
-										<SelectContent>
-											<SelectItem value="male">
-												Male
-											</SelectItem>
-
-											<SelectItem value="female">
-												Female
-											</SelectItem>
-
-											<SelectItem value="other">
-												Other
-											</SelectItem>
-										</SelectContent>
-									</Select>
-
-								</div>
-
-								{/* Social Category */}
-
-								<div className="space-y-2">
-
-									<Label>
-										Social Category
-									</Label>
-
-									<Select
-										value={
-											profileData.socialCategory ||
-											""
-										}
-										onValueChange={(
-											value
-										) =>
-											handleInputChange(
-												"socialCategory",
-												value
-											)
-										}
-										disabled={
-											!isEditing
-										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Select category" />
-										</SelectTrigger>
-
-										<SelectContent>
-											<SelectItem value="general">
-												General
-											</SelectItem>
-
-											<SelectItem value="obc">
-												OBC
-											</SelectItem>
-
-											<SelectItem value="sc">
-												SC
-											</SelectItem>
-
-											<SelectItem value="st">
-												ST
-											</SelectItem>
-
-											<SelectItem value="other">
-												Other
-											</SelectItem>
-										</SelectContent>
-									</Select>
-
-								</div>
-
-							</div>
-						</div>
-
-						<Separator />
-
-						{/* =================================================
-						    LAND & FARM
-						================================================= */}
-
-						<div>
-
-							<div className="flex items-center gap-2 mb-4">
-								<Tractor className="h-4 w-4 text-muted-foreground" />
-
-								<h3 className="font-semibold">
-									Land & Farming Details
-								</h3>
-							</div>
-
-							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-
-								{/* Farmer Category */}
-
-								<div className="space-y-2">
-
-									<Label>
-										Farmer Category
-									</Label>
-
-									<Select
-										value={
-											profileData.farmerCategory ||
-											""
-										}
-										onValueChange={(
-											value
-										) =>
-											handleInputChange(
-												"farmerCategory",
-												value
-											)
-										}
-										disabled={
-											!isEditing
-										}
-									>
-
-										<SelectTrigger>
-											<SelectValue placeholder="Select category" />
-										</SelectTrigger>
-
-										<SelectContent>
-
-											<SelectItem value="small">
-												Small
-											</SelectItem>
-
-											<SelectItem value="marginal">
-												Marginal
-											</SelectItem>
-
-											<SelectItem value="medium">
-												Medium
-											</SelectItem>
-
-											<SelectItem value="large">
-												Large
-											</SelectItem>
-
-											<SelectItem value="landless">
-												Landless
-											</SelectItem>
-
-										</SelectContent>
-
-									</Select>
-
-								</div>
-
-								{/* Land Holding */}
-
-								<div className="space-y-2">
-
-									<Label htmlFor="landHolding">
-										Land Holding
-									</Label>
-
-									<Input
-										id="landHolding"
-										type="number"
-										min="0"
-										step="0.01"
-										value={
-											profileData.landHolding ??
-											""
-										}
-										onChange={(e) =>
-											handleInputChange(
-												"landHolding",
-												e.target
-													.value ===
-													""
-													? null
-													: Number(
-															e
-																.target
-																.value
-														)
-											)
-										}
-										disabled={
-											!isEditing
-										}
-										placeholder="e.g. 2.5"
-									/>
-
-								</div>
-
-								{/* Land Unit */}
-
-								<div className="space-y-2">
-
-									<Label>
-										Land Unit
-									</Label>
-
-									<Select
-										value={
-											profileData.landUnit ||
-											""
-										}
-										onValueChange={(
-											value
-										) =>
-											handleInputChange(
-												"landUnit",
-												value
-											)
-										}
-										disabled={
-											!isEditing
-										}
-									>
-
-										<SelectTrigger>
-											<SelectValue placeholder="Select unit" />
-										</SelectTrigger>
-
-										<SelectContent>
-
-											<SelectItem value="acre">
-												Acre
-											</SelectItem>
-
-											<SelectItem value="hectare">
-												Hectare
-											</SelectItem>
-
-										</SelectContent>
-
-									</Select>
-
-								</div>
-
-								{/* Land Ownership */}
-
-								<div className="space-y-2">
-
-									<Label>
-										Land Ownership
-									</Label>
-
-									<Select
-										value={
-											profileData.landOwnership ||
-											""
-										}
-										onValueChange={(
-											value
-										) =>
-											handleInputChange(
-												"landOwnership",
-												value
-											)
-										}
-										disabled={
-											!isEditing
-										}
-									>
-
-										<SelectTrigger>
-											<SelectValue placeholder="Select ownership" />
-										</SelectTrigger>
-
-										<SelectContent>
-
-											<SelectItem value="owned">
-												Owned
-											</SelectItem>
-
-											<SelectItem value="leased">
-												Leased
-											</SelectItem>
-
-											<SelectItem value="shared">
-												Shared
-											</SelectItem>
-
-											<SelectItem value="government">
-												Government
-											</SelectItem>
-
-											<SelectItem value="other">
-												Other
-											</SelectItem>
-
-										</SelectContent>
-
-									</Select>
-
-								</div>
-
-							</div>
-						</div>
-
-						<Separator />
-
-						{/* =================================================
-						    FINANCIAL
-						================================================= */}
-
-						<div>
-
-							<div className="flex items-center gap-2 mb-4">
-								<Landmark className="h-4 w-4 text-muted-foreground" />
-
-								<h3 className="font-semibold">
-									Financial & Government Details
-								</h3>
-							</div>
-
-							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-
-								{/* Annual Income */}
-
-								<div className="space-y-2">
-
-									<Label htmlFor="annualFamilyIncome">
-										Annual Family Income
-									</Label>
-
-									<Input
-										id="annualFamilyIncome"
-										type="number"
-										min="0"
-										step="1000"
-										value={
-											profileData.annualFamilyIncome ??
-											""
-										}
-										onChange={(e) =>
-											handleInputChange(
-												"annualFamilyIncome",
-												e.target
-													.value ===
-													""
-													? null
-													: Number(
-															e
-																.target
-																.value
-														)
-											)
-										}
-										disabled={
-											!isEditing
-										}
-										placeholder="₹ Annual income"
-									/>
-
-								</div>
-
-								{/* Aadhaar */}
-
-								<div className="space-y-2">
-
-									<Label>
-										Aadhaar Linked
-									</Label>
-
-									<Select
-										value={
-											profileData.aadhaarLinked ===
-											true
-												? "yes"
-												: profileData.aadhaarLinked ===
-														false
-													? "no"
-													: ""
-										}
-										onValueChange={(
-											value
-										) =>
-											handleInputChange(
-												"aadhaarLinked",
-												value ===
-													"yes"
-													? true
-													: value ===
-															"no"
-														? false
-														: null
-											)
-										}
-										disabled={
-											!isEditing
-										}
-									>
-
-										<SelectTrigger>
-											<SelectValue placeholder="Select answer" />
-										</SelectTrigger>
-
-										<SelectContent>
-
-											<SelectItem value="yes">
-												Yes
-											</SelectItem>
-
-											<SelectItem value="no">
-												No
-											</SelectItem>
-
-										</SelectContent>
-
-									</Select>
-
-								</div>
-
-								{/* Bank */}
-
-								<div className="space-y-2">
-
-									<Label>
-										Bank Account Available
-									</Label>
-
-									<Select
-										value={
-											profileData.bankAccountAvailable ===
-											true
-												? "yes"
-												: profileData.bankAccountAvailable ===
-														false
-													? "no"
-													: ""
-										}
-										onValueChange={(
-											value
-										) =>
-											handleInputChange(
-												"bankAccountAvailable",
-												value ===
-													"yes"
-													? true
-													: value ===
-															"no"
-														? false
-														: null
-											)
-										}
-										disabled={
-											!isEditing
-										}
-									>
-
-										<SelectTrigger>
-											<SelectValue placeholder="Select answer" />
-										</SelectTrigger>
-
-										<SelectContent>
-
-											<SelectItem value="yes">
-												Yes
-											</SelectItem>
-
-											<SelectItem value="no">
-												No
-											</SelectItem>
-
-										</SelectContent>
-
-									</Select>
-
-								</div>
-
-								{/* PM KISAN */}
-
-								<div className="space-y-2">
-
-									<Label>
-										PM-KISAN Registered
-									</Label>
-
-									<Select
-										value={
-											profileData.pmKisanRegistered ===
-											true
-												? "yes"
-												: profileData.pmKisanRegistered ===
-														false
-													? "no"
-													: ""
-										}
-										onValueChange={(
-											value
-										) =>
-											handleInputChange(
-												"pmKisanRegistered",
-												value ===
-													"yes"
-													? true
-													: value ===
-															"no"
-														? false
-														: null
-											)
-										}
-										disabled={
-											!isEditing
-										}
-									>
-
-										<SelectTrigger>
-											<SelectValue placeholder="Select answer" />
-										</SelectTrigger>
-
-										<SelectContent>
-
-											<SelectItem value="yes">
-												Yes
-											</SelectItem>
-
-											<SelectItem value="no">
-												No
-											</SelectItem>
-
-										</SelectContent>
-
-									</Select>
-
-								</div>
-
-							</div>
-						</div>
-
-						<Separator />
-
-						{/* =================================================
-						    IRRIGATION
-						================================================= */}
-
-						<div>
-
-							<div className="flex items-center gap-2 mb-4">
-								<Tractor className="h-4 w-4 text-muted-foreground" />
-
-								<h3 className="font-semibold">
-									Irrigation
-								</h3>
-							</div>
-
-							<div className="max-w-md">
-
-								<div className="space-y-2">
-
-									<Label>
-										Irrigation Type
-									</Label>
-
-									<Select
-										value={
-											profileData.irrigationType ||
-											""
-										}
-										onValueChange={(
-											value
-										) =>
-											handleInputChange(
-												"irrigationType",
-												value
-											)
-										}
-										disabled={
-											!isEditing
-										}
-									>
-
-										<SelectTrigger>
-											<SelectValue placeholder="Select irrigation type" />
-										</SelectTrigger>
-
-										<SelectContent>
-
-											<SelectItem value="rainfed">
-												Rainfed
-											</SelectItem>
-
-											<SelectItem value="canal">
-												Canal
-											</SelectItem>
-
-											<SelectItem value="well">
-												Well
-											</SelectItem>
-
-											<SelectItem value="borewell">
-												Borewell
-											</SelectItem>
-
-											<SelectItem value="drip">
-												Drip
-											</SelectItem>
-
-											<SelectItem value="sprinkler">
-												Sprinkler
-											</SelectItem>
-
-											<SelectItem value="mixed">
-												Mixed
-											</SelectItem>
-
-											<SelectItem value="other">
-												Other
-											</SelectItem>
-
-										</SelectContent>
-
-									</Select>
-
-								</div>
-
-							</div>
-						</div>
-
-						{/* Bottom explanation */}
-
-						<div className="flex gap-3 p-4 rounded-lg bg-blue-50 border border-blue-200">
-
-							<FileCheck2 className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-
-							<div className="text-sm text-blue-800">
-
-								<p className="font-medium">
-									Why do we ask for this?
-								</p>
-
-								<p className="mt-1">
-									FarmAI uses these details to compare your profile with the eligibility conditions of government schemes. Your information is stored in your FarmAI account and can be updated from this profile page.
-								</p>
-
-							</div>
-
-						</div>
-
-					</CardContent>
-				</Card>
-
-				<Separator />
-
-				{/* =================================================
-				    LOCATION DETAILS
-				================================================= */}
-
-				<Card className="border-border">
-
-					<CardHeader>
-
-						<CardTitle className="flex items-center gap-2">
-							<MapPin className="h-5 w-5" />
-
-							{t(
-								"locationDetails"
-							)}
-						</CardTitle>
-
-						<CardDescription>
-							{t(
-								"farmLocationInfo"
-							)}
-						</CardDescription>
-
-					</CardHeader>
-
-					<CardContent className="space-y-4">
-
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-							{/* State */}
-
-							<div className="space-y-2">
-
-								<Label htmlFor="state">
-									{t(
-										"stateRequired"
-									)}
-								</Label>
-
-								<Input
-									id="state"
-									value={
-										profileData.state ||
-										""
-									}
-									onChange={(e) =>
-										handleInputChange(
-											"state",
-											e.target
-												.value
-										)
-									}
-									disabled={
-										!isEditing
-									}
-									placeholder={t(
-										"statePlaceholder"
-									)}
-								/>
-
-							</div>
-
-							{/* District */}
-
-							<div className="space-y-2">
-
-								<Label htmlFor="district">
-									{t(
-										"districtRequired"
-									)}
-								</Label>
-
-								<Input
-									id="district"
-									value={
-										profileData.district ||
-										""
-									}
-									onChange={(e) =>
-										handleInputChange(
-											"district",
-											e.target
-												.value
-										)
-									}
-									disabled={
-										!isEditing
-									}
-									placeholder={t(
-										"districtPlaceholder"
-									)}
-								/>
-
-							</div>
-
-							{/* Village */}
-
-							<div className="space-y-2">
-
-								<Label htmlFor="village">
-									{t(
-										"villageTown"
-									)}
-								</Label>
-
-								<Input
-									id="village"
-									value={
-										profileData.village ||
-										""
-									}
-									onChange={(e) =>
-										handleInputChange(
-											"village",
-											e.target
-												.value
-										)
-									}
-									disabled={
-										!isEditing
-									}
-									placeholder={t(
-										"villagePlaceholder"
-									)}
-								/>
-
-							</div>
-
-							{/* Pincode */}
-
-							<div className="space-y-2">
-
-								<Label htmlFor="pincode">
-									{t(
-										"pincode"
-									)}
-								</Label>
-
-								<Input
-									id="pincode"
-									value={
-										profileData.pincode ||
-										""
-									}
-									onChange={(e) =>
-										handleInputChange(
-											"pincode",
-											e.target
-												.value
-										)
-									}
-									disabled={
-										!isEditing
-									}
-									placeholder={t(
-										"pincodePlaceholder"
-									)}
-									maxLength={6}
-								/>
-
-							</div>
-
-						</div>
-
-						{/* Full Address */}
-
-						<div className="p-4 bg-muted rounded-lg">
-
-							<Label className="text-xs text-muted-foreground">
-								{t(
-									"fullFarmAddress"
-								)}
-							</Label>
-
-							<p className="mt-1 text-sm">
-
-								{profileData.farmLocation ||
-									[
-										profileData.village,
-										profileData.district,
-										profileData.state,
-										profileData.pincode,
-									]
-										.filter(
-											Boolean
-										)
-										.join(
-											", "
-										) ||
-									t(
-										"addressNotComplete"
-									)}
-
-							</p>
-
-						</div>
-
-						{/* Coordinates */}
-
-						{profileData.latitude !==
-							undefined &&
-							profileData.latitude !==
-								0 &&
-							profileData.longitude !==
-								undefined &&
-							profileData.longitude !==
-								0 && (
-								<div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-
-									<Label className="text-xs text-blue-700 flex items-center gap-2">
-										{t(
-											"gpsCoordinates"
-										)}
-									</Label>
-
-									<p className="mt-1 text-sm text-blue-900 font-mono">
-										Lat:{" "}
-										{profileData.latitude.toFixed(
-											6
-										)}
-										, Lon:{" "}
-										{profileData.longitude.toFixed(
-											6
-										)}
-									</p>
-
-								</div>
-							)}
-
-					</CardContent>
-				</Card>
-
-				<Separator />
-
-				{/* =================================================
-				    FARMING DETAILS
-				================================================= */}
-
-				<Card className="border-border">
-
-					<CardHeader>
-						<CardTitle>
-							{t(
-								"farmingDetails"
-							)}
-						</CardTitle>
-
-						<CardDescription>
-							{t(
-								"cropsAndPractices"
-							)}
-						</CardDescription>
-					</CardHeader>
-
-					<CardContent className="space-y-4">
-
-						{/* Farming Type */}
-
-						<div className="space-y-2">
-
-							<Label htmlFor="farmingType">
-								{t(
-									"farmingType"
-								)}
-							</Label>
-
-							<Select
-								value={
-									profileData.farmingType ||
-									"traditional"
-								}
-								onValueChange={(
-									value
-								) =>
-									handleInputChange(
-										"farmingType",
-										value
-									)
-								}
-								disabled={
-									!isEditing
-								}
-							>
-
-								<SelectTrigger>
-									<SelectValue
-										placeholder={t(
-											"selectFarmingType"
-										)}
-									/>
-								</SelectTrigger>
-
-								<SelectContent>
-
-									<SelectItem value="traditional">
-										{t(
-											"traditionalFarming"
-										)}
-									</SelectItem>
-
-									<SelectItem value="organic">
-										{t(
-											"organicFarming"
-										)}
-									</SelectItem>
-
-									<SelectItem value="modern">
-										{t(
-											"modernFarming"
-										)}
-									</SelectItem>
-
-								</SelectContent>
-
-							</Select>
-
-						</div>
-
-						{/* Crops */}
-
-						<div className="space-y-2">
-
-							<Label>
-								{t(
-									"selectedCrops"
-								)}{" "}
-								(
-								{profileData.crops
-									?.length ||
-									0}
-								)
-							</Label>
-
-							{!isEditing && (
-								<div className="flex flex-wrap gap-2">
-
-									{profileData.crops &&
-									profileData
-										.crops
-										.length >
-										0 ? (
-										profileData.crops.map(
-											(
-												crop
-											) => (
-												<Badge
-													key={
-														crop
+										<div className="flex gap-2 max-w-md pt-1">
+											<Input
+												value={customCropInput}
+												onChange={(e) => setCustomCropInput(e.target.value)}
+												placeholder="Add other crop (e.g. Soybean, Onion, Cotton)"
+												className="border-gray-300 text-sm"
+												onKeyDown={(e) => {
+													if (e.key === "Enter") {
+														e.preventDefault()
+														handleAddCustomCrop()
 													}
-													variant="secondary"
-													className="text-sm"
+												}}
+											/>
+											<Button
+												type="button"
+												variant="secondary"
+												onClick={handleAddCustomCrop}
+												className="shrink-0 bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+											>
+												+ Add
+											</Button>
+										</div>
+									)}
+
+									{/* Visual Crop Grid */}
+									{isEditing && (
+										<div className="pt-2">
+											<p className="text-xs text-muted-foreground mb-2">
+												Quick Select Common Staples:
+											</p>
+											<CropSelector
+												selected={profileData.crops || []}
+												toggleCrop={toggleCrop}
+												lang={profileData.preferredLanguage || "en-US"}
+											/>
+										</div>
+									)}
+								</div>
+
+								<Separator />
+
+								{/* Livestock & Dairy Farming */}
+								<div className="space-y-2.5">
+									<Label className="font-semibold flex items-center gap-1.5">
+										<Sprout className="h-4 w-4 text-emerald-600" />
+										Livestock & Allied Activities (पशुपालन व जोडधंदे)
+									</Label>
+									<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+										{LIVESTOCK_OPTIONS.map((ls) => {
+											const selected = (profileData.livestock || []).includes(ls.id)
+											return (
+												<button
+													key={ls.id}
+													type="button"
+													disabled={!isEditing}
+													onClick={() => toggleArrayItem("livestock", ls.id)}
+													className={`p-3 rounded-xl border text-left text-xs sm:text-sm font-medium flex items-center justify-between transition-all ${
+														selected
+															? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-sm"
+															: "bg-card border-gray-200 text-muted-foreground hover:border-gray-300"
+													} ${!isEditing ? "cursor-default" : "cursor-pointer"}`}
 												>
-													{
-														crop
-													}
-												</Badge>
+													<span>{ls.label}</span>
+													{selected && <Check className="h-4 w-4 text-emerald-600 shrink-0" />}
+												</button>
 											)
-										)
-									) : (
-										<p className="text-sm text-muted-foreground">
-											{t(
-												"noCropsSelected"
-											)}
+										})}
+									</div>
+								</div>
+
+								<Separator />
+
+								{/* Farm Machinery & Equipment */}
+								<div className="space-y-2.5">
+									<Label className="font-semibold flex items-center gap-1.5">
+										<Tractor className="h-4 w-4 text-emerald-600" />
+										Farm Machinery & Equipment (कृषी यंत्रे व अवजारे)
+									</Label>
+									<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+										{MACHINERY_OPTIONS.map((mach) => {
+											const selected = (profileData.machinery || []).includes(mach.id)
+											return (
+												<button
+													key={mach.id}
+													type="button"
+													disabled={!isEditing}
+													onClick={() => toggleArrayItem("machinery", mach.id)}
+													className={`p-3 rounded-xl border text-left text-xs sm:text-sm font-medium flex items-center justify-between transition-all ${
+														selected
+															? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-sm"
+															: "bg-card border-gray-200 text-muted-foreground hover:border-gray-300"
+													} ${!isEditing ? "cursor-default" : "cursor-pointer"}`}
+												>
+													<span>{mach.label}</span>
+													{selected && <Check className="h-4 w-4 text-emerald-600 shrink-0" />}
+												</button>
+											)
+										})}
+									</div>
+								</div>
+							</CardContent>
+						</Card>
+					</TabsContent>
+
+					{/* -------------------------------------------------
+					    TAB 4: GOVERNMENT SCHEMES & BANKING
+					------------------------------------------------- */}
+					<TabsContent value="schemes" className="space-y-6">
+						<Card>
+							<CardHeader>
+								<CardTitle className="text-xl flex items-center gap-2">
+									<Landmark className="h-5 w-5 text-emerald-600" />
+									Government Schemes, Subsidies & Banking Records
+								</CardTitle>
+								<CardDescription>
+									Official farmer category, DBT account status, and scheme registrations for instant eligibility evaluation.
+								</CardDescription>
+							</CardHeader>
+
+							<CardContent className="space-y-6">
+								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+									{/* Farmer Category */}
+									<div className="space-y-2">
+										<Label className="font-semibold">
+											Farmer Holding Category (शेतकरी वर्ग)
+										</Label>
+										<Select
+											value={profileData.farmerCategory || ""}
+											onValueChange={(val) => handleInputChange("farmerCategory", val)}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Select farmer category" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="marginal">Marginal Farmer (&lt; 1 Hectare / 2.5 Acres)</SelectItem>
+												<SelectItem value="small">Small Farmer (1 - 2 Hectares / 2.5 - 5 Acres)</SelectItem>
+												<SelectItem value="medium">Semi-Medium / Medium (2 - 10 Hectares)</SelectItem>
+												<SelectItem value="large">Large Farmer (&gt; 10 Hectares)</SelectItem>
+												<SelectItem value="landless">Landless Agricultural Laborer (भूमिहीन)</SelectItem>
+											</SelectContent></Select>
+									</div>
+
+									{/* Annual Family Income */}
+									<div className="space-y-2">
+										<Label htmlFor="annualFamilyIncome" className="font-semibold">
+											Annual Family Income (वार्षिक उत्पन्न ₹)
+										</Label>
+										<Input
+											id="annualFamilyIncome"
+											type="number"
+											min="0"
+											step="5000"
+											value={profileData.annualFamilyIncome ?? ""}
+											onChange={(e) =>
+												handleInputChange(
+													"annualFamilyIncome",
+													e.target.value === "" ? null : Number(e.target.value)
+												)
+											}
+											disabled={!isEditing}
+											placeholder="₹ e.g. 150000"
+											className="border-gray-300 font-mono"
+										/>
+									</div>
+
+									{/* PM-KISAN Registered */}
+									<div className="space-y-2">
+										<Label className="font-semibold">
+											PM-KISAN Samman Nidhi (पीएम किसान लाभार्थी?)
+										</Label>
+										<Select
+											value={
+												profileData.pmKisanRegistered === true
+													? "yes"
+													: profileData.pmKisanRegistered === false
+														? "no"
+														: ""
+											}
+											onValueChange={(val) =>
+												handleInputChange(
+													"pmKisanRegistered",
+													val === "yes" ? true : val === "no" ? false : null
+												)
+											}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Select status" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="yes">Yes - Registered & Active (पात्र शेतकरी)</SelectItem>
+												<SelectItem value="no">No - Not Registered</SelectItem>
+											</SelectContent></Select>
+									</div>
+
+									{/* Aadhaar Linked for DBT */}
+									<div className="space-y-2">
+										<Label className="font-semibold">
+											Aadhaar Linked to Bank (DBT खाते सक्रिय?)
+										</Label>
+										<Select
+											value={
+												profileData.aadhaarLinked === true
+													? "yes"
+													: profileData.aadhaarLinked === false
+														? "no"
+														: ""
+											}
+											onValueChange={(val) =>
+												handleInputChange(
+													"aadhaarLinked",
+													val === "yes" ? true : val === "no" ? false : null
+												)
+											}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Aadhaar linked to bank?" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="yes">Yes - Linked & DBT Active (आधार बँक खात्याशी जोडलेले)</SelectItem>
+												<SelectItem value="no">No - Not Linked</SelectItem>
+											</SelectContent></Select>
+									</div>
+
+									{/* Bank Account Available */}
+									<div className="space-y-2">
+										<Label className="font-semibold">
+											Dedicated Bank Account (बँक खाते उपलब्ध?)
+										</Label>
+										<Select
+											value={
+												profileData.bankAccountAvailable === true
+													? "yes"
+													: profileData.bankAccountAvailable === false
+														? "no"
+														: ""
+											}
+											onValueChange={(val) =>
+												handleInputChange(
+													"bankAccountAvailable",
+													val === "yes" ? true : val === "no" ? false : null
+												)
+											}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Bank account available?" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="yes">Yes - Active Bank Account (होय)</SelectItem>
+												<SelectItem value="no">No</SelectItem>
+											</SelectContent></Select>
+									</div>
+
+									{/* Kisan Credit Card (KCC) */}
+									<div className="space-y-2">
+										<Label className="font-semibold">
+											Kisan Credit Card (KCC धारक?)
+										</Label>
+										<Select
+											value={
+												profileData.kccHolder === true
+													? "yes"
+													: profileData.kccHolder === false
+														? "no"
+														: ""
+											}
+											onValueChange={(val) =>
+												handleInputChange(
+													"kccHolder",
+													val === "yes" ? true : val === "no" ? false : null
+												)
+											}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="KCC Cardholder?" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="yes">Yes - Have Kisan Credit Card (होय, KCC कार्ड आहे)</SelectItem>
+												<SelectItem value="no">No</SelectItem>
+											</SelectContent></Select>
+									</div>
+
+									{/* Crop Insurance (PMFBY) */}
+									<div className="space-y-2">
+										<Label className="font-semibold">
+											Crop Insurance - PMFBY (पंतप्रधान पीक विमा?)
+										</Label>
+										<Select
+											value={
+												profileData.cropInsuranceActive === true
+													? "yes"
+													: profileData.cropInsuranceActive === false
+														? "no"
+														: ""
+											}
+											onValueChange={(val) =>
+												handleInputChange(
+													"cropInsuranceActive",
+													val === "yes" ? true : val === "no" ? false : null
+												)
+											}
+											disabled={!isEditing}
+										>
+											<SelectTrigger className="border-gray-300">
+												<SelectValue placeholder="Crop insurance status" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="yes">Yes - Crops Insured under PMFBY (पीक विमा उतरवला आहे)</SelectItem>
+												<SelectItem value="no">No - Not Insured</SelectItem>
+											</SelectContent></Select>
+									</div>
+								</div>
+
+								{/* Scheme Eligibility Banner */}
+								<div className="flex gap-3.5 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 mt-4">
+									<FileCheck2 className="h-6 w-6 text-emerald-600 shrink-0 mt-0.5" />
+									<div className="text-sm text-emerald-900 space-y-1">
+										<p className="font-bold">
+											Automated Scheme Eligibility Engine Active
 										</p>
-									)}
-
+										<p className="text-emerald-800/90 text-xs sm:text-sm">
+											These details are matched in real-time with over 35 state and central agricultural schemes (including MahaDBT, PMKSY Drip Subsidies, Soil Health Mission, and Kisan Samman Nidhi). Ensure accurate landholdings to prevent subsidy application rejection.
+										</p>
+									</div>
 								</div>
-							)}
+							</CardContent>
+						</Card>
+					</TabsContent>
+				</Tabs>
 
-							{isEditing && (
-								<div className="p-4 border rounded-lg">
-
-									<CropSelector
-										selected={
-											profileData.crops ||
-											[]
-										}
-										toggleCrop={
-											toggleCrop
-										}
-										lang={
-											(profileData.preferredLanguage as
-												| "en-US"
-												| "hi-IN"
-												| "mr-IN") ||
-											"en-US"
-										}
-									/>
-
-								</div>
-							)}
-
-						</div>
-
-					</CardContent>
-				</Card>
-
-				<Separator />
-
-				{/* =================================================
-				    PREFERENCES
-				================================================= */}
-
-				<Card className="border-border">
-
-					<CardHeader>
-
-						<CardTitle className="flex items-center gap-2">
-							<Globe className="h-5 w-5" />
-
-							{t(
-								"preferences"
-							)}
-						</CardTitle>
-
-						<CardDescription>
-							{t(
-								"languageAndCommunication"
-							)}
-						</CardDescription>
-
-					</CardHeader>
-
-					<CardContent className="space-y-4">
-
-						<div className="space-y-2">
-
-							<Label htmlFor="preferredLanguage">
-								{t(
-									"preferredLanguage"
-								)}
-							</Label>
-
-							<Select
-								value={
-									profileData.preferredLanguage ||
-									"en-US"
-								}
-								onValueChange={(
-									value
-								) =>
-									handleInputChange(
-										"preferredLanguage",
-										value
-									)
-								}
-								disabled={
-									!isEditing
-								}
-							>
-
-								<SelectTrigger>
-									<SelectValue
-										placeholder={t(
-											"selectLanguage"
-										)}
-									/>
-								</SelectTrigger>
-
-								<SelectContent>
-
-									<SelectItem value="en-US">
-										{t(
-											"english"
-										)}
-									</SelectItem>
-
-									<SelectItem value="hi-IN">
-										{t(
-											"hindi"
-										)}
-									</SelectItem>
-
-									<SelectItem value="mr-IN">
-										{t(
-											"marathi"
-										)}
-									</SelectItem>
-
-								</SelectContent>
-
-							</Select>
-
-							<p className="text-xs text-muted-foreground">
-								{t(
-									"languageUsedForCommunication"
-								)}
-							</p>
-
-						</div>
-
-					</CardContent>
-				</Card>
-
-				{/* =================================================
-				    ACCOUNT INFO
-				================================================= */}
-
+				{/* -------------------------------------------------
+				    FOOTER REGISTRATION METADATA
+				------------------------------------------------- */}
 				{profileData.createdAt && (
-					<div className="text-center text-sm text-muted-foreground">
-						{t(
-							"memberSince"
-						)}{" "}
-						{new Date(
-							profileData.createdAt
-						).toLocaleDateString(
-							"en-IN",
-							{
-								year: "numeric",
-								month: "long",
-								day: "numeric",
-							}
-						)}
+					<div className="text-center text-xs text-muted-foreground pt-4">
+						Verified FarmAI Digital Kisan Profile • Registered since{" "}
+						{new Date(profileData.createdAt).toLocaleDateString("en-IN", {
+							year: "numeric",
+							month: "long",
+							day: "numeric",
+						})}
 					</div>
 				)}
-
 			</div>
 		</DashboardLayout>
 	)
