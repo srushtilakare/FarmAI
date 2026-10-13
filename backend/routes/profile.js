@@ -121,6 +121,8 @@ router.put(
         "district",
         "pincode",
         "village",
+        "taluka",
+        "soilType",
         "farmingType",
         "preferredLanguage",
       ];
@@ -130,6 +132,46 @@ router.put(
           user[field] = req.body[field];
         }
       });
+
+      // Array fields helper
+      const parseArrayField = (val) => {
+        if (!val) return [];
+        if (Array.isArray(val)) return val;
+        if (typeof val === "string") {
+          try {
+            const p = JSON.parse(val);
+            if (Array.isArray(p)) return p;
+          } catch (e) {
+            return val.split(",").map((s) => s.trim()).filter(Boolean);
+          }
+        }
+        return [];
+      };
+
+      if (req.body.irrigationSource !== undefined) {
+        user.irrigationSource = parseArrayField(req.body.irrigationSource);
+      }
+      if (req.body.livestock !== undefined) {
+        user.livestock = parseArrayField(req.body.livestock);
+      }
+      if (req.body.machinery !== undefined) {
+        user.machinery = parseArrayField(req.body.machinery);
+      }
+
+      // Boolean and Number fields
+      if (req.body.soilHealthCard !== undefined) {
+        user.soilHealthCard = req.body.soilHealthCard === true || req.body.soilHealthCard === "true";
+      }
+      if (req.body.kccHolder !== undefined) {
+        user.kccHolder = req.body.kccHolder === true || req.body.kccHolder === "true";
+      }
+      if (req.body.cropInsuranceActive !== undefined) {
+        user.cropInsuranceActive = req.body.cropInsuranceActive === true || req.body.cropInsuranceActive === "true";
+      }
+      if (req.body.experienceYears !== undefined) {
+        const exp = Number(req.body.experienceYears);
+        user.experienceYears = !isNaN(exp) && exp >= 0 ? exp : null;
+      }
 
       // =====================================================
       // CROPS
@@ -300,8 +342,17 @@ router.put(
       // PROFILE PHOTO
       // =====================================================
 
-      if (req.file) {
+      if (
+        req.body.removePhoto === true ||
+        req.body.removePhoto === "true" ||
+        req.body.profilePhoto === "" ||
+        req.body.profilePhoto === null
+      ) {
+        user.profilePhoto = "";
+      } else if (req.file) {
         user.profilePhoto = `/uploads/${req.file.filename}`;
+      } else if (req.body.profilePhoto !== undefined) {
+        user.profilePhoto = req.body.profilePhoto;
       }
 
       // =====================================================

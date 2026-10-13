@@ -38,20 +38,29 @@ router.put("/", auth, upload.single("profilePhoto"), async (req, res) => {
   try {
     const updates = { ...req.body };
 
-    // If a photo is uploaded, store its path (publicly accessible path)
-    if (req.file) {
+    // If photo removal was requested
+    if (
+      updates.removePhoto === true ||
+      updates.removePhoto === "true" ||
+      updates.profilePhoto === "" ||
+      updates.profilePhoto === null
+    ) {
+      updates.profilePhoto = "";
+      delete updates.removePhoto;
+    } else if (req.file) {
+      // If a physical file was uploaded via multipart/form-data
       updates.profilePhoto = `/uploads/${req.file.filename}`;
     }
 
     // req.body fields may be stringified JSON (because FormData was used).
     // Try to parse JSON fields where appropriate.
     for (const key of Object.keys(updates)) {
-      const val = updates[key]
+      const val = updates[key];
       if (typeof val === "string") {
-        // attempt JSON parse for arrays/objects
+        // attempt JSON parse for arrays/objects/booleans
         try {
-          const parsed = JSON.parse(val)
-          updates[key] = parsed
+          const parsed = JSON.parse(val);
+          updates[key] = parsed;
         } catch (e) {
           // leave as string
         }

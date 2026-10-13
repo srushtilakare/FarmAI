@@ -86,6 +86,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
+    taluka: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     latitude: {
       type: Number,
       default: 0,
@@ -110,6 +116,48 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       default: "traditional",
+    },
+
+    soilType: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    soilHealthCard: {
+      type: Boolean,
+      default: null,
+    },
+
+    irrigationSource: {
+      type: [String],
+      default: [],
+    },
+
+    livestock: {
+      type: [String],
+      default: [],
+    },
+
+    machinery: {
+      type: [String],
+      default: [],
+    },
+
+    kccHolder: {
+      type: Boolean,
+      default: null,
+    },
+
+    cropInsuranceActive: {
+      type: Boolean,
+      default: null,
+    },
+
+    experienceYears: {
+      type: Number,
+      default: null,
+      min: 0,
     },
 
     // =========================================================

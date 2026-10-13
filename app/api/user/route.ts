@@ -52,7 +52,12 @@ export async function PUT(req: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch (e) {
+      data = { message: res.statusText || "Backend error" };
+    }
     
     return NextResponse.json(data, { status: res.status });
   } catch (error) {
