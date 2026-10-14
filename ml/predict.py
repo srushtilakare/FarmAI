@@ -80,7 +80,13 @@ def predict_image(img_path):
             "crop": crop.capitalize()
         }
     except Exception as e:
+        import traceback
+
+        print("Prediction Failed", repr(e), flush=True)
+        traceback.print_exc()
+
         return {"error": f"Prediction failed: {str(e)}"}
+
 
 # Main execution
 if __name__ == "__main__":
