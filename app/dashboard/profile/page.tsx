@@ -686,22 +686,22 @@ export default function ProfilePage() {
 
 	return (
 		<DashboardLayout>
-			<div className="space-y-6 pb-12 max-w-7xl mx-auto">
+			<div className="mx-auto max-w-7xl space-y-5 pb-10 text-slate-800">
 
 				{/* -------------------------------------------------
 				    PAGE TITLE & ACTION BAR
 				------------------------------------------------- */}
-				<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-card p-5 rounded-2xl border shadow-sm">
+				<div className="flex flex-col gap-4 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
 					<div>
 						<div className="flex items-center gap-2.5">
-							<div className="p-2 bg-emerald-100 text-emerald-800 rounded-lg">
+							<div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-800">
 								<Sprout className="h-6 w-6" />
 							</div>
 							<div>
-								<h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
+								<h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
 									Farmer Profile & Identity
 								</h1>
-								<p className="text-sm text-muted-foreground">
+								<p className="mt-1 text-sm leading-relaxed text-slate-600">
 									शेतकरी प्रोफाईल व कृषी ओळखपत्र • Verified agricultural credentials
 								</p>
 							</div>
@@ -715,7 +715,7 @@ export default function ProfilePage() {
 									variant="outline"
 									onClick={handleCancel}
 									disabled={saving}
-									className="border-gray-300"
+									className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 								>
 									Cancel
 								</Button>
@@ -782,10 +782,10 @@ export default function ProfilePage() {
 				{/* -------------------------------------------------
 				    DIGITAL FARMER PASSBOOK / IDENTITY HEADER CARD
 				------------------------------------------------- */}
-				<div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 text-white shadow-xl border border-emerald-700/50 p-6 md:p-8">
+				<div className="relative overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-100 via-emerald-50 to-teal-50 p-5 text-slate-800 shadow-md ring-1 ring-emerald-100 md:p-7">
 					{/* Decorative background watermark */}
-					<div className="absolute right-0 bottom-0 opacity-10 pointer-events-none translate-x-8 translate-y-8">
-						<Tractor className="w-80 h-80 text-white" />
+					<div className="pointer-events-none absolute bottom-0 right-0 translate-x-8 translate-y-8 opacity-[0.09]">
+						<Tractor className="h-80 w-80 text-emerald-800" />
 					</div>
 
 					<div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-8">
@@ -793,7 +793,7 @@ export default function ProfilePage() {
 						{/* Photo Avatar with Upload & Delete controls */}
 						<div className="flex flex-col items-center gap-3">
 							<div className="relative group">
-								<Avatar className="h-32 w-32 md:h-36 md:w-36 rounded-full border-4 border-emerald-300/80 shadow-2xl bg-emerald-950 ring-4 ring-emerald-500/20">
+								<Avatar className="h-28 w-28 rounded-full border-4 border-white bg-emerald-100 shadow-md ring-2 ring-emerald-100 md:h-32 md:w-32">
 									{resolvedPhotoUrl ? (
 										<AvatarImage
 											src={resolvedPhotoUrl}
@@ -801,7 +801,7 @@ export default function ProfilePage() {
 											className="object-cover"
 										/>
 									) : (
-										<AvatarFallback className="bg-emerald-700 text-white text-3xl font-bold tracking-wider">
+										<AvatarFallback className="bg-emerald-100 text-emerald-800 text-3xl font-bold tracking-wider">
 											{profileData.fullName
 												? profileData.fullName
 														.split(" ")
@@ -838,7 +838,7 @@ export default function ProfilePage() {
 								<div className="flex items-center gap-2 mt-1">
 									<label
 										htmlFor="profile-photo-upload"
-										className="text-xs bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-full cursor-pointer transition flex items-center gap-1"
+										className="flex cursor-pointer items-center gap-1 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs font-medium text-emerald-800 transition hover:bg-emerald-50"
 									>
 										<Upload className="h-3 w-3" />
 										Upload Photo
@@ -848,7 +848,7 @@ export default function ProfilePage() {
 										<button
 											type="button"
 											onClick={handleRemovePhoto}
-											className="text-xs bg-red-600/80 hover:bg-red-600 text-white px-2.5 py-1 rounded-full transition flex items-center gap-1"
+											className="flex items-center gap-1 rounded-full bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100"
 											title="Remove current photo"
 										>
 											<Trash2 className="h-3 w-3" />
@@ -859,7 +859,7 @@ export default function ProfilePage() {
 							)}
 
 							<div className="text-center">
-								<Badge className="bg-emerald-500/30 text-emerald-200 border-emerald-400/40 text-[11px] font-mono tracking-wider">
+								<Badge className="border-emerald-200 bg-emerald-100 text-[11px] font-mono tracking-wider text-emerald-800">
 									{farmerKisanId}
 								</Badge>
 							</div>
@@ -867,25 +867,25 @@ export default function ProfilePage() {
 
 						{/* Identity & Farm Info Details */}
 						<div className="flex-1 text-center lg:text-left space-y-3">
-							<div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5">
-								<h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+							<div className="flex flex-wrap items-center justify-center gap-2.5 lg:justify-start">
+								<h2 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
 									{profileData.fullName || "Farmer"}
 								</h2>
 
-								<Badge className="bg-emerald-400 text-emerald-950 font-semibold px-2.5 py-0.5 flex items-center gap-1 shadow-sm">
+								<Badge className="flex items-center gap-1 border border-emerald-200 bg-emerald-100 px-2.5 py-1 font-semibold text-emerald-800 shadow-none">
 									<Award className="h-3.5 w-3.5" />
 									Verified Farmer
 								</Badge>
 							</div>
 
-							<p className="text-emerald-100/90 text-lg font-medium">
+							<p className="text-base font-semibold text-emerald-800 md:text-lg">
 								{profileData.farmName || "Primary Krishi Holding"}
 							</p>
 
 							{/* Location & Contact row */}
-							<div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-sm text-emerald-100/80">
+							<div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-slate-600 lg:justify-start">
 								<div className="flex items-center gap-1.5">
-									<MapPin className="h-4 w-4 text-emerald-300" />
+									<MapPin className="h-4 w-4 shrink-0 text-emerald-700" />
 									<span>
 										{[
 											profileData.village,
@@ -900,14 +900,14 @@ export default function ProfilePage() {
 
 								{profileData.phone && (
 									<div className="flex items-center gap-1.5">
-										<Phone className="h-4 w-4 text-emerald-300" />
+										<Phone className="h-4 w-4 shrink-0 text-emerald-700" />
 										<span>+91 {profileData.phone}</span>
 									</div>
 								)}
 
 								{profileData.email && (
 									<div className="flex items-center gap-1.5">
-										<Mail className="h-4 w-4 text-emerald-300" />
+										<Mail className="h-4 w-4 shrink-0 text-emerald-700" />
 										<span>{profileData.email}</span>
 									</div>
 								)}
@@ -915,7 +915,7 @@ export default function ProfilePage() {
 
 							{/* Key Crop Badges */}
 							<div className="flex flex-wrap items-center justify-center lg:justify-start gap-1.5 pt-1">
-								<span className="text-xs text-emerald-200/80 mr-1 font-medium">
+								<span className="mr-1 text-xs font-semibold text-slate-600">
 									Cultivating:
 								</span>
 								{profileData.crops && profileData.crops.length > 0 ? (
@@ -923,20 +923,20 @@ export default function ProfilePage() {
 										<Badge
 											key={crop}
 											variant="secondary"
-											className="bg-emerald-700/60 text-white border border-emerald-500/30 text-xs capitalize"
+											className="border border-emerald-200 bg-emerald-100 text-xs capitalize text-emerald-800"
 										>
 											🌿 {crop}
 										</Badge>
 									))
 								) : (
-									<span className="text-xs text-emerald-300/70 italic">
+									<span className="text-xs italic text-slate-500">
 										No crops registered
 									</span>
 								)}
 								{profileData.crops && profileData.crops.length > 5 && (
 									<Badge
 										variant="secondary"
-										className="bg-emerald-700/60 text-white text-xs"
+										className="bg-emerald-100 text-xs text-emerald-800"
 									>
 										+{profileData.crops.length - 5} more
 									</Badge>
@@ -945,32 +945,32 @@ export default function ProfilePage() {
 
 							{/* Micro KPI Cards */}
 							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3">
-								<div className="bg-emerald-950/50 backdrop-blur-sm border border-emerald-600/30 p-2.5 rounded-xl text-center">
-									<p className="text-[11px] text-emerald-300 font-medium">Land Holding</p>
-									<p className="text-base font-bold text-white">
+								<div className="rounded-xl border border-emerald-100 bg-white/90 p-3 text-center shadow-sm">
+									<p className="text-xs font-medium text-slate-500">Land Holding</p>
+									<p className="mt-1 text-base font-bold text-slate-900">
 										{profileData.landHolding
 											? `${profileData.landHolding} ${profileData.landUnit || "Acre"}`
 											: "Not Set"}
 									</p>
 								</div>
 
-								<div className="bg-emerald-950/50 backdrop-blur-sm border border-emerald-600/30 p-2.5 rounded-xl text-center">
-									<p className="text-[11px] text-emerald-300 font-medium">Practice</p>
-									<p className="text-base font-bold text-white capitalize">
+								<div className="rounded-xl border border-emerald-100 bg-white/90 p-3 text-center shadow-sm">
+									<p className="text-xs font-medium text-slate-500">Practice</p>
+									<p className="mt-1 text-base font-bold capitalize text-slate-900">
 										{profileData.farmingType || "Traditional"}
 									</p>
 								</div>
 
-								<div className="bg-emerald-950/50 backdrop-blur-sm border border-emerald-600/30 p-2.5 rounded-xl text-center">
-									<p className="text-[11px] text-emerald-300 font-medium">PM-KISAN</p>
-									<p className="text-base font-bold text-white">
+								<div className="rounded-xl border border-emerald-100 bg-white/90 p-3 text-center shadow-sm">
+									<p className="text-xs font-medium text-slate-500">PM-KISAN</p>
+									<p className="mt-1 text-base font-bold text-slate-900">
 										{profileData.pmKisanRegistered ? "Registered" : "Pending"}
 									</p>
 								</div>
 
-								<div className="bg-emerald-950/50 backdrop-blur-sm border border-emerald-600/30 p-2.5 rounded-xl text-center">
-									<p className="text-[11px] text-emerald-300 font-medium">Profile Score</p>
-									<p className="text-base font-bold text-white">
+								<div className="rounded-xl border border-emerald-100 bg-white/90 p-3 text-center shadow-sm">
+									<p className="text-xs font-medium text-slate-500">Profile Score</p>
+									<p className="mt-1 text-base font-bold text-slate-900">
 										{eligibilityCompletion}%
 									</p>
 								</div>
@@ -982,15 +982,15 @@ export default function ProfilePage() {
 				{/* -------------------------------------------------
 				    PROFILE COMPLETENESS PROGRESS CARD
 				------------------------------------------------- */}
-				<Card className="border-emerald-200/80 bg-gradient-to-r from-emerald-50/50 via-white to-teal-50/50">
+				<Card className="border-emerald-100 bg-white shadow-sm">
 					<CardContent className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
 						<div className="flex items-center gap-3.5">
-							<div className="p-3 bg-emerald-100 text-emerald-700 rounded-2xl">
+							<div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
 								<ShieldCheck className="h-6 w-6" />
 							</div>
 							<div>
 								<div className="flex items-center gap-2">
-									<h3 className="font-bold text-base text-gray-900">
+									<h3 className="text-base font-bold text-slate-900">
 										FarmAI Agriculture Profile Completion
 									</h3>
 									<Badge
@@ -1003,7 +1003,7 @@ export default function ProfilePage() {
 										{eligibilityCompletion}% Complete
 									</Badge>
 								</div>
-								<p className="text-xs text-muted-foreground mt-0.5">
+								<p className="mt-1 text-sm leading-relaxed text-slate-600">
 									A complete profile enables automated eligibility checking for PM-Kisan, Fasal Bima, and state drip irrigation subsidies.
 								</p>
 							</div>
@@ -1016,9 +1016,9 @@ export default function ProfilePage() {
 									{eligibilityFields.length - missingEligibilityFields.length} of {eligibilityFields.length} fields filled
 								</span>
 							</div>
-							<div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
+							<div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
 								<div
-									className="h-full bg-emerald-600 rounded-full transition-all duration-500"
+									className="h-full rounded-full bg-emerald-600 transition-all duration-500"
 									style={{ width: `${eligibilityCompletion}%` }}
 								/>
 							</div>
@@ -1032,10 +1032,10 @@ export default function ProfilePage() {
 				<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
 					
 					{/* Responsive Tabs Navigation */}
-					<TabsList className="bg-muted/80 p-1 rounded-xl h-auto flex flex-wrap gap-1 border">
+					<TabsList className="flex h-auto flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1.5">
 						<TabsTrigger
 							value="overview"
-							className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-3"
+							className="rounded-lg px-3 py-2 text-xs text-slate-600 transition-colors data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm sm:text-sm"
 						>
 							<UserRound className="h-4 w-4 mr-1.5" />
 							Personal Details
@@ -1043,7 +1043,7 @@ export default function ProfilePage() {
 
 						<TabsTrigger
 							value="land"
-							className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-3"
+							className="rounded-lg px-3 py-2 text-xs text-slate-600 transition-colors data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm sm:text-sm"
 						>
 							<Tractor className="h-4 w-4 mr-1.5" />
 							Farm & Land Records
@@ -1051,7 +1051,7 @@ export default function ProfilePage() {
 
 						<TabsTrigger
 							value="cultivation"
-							className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-3"
+							className="rounded-lg px-3 py-2 text-xs text-slate-600 transition-colors data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm sm:text-sm"
 						>
 							<Wheat className="h-4 w-4 mr-1.5" />
 							Crops & Irrigation
@@ -1059,7 +1059,7 @@ export default function ProfilePage() {
 
 						<TabsTrigger
 							value="schemes"
-							className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm text-xs sm:text-sm py-2 px-3"
+							className="rounded-lg px-3 py-2 text-xs text-slate-600 transition-colors data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm sm:text-sm"
 						>
 							<Landmark className="h-4 w-4 mr-1.5" />
 							Government Schemes & Banking
@@ -1070,7 +1070,7 @@ export default function ProfilePage() {
 					    TAB 1: PERSONAL & CONTACT INFORMATION
 					------------------------------------------------- */}
 					<TabsContent value="overview" className="space-y-6">
-						<Card>
+						<Card className="border-slate-200 bg-white shadow-sm">
 							<CardHeader>
 								<CardTitle className="text-xl flex items-center gap-2">
 									<UserRound className="h-5 w-5 text-emerald-600" />
@@ -1095,7 +1095,7 @@ export default function ProfilePage() {
 											disabled={!isEditing}
 											placeholder="e.g. Ramesh Shankar Patil"
 											required
-											className="border-gray-300"
+											className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 
@@ -1117,7 +1117,7 @@ export default function ProfilePage() {
 											type="tel"
 											placeholder="10-digit mobile number"
 											maxLength={10}
-											className="border-gray-300 font-mono"
+											className="border-slate-200 bg-white font-mono text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 
@@ -1133,7 +1133,7 @@ export default function ProfilePage() {
 											disabled={!isEditing}
 											type="email"
 											placeholder="farmer@example.com"
-											className="border-gray-300"
+											className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 
@@ -1147,7 +1147,7 @@ export default function ProfilePage() {
 											onValueChange={(val) => handleInputChange("preferredLanguage", val)}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Select language" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1172,7 +1172,7 @@ export default function ProfilePage() {
 											}
 											onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
 											disabled={!isEditing}
-											className="border-gray-300"
+											className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 
@@ -1184,7 +1184,7 @@ export default function ProfilePage() {
 											onValueChange={(val) => handleInputChange("gender", val)}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Select gender" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1204,7 +1204,7 @@ export default function ProfilePage() {
 											onValueChange={(val) => handleInputChange("socialCategory", val)}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Select social category" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1235,7 +1235,7 @@ export default function ProfilePage() {
 											}
 											disabled={!isEditing}
 											placeholder="e.g. 15 Years"
-											className="border-gray-300"
+											className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 								</div>
@@ -1247,7 +1247,7 @@ export default function ProfilePage() {
 					    TAB 2: FARM & LAND RECORDS
 					------------------------------------------------- */}
 					<TabsContent value="land" className="space-y-6">
-						<Card>
+						<Card className="border-slate-200 bg-white shadow-sm">
 							<CardHeader>
 								<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 									<div>
@@ -1297,7 +1297,7 @@ export default function ProfilePage() {
 											onChange={(e) => handleInputChange("farmName", e.target.value)}
 											disabled={!isEditing}
 											placeholder="e.g. Shinde Agro Farms"
-											className="border-gray-300"
+											className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 
@@ -1313,7 +1313,7 @@ export default function ProfilePage() {
 											disabled={!isEditing}
 											placeholder="e.g. Maharashtra"
 											required
-											className="border-gray-300"
+											className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 
@@ -1329,7 +1329,7 @@ export default function ProfilePage() {
 											disabled={!isEditing}
 											placeholder="e.g. Jalna, Latur, Pune"
 											required
-											className="border-gray-300"
+											className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 
@@ -1344,7 +1344,7 @@ export default function ProfilePage() {
 											onChange={(e) => handleInputChange("taluka", e.target.value)}
 											disabled={!isEditing}
 											placeholder="e.g. Ambad, Ausa, Baramati"
-											className="border-gray-300"
+											className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 
@@ -1359,7 +1359,7 @@ export default function ProfilePage() {
 											onChange={(e) => handleInputChange("village", e.target.value)}
 											disabled={!isEditing}
 											placeholder="e.g. Rohilgad, Killari"
-											className="border-gray-300"
+											className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 
@@ -1375,7 +1375,7 @@ export default function ProfilePage() {
 											disabled={!isEditing}
 											placeholder="e.g. 431205"
 											maxLength={6}
-											className="border-gray-300 font-mono"
+											className="border-slate-200 bg-white font-mono text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 
@@ -1398,7 +1398,7 @@ export default function ProfilePage() {
 											}
 											disabled={!isEditing}
 											placeholder="e.g. 4.5"
-											className="border-gray-300 font-mono"
+											className="border-slate-200 bg-white font-mono text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 
@@ -1410,7 +1410,7 @@ export default function ProfilePage() {
 											onValueChange={(val) => handleInputChange("landUnit", val)}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Select unit" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1429,7 +1429,7 @@ export default function ProfilePage() {
 											onValueChange={(val) => handleInputChange("landOwnership", val)}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Select ownership" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1448,7 +1448,7 @@ export default function ProfilePage() {
 											onValueChange={(val) => handleInputChange("soilType", val)}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Select soil type" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1481,7 +1481,7 @@ export default function ProfilePage() {
 											}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Soil tested & card issued?" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1493,7 +1493,7 @@ export default function ProfilePage() {
 									{/* GPS Coordinates preview */}
 									<div className="space-y-2">
 										<Label className="font-semibold">GPS Farm Coordinates</Label>
-										<div className="p-2.5 bg-muted rounded-lg font-mono text-xs flex items-center justify-between">
+										<div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-3 font-mono text-xs text-slate-700">
 											<span>
 												Lat: {profileData.latitude || "0.000000"}, Lon: {profileData.longitude || "0.000000"}
 											</span>
@@ -1509,7 +1509,7 @@ export default function ProfilePage() {
 					    TAB 3: CROPS, IRRIGATION & LIVESTOCK
 					------------------------------------------------- */}
 					<TabsContent value="cultivation" className="space-y-6">
-						<Card>
+						<Card className="border-slate-200 bg-white shadow-sm">
 							<CardHeader>
 								<CardTitle className="text-xl flex items-center gap-2">
 									<Wheat className="h-5 w-5 text-emerald-600" />
@@ -1532,7 +1532,7 @@ export default function ProfilePage() {
 											onValueChange={(val) => handleInputChange("farmingType", val)}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Select farming type" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1553,7 +1553,7 @@ export default function ProfilePage() {
 											onValueChange={(val) => handleInputChange("irrigationType", val)}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="border-slate-200 bg-white text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Select primary irrigation" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1646,7 +1646,7 @@ export default function ProfilePage() {
 												value={customCropInput}
 												onChange={(e) => setCustomCropInput(e.target.value)}
 												placeholder="Add other crop (e.g. Soybean, Onion, Cotton)"
-												className="border-gray-300 text-sm"
+												className="border-slate-200 bg-white text-sm text-slate-800 focus-visible:ring-emerald-500"
 												onKeyDown={(e) => {
 													if (e.key === "Enter") {
 														e.preventDefault()
@@ -1749,10 +1749,10 @@ export default function ProfilePage() {
 					    TAB 4: GOVERNMENT SCHEMES & BANKING
 					------------------------------------------------- */}
 					<TabsContent value="schemes" className="space-y-6">
-						<Card>
-							<CardHeader>
-								<CardTitle className="text-xl flex items-center gap-2">
-									<Landmark className="h-5 w-5 text-emerald-600" />
+						<Card className="min-w-0 overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
+							<CardHeader className="border-b border-slate-100 bg-slate-50/70 px-5 py-5 sm:px-6">
+								<CardTitle className="flex items-center gap-2 text-lg font-bold leading-snug text-slate-900 sm:text-xl">
+									<Landmark className="h-5 w-5 shrink-0 text-emerald-700" />
 									Government Schemes, Subsidies & Banking Records
 								</CardTitle>
 								<CardDescription>
@@ -1760,11 +1760,11 @@ export default function ProfilePage() {
 								</CardDescription>
 							</CardHeader>
 
-							<CardContent className="space-y-6">
-								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+							<CardContent className="space-y-6 px-5 py-6 sm:px-6">
+								<div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
 									{/* Farmer Category */}
-									<div className="space-y-2">
-										<Label className="font-semibold">
+									<div className="min-w-0 space-y-2">
+										<Label className="block text-sm font-semibold leading-5 text-slate-700">
 											Farmer Holding Category (शेतकरी वर्ग)
 										</Label>
 										<Select
@@ -1772,7 +1772,7 @@ export default function ProfilePage() {
 											onValueChange={(val) => handleInputChange("farmerCategory", val)}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="h-auto min-h-11 w-full min-w-0 border-slate-200 bg-white py-2.5 text-left text-sm text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Select farmer category" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1785,8 +1785,8 @@ export default function ProfilePage() {
 									</div>
 
 									{/* Annual Family Income */}
-									<div className="space-y-2">
-										<Label htmlFor="annualFamilyIncome" className="font-semibold">
+									<div className="min-w-0 space-y-2">
+										<Label htmlFor="annualFamilyIncome" className="block text-sm font-semibold leading-5 text-slate-700">
 											Annual Family Income (वार्षिक उत्पन्न ₹)
 										</Label>
 										<Input
@@ -1803,13 +1803,13 @@ export default function ProfilePage() {
 											}
 											disabled={!isEditing}
 											placeholder="₹ e.g. 150000"
-											className="border-gray-300 font-mono"
+											className="h-11 w-full min-w-0 border-slate-200 bg-white font-mono text-sm text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200"
 										/>
 									</div>
 
 									{/* PM-KISAN Registered */}
-									<div className="space-y-2">
-										<Label className="font-semibold">
+									<div className="min-w-0 space-y-2">
+										<Label className="block text-sm font-semibold leading-5 text-slate-700">
 											PM-KISAN Samman Nidhi (पीएम किसान लाभार्थी?)
 										</Label>
 										<Select
@@ -1828,7 +1828,7 @@ export default function ProfilePage() {
 											}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="h-auto min-h-11 w-full min-w-0 border-slate-200 bg-white py-2.5 text-left text-sm text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Select status" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1838,8 +1838,8 @@ export default function ProfilePage() {
 									</div>
 
 									{/* Aadhaar Linked for DBT */}
-									<div className="space-y-2">
-										<Label className="font-semibold">
+									<div className="min-w-0 space-y-2">
+										<Label className="block text-sm font-semibold leading-5 text-slate-700">
 											Aadhaar Linked to Bank (DBT खाते सक्रिय?)
 										</Label>
 										<Select
@@ -1858,7 +1858,7 @@ export default function ProfilePage() {
 											}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="h-auto min-h-11 w-full min-w-0 border-slate-200 bg-white py-2.5 text-left text-sm text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Aadhaar linked to bank?" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1868,8 +1868,8 @@ export default function ProfilePage() {
 									</div>
 
 									{/* Bank Account Available */}
-									<div className="space-y-2">
-										<Label className="font-semibold">
+									<div className="min-w-0 space-y-2">
+										<Label className="block text-sm font-semibold leading-5 text-slate-700">
 											Dedicated Bank Account (बँक खाते उपलब्ध?)
 										</Label>
 										<Select
@@ -1888,7 +1888,7 @@ export default function ProfilePage() {
 											}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="h-auto min-h-11 w-full min-w-0 border-slate-200 bg-white py-2.5 text-left text-sm text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Bank account available?" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1898,8 +1898,8 @@ export default function ProfilePage() {
 									</div>
 
 									{/* Kisan Credit Card (KCC) */}
-									<div className="space-y-2">
-										<Label className="font-semibold">
+									<div className="min-w-0 space-y-2">
+										<Label className="block text-sm font-semibold leading-5 text-slate-700">
 											Kisan Credit Card (KCC धारक?)
 										</Label>
 										<Select
@@ -1918,7 +1918,7 @@ export default function ProfilePage() {
 											}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="h-auto min-h-11 w-full min-w-0 border-slate-200 bg-white py-2.5 text-left text-sm text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="KCC Cardholder?" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1928,8 +1928,8 @@ export default function ProfilePage() {
 									</div>
 
 									{/* Crop Insurance (PMFBY) */}
-									<div className="space-y-2">
-										<Label className="font-semibold">
+									<div className="min-w-0 space-y-2">
+										<Label className="block text-sm font-semibold leading-5 text-slate-700">
 											Crop Insurance - PMFBY (पंतप्रधान पीक विमा?)
 										</Label>
 										<Select
@@ -1948,7 +1948,7 @@ export default function ProfilePage() {
 											}
 											disabled={!isEditing}
 										>
-											<SelectTrigger className="border-gray-300">
+											<SelectTrigger className="h-auto min-h-11 w-full min-w-0 border-slate-200 bg-white py-2.5 text-left text-sm text-slate-800 shadow-none focus-visible:ring-emerald-500 disabled:cursor-default disabled:opacity-100 disabled:bg-slate-50 disabled:text-slate-700 disabled:border-slate-200">
 												<SelectValue placeholder="Crop insurance status" />
 											</SelectTrigger>
 											<SelectContent>
@@ -1959,13 +1959,13 @@ export default function ProfilePage() {
 								</div>
 
 								{/* Scheme Eligibility Banner */}
-								<div className="flex gap-3.5 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 mt-4">
+								<div className="mt-2 flex gap-3.5 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4 sm:p-5">
 									<FileCheck2 className="h-6 w-6 text-emerald-600 shrink-0 mt-0.5" />
-									<div className="text-sm text-emerald-900 space-y-1">
+									<div className="min-w-0 space-y-1 text-sm leading-6 text-emerald-950">
 										<p className="font-bold">
 											Automated Scheme Eligibility Engine Active
 										</p>
-										<p className="text-emerald-800/90 text-xs sm:text-sm">
+										<p className="text-sm leading-6 text-emerald-800">
 											These details are matched in real-time with over 35 state and central agricultural schemes (including MahaDBT, PMKSY Drip Subsidies, Soil Health Mission, and Kisan Samman Nidhi). Ensure accurate landholdings to prevent subsidy application rejection.
 										</p>
 									</div>
